@@ -1,48 +1,48 @@
 {
-  "name": "@spritz-finance/api-client",
-  "version": "1.0.0",
-  "main": "dist/spritz-api-client.js",
-  "module": "dist/spritz-api-client.mjs",
-  "types": "dist/spritz-api-client.d.ts",
-  "repository": "https://github.com/spritz-finance/api-client.git",
-  "author": "Laurence Davies <ljd.davies@gmail.com>",
-  "license": "MIT",
-  "keywords": [
-    "spritz",
-    "spritz-finance",
-    "node"
-  ],
-  "scripts": {
-    "prebuild": "rimraf dist",
-    "build": "rollup -c",
-    "prepublishOnly": "npm run build",
-    "codegen": "graphql-codegen --config codegen.ts"
-  },
-  "devDependencies": {
-    "@graphql-codegen/cli": "^3.2.2",
-    "@graphql-codegen/client-preset": "^2.1.1",
-    "@graphql-codegen/introspection": "^3.0.1",
-    "@graphql-codegen/typescript": "^3.0.2",
-    "@graphql-codegen/typescript-operations": "^3.0.2",
-    "@types/node": "^18.15.11",
-    "@typescript-eslint/eslint-plugin": "^5.57.0",
-    "@typescript-eslint/parser": "^5.57.0",
-    "dotenv": "^16.0.3",
-    "esbuild": "^0.17.14",
-    "eslint": "^8.37.0",
-    "eslint-config-prettier": "^8.8.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "prettier": "^2.8.7",
-    "rimraf": "^4.4.1",
-    "rollup": "^3.20.2",
-    "rollup-plugin-dts": "^5.3.0",
-    "rollup-plugin-esbuild": "^5.0.0",
-    "ts-node": "^10.9.1",
-    "tslib": "^2.5.0",
-    "typescript": "^5.0.2"
-  },
-  "dependencies": {
-    "axios": "^1.3.4",
-    "graphql": "^16.6.0"
-  }
+    "name": "@spritz-finance/api-client",
+    "version": "0.0.1",
+    "main": "dist/spritz-api-client.js",
+    "module": "dist/spritz-api-client.mjs",
+    "types": "dist/spritz-api-client.d.ts",
+    "repository": "https://github.com/spritz-finance/api-client.git",
+    "author": "Laurence Davies <ljd.davies@gmail.com>",
+    "license": "MIT",
+    "keywords": [
+        "spritz",
+        "spritz-finance",
+        "node"
+    ],
+    "scripts": {
+        "prebuild": "rimraf dist",
+        "build": "rollup -c",
+        "prepublishOnly": "npm run build",
+        "codegen": "graphql-codegen --config codegen.ts"
+    },
+    "devDependencies": {
+        "@graphql-codegen/cli": "^3.2.2",
+        "@graphql-codegen/client-preset": "^2.1.1",
+        "@graphql-codegen/introspection": "^3.0.1",
+        "@graphql-codegen/typescript": "^3.0.2",
+        "@graphql-codegen/typescript-operations": "^3.0.2",
+        "@types/node": "^18.15.11",
+        "@typescript-eslint/eslint-plugin": "^5.57.0",
+        "@typescript-eslint/parser": "^5.57.0",
+        "dotenv": "^16.0.3",
+        "esbuild": "^0.17.14",
+        "eslint": "^8.37.0",
+        "eslint-config-prettier": "^8.8.0",
+        "eslint-plugin-prettier": "^4.2.1",
+        "prettier": "^2.8.7",
+        "rimraf": "^4.4.1",
+        "rollup": "^3.20.2",
+        "rollup-plugin-dts": "^5.3.0",
+        "rollup-plugin-esbuild": "^5.0.0",
+        "ts-node": "^10.9.1",
+        "tslib": "^2.5.0",
+        "typescript": "^5.0.2"
+    },
+    "dependencies": {
+        "axios": "^1.3.4",
+        "graphql": "^16.6.0"
+    }
 }
