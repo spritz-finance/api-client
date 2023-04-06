@@ -1,18 +1,22 @@
 import dts from 'rollup-plugin-dts'
 import esbuild from 'rollup-plugin-esbuild'
+import graphql from '@rollup/plugin-graphql'
 
 const bundle = (config) => ({
     ...config,
     input: 'src/index.ts',
-    external: (id) => !/^[./]/.test(id),
 })
 
 export default [
     bundle({
         plugins: [
             esbuild({
+                optimizeDeps: {
+                    include: ['graphql'],
+                },
                 minify: true,
             }),
+            graphql(),
         ],
         output: [
             {
@@ -26,6 +30,7 @@ export default [
                 sourcemap: true,
             },
         ],
+        external: ['axios'],
     }),
     bundle({
         plugins: [dts()],

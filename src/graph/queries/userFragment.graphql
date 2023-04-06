@@ -1,0 +1,11 @@
+fragment FullUser on User {
+    id
+    sub
+    email
+    firstName
+    lastName
+    picture
+    phone
+    createdAt
+    timezone
+}
