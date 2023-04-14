@@ -1,6 +1,6 @@
-import { CurrentUser, CurrentUser_me } from '../../graph/queries/__types__/CurrentUser'
-import { GraphClient } from '../../lib/client'
 import CurrentUserQuery from '../../graph/queries/currentUser.graphql'
+import { CurrentUser } from '../../graph/queries/__types__/CurrentUser'
+import { GraphClient } from '../../lib/client'
 
 export class UserService {
     private client: GraphClient
@@ -14,6 +14,6 @@ export class UserService {
             query: CurrentUserQuery,
         })
 
-        return response.me as CurrentUser_me
+        return response?.me ?? null
     }
 }

@@ -17,11 +17,12 @@ export const createGraphClient = (config: AxiosRequestConfig) => {
 export class GraphClient {
     client: AxiosInstance
 
-    constructor(environment: Environment) {
+    constructor(environment: Environment, apiKey: string) {
         this.client = createGraphClient({
             baseURL: config[environment].graphEndpoint,
             headers: {
                 'Content-Type': 'application/json',
+                Authorization: 'Bearer ' + apiKey,
             },
         })
     }
@@ -34,7 +35,7 @@ export class GraphClient {
                 operationName: (query?.definitions?.[0] as OperationDefinitionNode)?.name?.value,
             })
             if (response.data.errors) {
-                throw new Error(`Spritz GraphQL Error: ${JSON.stringify(response.data.errors)}`)
+                throw new Error(`Spritz GraphQL Error: ${response.data.errors[0].message}`)
             }
             return response.data.data as Q
         } catch (error: any) {
