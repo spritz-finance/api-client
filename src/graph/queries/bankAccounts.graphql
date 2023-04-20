@@ -1,0 +1,7 @@
+#import "./bankAccountFragment.graphql"
+
+query UserBankAccounts {
+    userBankAccounts {
+        ...BankAccountFragment
+    }
+}

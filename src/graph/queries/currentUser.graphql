@@ -2,6 +2,6 @@
 
 query CurrentUser {
     me {
-        ...FullUser
+        ...UserFragment
     }
 }

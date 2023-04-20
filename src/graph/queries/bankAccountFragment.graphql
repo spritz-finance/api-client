@@ -1,0 +1,15 @@
+fragment BankAccountFragment on BankAccount {
+    id
+    accountNumber
+    type
+    country
+    currency
+    ... on USLocalBankAccount {
+        routingNumber
+    }
+    institution {
+        id
+        name
+        logo
+    }
+}

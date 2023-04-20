@@ -1,4 +1,4 @@
-fragment FullUser on User {
+fragment UserFragment on User {
     id
     sub
     email
