@@ -1,0 +1,7 @@
+#import "./tokenBalanceFragment.graphql"
+
+query WalletTokenBalances($address: String!, $network: String) {
+    tokenBalances(address: $address, network: $network) {
+        ...TokenBalanceFragment
+    }
+}

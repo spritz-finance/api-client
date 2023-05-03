@@ -1,0 +1,7 @@
+#import "../queries/payableAccountFragment.graphql"
+
+mutation DeletePayableAccount($accountId: String!) {
+    deletePayableAccount(accountId: $accountId) {
+        ...PayableAccountFragment
+    }
+}

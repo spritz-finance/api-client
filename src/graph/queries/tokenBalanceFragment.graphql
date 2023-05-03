@@ -1,0 +1,12 @@
+fragment TokenBalanceFragment on TokenBalance {
+    address
+    walletAddress
+    symbol
+    network
+    decimals
+    balance
+    balanceRaw
+    balanceUSD
+    price
+    tokenImageUrl
+}

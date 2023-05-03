@@ -1,0 +1,7 @@
+#import "../queries/payableAccountFragment.graphql"
+
+mutation RenamePayableAccount($accountId: String!, $name: String!) {
+    renamePayableAccount(accountId: $accountId, name: $name) {
+        ...PayableAccountFragment
+    }
+}

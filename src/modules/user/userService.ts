@@ -23,7 +23,6 @@ export class UserService {
         const response = await this.client.query<UserVerification>({
             query: UserVerificationQuery,
         })
-
         return response?.verification ?? null
     }
 }

@@ -1,4 +1,4 @@
-fragment BankAccountFragment on BankAccount {
+fragment PayableAccountFragment on PayableAccount {
     id
     name
     userId
