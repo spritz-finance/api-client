@@ -9,6 +9,23 @@ interface QueryParams<V = any> {
     variables?: V
 }
 
+class SpritzApiError extends Error {
+    date: Date
+
+    constructor(message: string, ...params: any[]) {
+        super(...params)
+
+        // Maintain proper stack trace for where our error was thrown
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, SpritzApiError)
+        }
+
+        this.name = 'SpritzApiError'
+        this.message = message
+        this.date = new Date()
+    }
+}
+
 export const createGraphClient = (config: AxiosRequestConfig) => {
     const serviceClient = axios.create(config)
     return serviceClient
@@ -28,6 +45,7 @@ export class GraphClient {
     }
 
     async query<Q = any, V = any>({ query, variables }: QueryParams<V>) {
+        // eslint-disable-next-line no-useless-catch
         try {
             const response = await this.client.post<{ data: Q; errors?: any }>('', {
                 query: print(query),
@@ -35,11 +53,16 @@ export class GraphClient {
                 operationName: (query?.definitions?.[0] as OperationDefinitionNode)?.name?.value,
             })
             if (response.data.errors) {
-                throw new Error(`Spritz GraphQL Error: ${response.data.errors[0].message}`)
+                throw new SpritzApiError(`Spritz GraphQL Error: ${response.data.errors[0].message}`)
             }
             return response.data.data as Q
         } catch (error: any) {
-            throw new Error(`Spritz Request Error: ${error.message}`)
+            if (axios.isAxiosError(error)) {
+                const message = error.response?.data.Message ?? error.response?.data.message
+                throw new SpritzApiError(`Spritz Request Error: ${message}`)
+            } else {
+                throw new SpritzApiError(`Spritz Request Error: ${error.message}`)
+            }
         }
     }
 }
