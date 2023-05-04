@@ -1,0 +1,10 @@
+fragment PaymentFragment on Payment {
+    id
+    userId
+    status
+    accountId
+    deliveryDate
+    amount
+    feeAmount
+    createdAt
+}

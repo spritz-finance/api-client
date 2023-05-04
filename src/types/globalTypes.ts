@@ -48,6 +48,19 @@ export enum PayableAccountType {
   DebitCard = "DebitCard",
 }
 
+export enum PaymentStatus {
+  CANCELLED = "CANCELLED",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  INITIALIZED = "INITIALIZED",
+  PENDING = "PENDING",
+  REFUNDED = "REFUNDED",
+  REVERSAL_IN_PROGRESS = "REVERSAL_IN_PROGRESS",
+  REVERSED = "REVERSED",
+  SCHEDULED = "SCHEDULED",
+  SENT = "SENT",
+}
+
 export interface CreateDirectPaymentInput {
   accountId: string;
   amount: number;

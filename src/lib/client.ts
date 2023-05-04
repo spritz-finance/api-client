@@ -15,7 +15,6 @@ class SpritzApiError extends Error {
     constructor(message: string, ...params: any[]) {
         super(...params)
 
-        // Maintain proper stack trace for where our error was thrown
         if (Error.captureStackTrace) {
             Error.captureStackTrace(this, SpritzApiError)
         }
@@ -34,18 +33,18 @@ export const createGraphClient = (config: AxiosRequestConfig) => {
 export class GraphClient {
     client: AxiosInstance
 
-    constructor(environment: Environment, apiKey: string) {
+    constructor(environment: Environment, apiKey: string, integrationKey?: string) {
         this.client = createGraphClient({
             baseURL: config[environment].graphEndpoint,
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: 'Bearer ' + apiKey,
+                ...(integrationKey ? { 'X-INTEGRATION-KEY': integrationKey } : {}),
             },
         })
     }
 
     async query<Q = any, V = any>({ query, variables }: QueryParams<V>) {
-        // eslint-disable-next-line no-useless-catch
         try {
             const response = await this.client.post<{ data: Q; errors?: any }>('', {
                 query: print(query),

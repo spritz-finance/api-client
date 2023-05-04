@@ -1,17 +1,16 @@
 {
     "name": "@spritz-finance/api-client",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "Typescript library for interacting with the Spritz Finance API",
     "main": "dist/spritz-api-client.js",
     "module": "dist/spritz-api-client.mjs",
     "types": "dist/spritz-api-client.d.ts",
     "repository": "https://github.com/spritz-finance/api-client.git",
     "author": "Laurence Davies <ljd.davies@gmail.com>",
-    "license": "MIT",
+    "license": "ISC",
     "keywords": [
         "spritz",
-        "spritz-finance",
-        "node"
+        "spritz-finance"
     ],
     "files": [
         "dist"
