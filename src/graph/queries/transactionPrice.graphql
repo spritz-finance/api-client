@@ -1,0 +1,3 @@
+query TransactionPrice($amount: Float!) {
+    transactionPrice(amount: $amount)
+}

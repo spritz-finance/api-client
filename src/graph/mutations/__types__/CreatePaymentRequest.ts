@@ -16,6 +16,8 @@ export interface CreatePaymentRequest_createDirectPayment {
     accountId: any
     status: DirectPaymentStatus
     amount: number
+    feeAmount: number | null
+    amountDue: number
     network: string
     createdAt: any
 }

@@ -1,5 +1,5 @@
-import { keccak256 } from 'ethereum-cryptography/keccak'
-import { utf8ToBytes } from 'ethereum-cryptography/utils'
+import hash from 'ethereum-cryptography/keccak'
+import utils from 'ethereum-cryptography/utils'
 
 export function uint8ArrayToHexString(uint8Array: Uint8Array): string {
     let hexString = '0x'
@@ -13,8 +13,8 @@ export function uint8ArrayToHexString(uint8Array: Uint8Array): string {
 const checkAddressCheckSum = (data: string): boolean => {
     if (!/^(0x)?[0-9a-f]{40}$/i.test(data)) return false
     const address = data.slice(2)
-    const updatedData = utf8ToBytes(address.toLowerCase())
-    const addressHash = uint8ArrayToHexString(keccak256(updatedData)).slice(2)
+    const updatedData = utils.utf8ToBytes(address.toLowerCase())
+    const addressHash = uint8ArrayToHexString(hash.keccak256(updatedData)).slice(2)
 
     for (let i = 0; i < 40; i += 1) {
         // the nth letter should be uppercase if the nth digit of casemap is 1

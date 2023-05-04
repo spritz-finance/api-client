@@ -4,6 +4,8 @@ fragment PaymentRequestFragment on DirectPayment {
     accountId
     status
     amount
+    feeAmount
+    amountDue
     network
     createdAt
 }

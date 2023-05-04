@@ -3,7 +3,6 @@ fragment PaymentFragment on Payment {
     userId
     status
     accountId
-    deliveryDate
     amount
     feeAmount
     createdAt

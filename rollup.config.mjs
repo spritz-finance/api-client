@@ -12,7 +12,11 @@ export default [
         plugins: [
             esbuild({
                 optimizeDeps: {
-                    include: ['graphql', 'ethereum-cryptography'],
+                    include: [
+                        'graphql',
+                        'ethereum-cryptography/keccak',
+                        'ethereum-cryptography/utils',
+                    ],
                 },
                 minify: true,
             }),

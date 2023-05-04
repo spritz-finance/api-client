@@ -15,7 +15,6 @@ export interface AccountPayments_paymentsForAccount {
     userId: any
     status: PaymentStatus
     accountId: any | null
-    deliveryDate: any | null
     amount: number | null
     feeAmount: number | null
     createdAt: any

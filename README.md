@@ -141,6 +141,8 @@ const paymentRequest = await client.paymentRequest.create({
   accountId: '6322445f10d3f4d19c4d72fe',
   status: 'CREATED',
   amount: 100,
+  feeAmount: 0,
+  amountDue: 100,
   network: 'ethereum',
   createdAt: '2023-05-04T11:40:56.488Z'
 }
@@ -162,9 +164,7 @@ const paymentRequest = await client.paymentRequest.create({
 });
 
 const transactionData = await client.paymentRequest.getWeb3PaymentParams({
-	paymentRequestId: paymentRequest.id,
-	amount: paymentRequest.amount,
-	network: paymentRequest.network,
+	paymentRequest,
 	paymentTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC on mainnet
 })
 
@@ -181,3 +181,65 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
 ```
 
 The contract address (to), calldata (data), and value are the primary components used to execute the blockchain transaction. You can use the `requiredTokenInput` to verify that the user's wallet has sufficient funds to complete the payment before initiating the transaction.
+
+### Transaction fees
+
+Transaction fees are applied once the monthly transaction volume exceeds $100. To determine the fee amount for a specific payment value, you can use the following endpoint.
+
+```typescript
+const fees = await client.paymentRequest.transactionPrice(101)
+
+// Example response
+0.01
+```
+
+## Payments
+
+Payments represent a fiat payment that has been issued to the account. Once the status of the Payment Request has moved to `Confirmed` then the Payment will be created.
+
+### Retrieve the payment for a payment request
+
+```typescript
+import {PaymentNetwork} from '@spritz-finance/api-client';
+
+const paymentRequest = await client.paymentRequest.create({
+	amount: 100,
+	accountId: account.id,
+	network: PaymentNetwork.Ethereum,
+});
+
+const payment = await client.payment.getForPaymentRequest(paymentRequest.id);
+
+// Example response
+
+ {
+    id: '6368e3a3ec516e9572bbd23b',
+    userId: '63d12d3B577fab6c6382136e',
+    status: 'PENDING',
+    accountId: '6322445f10d3f4d19c4d72fe',
+    amount: 100,
+    feeAmount: null,
+    createdAt: '2022-11-07T10:53:23.998Z'
+  }
+
+```
+
+### Retrieve all payments for an account
+
+```typescript
+const payments = await client.payment.listForAccount(account.id)
+
+// Example response
+
+;[
+    {
+        id: '6368e3a3ec516e9572bbd23b',
+        userId: '63d12d3B577fab6c6382136e',
+        status: 'PENDING',
+        accountId: '6322445f10d3f4d19c4d72fe',
+        amount: 100,
+        feeAmount: null,
+        createdAt: '2022-11-07T10:53:23.998Z',
+    },
+]
+```
