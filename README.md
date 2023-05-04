@@ -28,7 +28,11 @@ const client = SpritzApiClient.initialize(Environment.Staging, 'YOUR_API_KEY_HER
 
 ## Bank Accounts
 
+Spritz provides robust support for bank accounts, allowing you to easily manage and interact with a user's bank account. To leverage these capabilities, you can utilize our specific methods and functionalities designed for bank accounts.
+
 ### List user bank accounts
+
+You can retrieve a comprehensive list of all bank accounts that have been linked to a user's account using this functionality.
 
 ```typescript
 const bankAccounts = await client.bankAccounts.list()
@@ -40,33 +44,37 @@ The bank accounts endpoint returns a standard response comprising an array of al
 
 ```typescript
 const bankAccounts = [{
-	id: "62d17d3b377dab6c1342136e",
-	name: "Precious Savings",
-	type: "BankAccount",
-	bankAccountType: "USBankAccount",
-	bankAccountSubType: "Checking",
-	userId: "62d17d3b377dab6c1342136e",
-	accountNumber: "1234567",
-	bankAccountDetails: {
-		routingNumber: "00000123",
-	}
-	country: "US",
-	currency: "USD",
-	email: "bilbo@shiremail.net",
-	holder: "Bilbo Baggins",
-	institution: {
-		id: "62d27d4b277dab3c1342126e",
-		name: "Shire Bank",
-		logo: "https://tinyurl.com/shire-bank-logo",
-	},
-	ownedByUser: true,
-	createdAt: "2023-05-03T11:25:02.401Z",
+  id: "62d17d3b377dab6c1342136e",
+  name: "Precious Savings",
+  type: "BankAccount",
+  bankAccountType: "USBankAccount",
+  bankAccountSubType: "Checking",
+  userId: "62d17d3b377dab6c1342136e",
+  accountNumber: "1234567",
+  bankAccountDetails: {
+    routingNumber: "00000123",
+  }
+  country: "US",
+  currency: "USD",
+  email: "bilbo@shiremail.net",
+  holder: "Bilbo Baggins",
+  institution: {
+    id: "62d27d4b277dab3c1342126e",
+    name: "Shire Bank",
+	logo: "https://tinyurl.com/shire-bank-logo",
+  },
+  ownedByUser: true,
+  createdAt: "2023-05-03T11:25:02.401Z",
 }];
 ```
 
 ### Add US bank account
 
+At present, you can only add US bank accounts to a user's account. To add a US bank account for the user, you can use the following.
+
 ```typescript
+// Input arguments for creating a US bank account
+
 export interface USBankAccountInput {
     accountNumber: string
     email: string
@@ -94,12 +102,82 @@ const bankAccounts = await client.bankAccounts.create(BankAccountType.USBankAcco
 
 ### Rename a bank account
 
+You can conveniently change the display name of a bank account using the following endpoint. The first argument specifies the ID of the bank account, while the second argument represents the desired new name for the account.
+
 ```typescript
 const updateAccount = await client.bankAccounts.rename('62d17d3b377dab6c1342136e', 'My new account')
 ```
 
 ### Delete a bank account
 
+To remove a bank account from a user's account, you can use the following endpoint. You only need to specify the ID of the bank account that you want to delete as an argument.
+
 ```typescript
 await client.bankAccounts.delete('62d17d3b377dab6c1342136e')
 ```
+
+## Payment Requests
+
+A payment request refers to the intent to initiate a payment to a specific account. Once a payment request is created, a blockchain transaction is required to fulfill it. After the blockchain transaction settles, the payment request is completed, and a fiat payment is issued to the designated account.
+
+### Create a payment request
+
+To initiate a payment request for a specific account, you can use the following functionality. The required inputs for creating a payment request include the ID of the account to be paid, the amount of the fiat payment in USD, and the network on which the blockchain transaction will settle.
+
+```typescript
+import {PaymentNetwork} from '@spritz-finance/api-client';
+
+const paymentRequest = await client.paymentRequest.create({
+	amount: 100,
+	accountId: account.id,
+	network: PaymentNetwork.Ethereum,
+});
+
+// Example response
+
+{
+  id: '645399c8c1ac408007b12273',
+  userId: '63d12d3B577fab6c6382136e',
+  accountId: '6322445f10d3f4d19c4d72fe',
+  status: 'CREATED',
+  amount: 100,
+  network: 'ethereum',
+  createdAt: '2023-05-04T11:40:56.488Z'
+}
+```
+
+### Fulfil a payment request (EVM transactions)
+
+After creating a payment request, you must issue a blockchain transaction to settle the payment request. For EVM compatible networks, this involves interacting with the SpritzPay smart contract (see: [SpritzPay deployments](https://docs.spritz.finance/docs/deployment-addresses)).
+
+To obtain the data needed for the transaction, you can use the following endpoint.
+
+```typescript
+import {PaymentNetwork} from '@spritz-finance/api-client';
+
+const paymentRequest = await client.paymentRequest.create({
+	amount: 100,
+	accountId: account.id,
+	network: PaymentNetwork.Ethereum,
+});
+
+const transactionData = await client.paymentRequest.getWeb3PaymentParams({
+	paymentRequestId: paymentRequest.id,
+	amount: paymentRequest.amount,
+	network: paymentRequest.network,
+	paymentTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC on mainnet
+})
+
+// Example response
+
+{
+  contractAddress: '0xbF7Abc15f00a8C2d6b13A952c58d12b7c194A8D0',
+  method: 'payWithToken',
+  calldata: '0xd71d9632000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000000000000000000000000000000000000005f5e100000000000000000000000000000000000000000064539a31c1ac408007b12277',
+  value: null,
+  requiredTokenInput: '100000000',
+  suggestedGasLimit: '110000'
+}
+```
+
+The contract address (to), calldata (data), and value are the primary components used to execute the blockchain transaction. You can use the `requiredTokenInput` to verify that the user's wallet has sufficient funds to complete the payment before initiating the transaction.

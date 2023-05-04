@@ -33,6 +33,7 @@ export class PaymentRequestService {
             variables: {
                 createDirectPaymentInput: {
                     ...input,
+                    amount: roundCurrency(input.amount),
                     provider: AccountProvider.CHECKBOOK,
                 },
             },
