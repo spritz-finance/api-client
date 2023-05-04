@@ -231,7 +231,7 @@ const payments = await client.payment.listForAccount(account.id)
 
 // Example response
 
-;[
+[
     {
         id: '6368e3a3ec516e9572bbd23b',
         userId: '63d12d3B577fab6c6382136e',
