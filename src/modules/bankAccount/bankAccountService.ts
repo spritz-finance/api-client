@@ -45,7 +45,7 @@ const getCreateMutationConfig = <T extends BankAccountType>(
     return mutationConfig[type]?.(input) ?? null
 }
 
-export class BankAccountsService {
+export class BankAccountService {
     private client: GraphClient
 
     constructor(client: GraphClient) {

@@ -1,0 +1,7 @@
+#import "../queries/paymentRequestFragment.graphql"
+
+mutation CreatePaymentRequest($createDirectPaymentInput: CreateDirectPaymentInput!) {
+    createDirectPayment(createDirectPaymentInput: $createDirectPaymentInput) {
+        ...PaymentRequestFragment
+    }
+}

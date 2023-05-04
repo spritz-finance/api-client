@@ -12,7 +12,7 @@ export default [
         plugins: [
             esbuild({
                 optimizeDeps: {
-                    include: ['graphql'],
+                    include: ['graphql', 'js-sha3'],
                 },
                 minify: true,
             }),

@@ -7,6 +7,11 @@
 // START Enums and Input Objects
 //==============================================================
 
+export enum AccountProvider {
+  CHECKBOOK = "CHECKBOOK",
+  METHOD_FI = "METHOD_FI",
+}
+
 export enum BankAccountSubType {
   Business = "Business",
   Checking = "Checking",
@@ -15,6 +20,17 @@ export enum BankAccountSubType {
 
 export enum BankAccountType {
   USBankAccount = "USBankAccount",
+}
+
+export enum DirectPaymentStatus {
+  COMPLETED = "COMPLETED",
+  CONFIRMED = "CONFIRMED",
+  CREATED = "CREATED",
+  FAILED = "FAILED",
+  PENDING = "PENDING",
+  REFUNDED = "REFUNDED",
+  TRANSACTION_FAILED = "TRANSACTION_FAILED",
+  TRANSACTION_PENDING = "TRANSACTION_PENDING",
 }
 
 export enum ModuleStatus {
@@ -30,6 +46,17 @@ export enum PayableAccountType {
   BankAccount = "BankAccount",
   Bill = "Bill",
   DebitCard = "DebitCard",
+}
+
+export interface CreateDirectPaymentInput {
+  accountId: string;
+  amount: number;
+  network?: string | null;
+  provider?: AccountProvider | null;
+  rewardsAmount?: number | null;
+  subscriptionId?: string | null;
+  testPayment?: boolean | null;
+  tokenAddress?: string | null;
 }
 
 export interface USBankAccountInput {

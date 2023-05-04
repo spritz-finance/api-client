@@ -1,0 +1,9 @@
+fragment PaymentRequestFragment on DirectPayment {
+    id
+    userId
+    accountId
+    status
+    amount
+    network
+    createdAt
+}

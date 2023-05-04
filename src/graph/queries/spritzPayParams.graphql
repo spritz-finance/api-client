@@ -1,0 +1,20 @@
+query GetSpritzPayParams(
+    $tokenAddress: String!
+    $amount: Float!
+    $reference: String!
+    $network: String!
+) {
+    spritzPayParams(
+        tokenAddress: $tokenAddress
+        amount: $amount
+        reference: $reference
+        network: $network
+    ) {
+        contractAddress
+        method
+        calldata
+        value
+        requiredTokenInput
+        suggestedGasLimit
+    }
+}

@@ -1,4 +1,5 @@
 export { SpritzApiClient } from './spritzApiClient'
 export * from './env'
 export * from './types/globalTypes'
+export * from './modules/types'
 export * from './graph/queries/__types__'
