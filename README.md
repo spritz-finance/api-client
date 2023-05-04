@@ -23,7 +23,10 @@ A Typescript library for interacting with the Spritz Finance API
 ```typescript
 import { SpritzApiClient, Environment } from '@spritz-finance/api-client'
 
-const client = SpritzApiClient.initialize(Environment.Staging, 'YOUR_API_KEY_HERE')
+const client = SpritzApiClient.initialize({
+	environment: Environment.Staging, 
+	apiKey: 'YOUR_API_KEY_HERE'
+})
 ```
 
 ## Bank Accounts
