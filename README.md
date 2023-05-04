@@ -24,9 +24,41 @@ A Typescript library for interacting with the Spritz Finance API
 import { SpritzApiClient, Environment } from '@spritz-finance/api-client'
 
 const client = SpritzApiClient.initialize({
-	environment: Environment.Staging, 
-	apiKey: 'YOUR_API_KEY_HERE'
+    environment: Environment.Staging,
+    apiKey: 'YOUR_USER_API_KEY_HERE',
+    integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
 })
+```
+
+## Basic payment flow
+
+```typescript
+// Fetch all bank accounts for the user
+const bankAccounts = await client.bankAccounts.list()
+
+// Choose a bank account to use for the payment request
+const account = bankAccounts[0]
+
+// Create a payment request for the selected bank account
+const paymentRequest = await client.paymentRequest.create({
+	amount: 100,
+	accountId: account.id,
+	network: PaymentNetwork.Ethereum,
+});
+
+// Retrieve the transaction data required to issue a blockchain transaction
+const transactionData = await client.paymentRequest.getWeb3PaymentParams({
+	paymentRequest,
+	paymentTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC on mainnet
+})
+
+/**
+ * Issue blockchain transaction with the transaction data
+ * and wait for confirmation
+ **/
+
+// Retrieve the payment issued for the payment request to check the payment status and confirmation
+const payment = await client.payment.getForPaymentRequest(paymentRequest.id);
 ```
 
 ## Bank Accounts
