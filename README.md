@@ -24,9 +24,9 @@ A Typescript library for interacting with the Spritz Finance API
 import { SpritzApiClient, Environment } from '@spritz-finance/api-client'
 
 const client = SpritzApiClient.initialize({
-    environment: Environment.Staging,
-    apiKey: 'YOUR_USER_API_KEY_HERE',
-    integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
+  environment: Environment.Staging,
+  apiKey: 'YOUR_USER_API_KEY_HERE',
+  integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
 })
 ```
 
@@ -41,15 +41,15 @@ const account = bankAccounts[0]
 
 // Create a payment request for the selected bank account
 const paymentRequest = await client.paymentRequest.create({
-	amount: 100,
-	accountId: account.id,
-	network: PaymentNetwork.Ethereum,
-});
+  amount: 100,
+  accountId: account.id,
+  network: PaymentNetwork.Ethereum,
+})
 
 // Retrieve the transaction data required to issue a blockchain transaction
 const transactionData = await client.paymentRequest.getWeb3PaymentParams({
-	paymentRequest,
-	paymentTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC on mainnet
+  paymentRequest,
+  paymentTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC on mainnet
 })
 
 /**
@@ -58,7 +58,7 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
  **/
 
 // Retrieve the payment issued for the payment request to check the payment status and confirmation
-const payment = await client.payment.getForPaymentRequest(paymentRequest.id);
+const payment = await client.payment.getForPaymentRequest(paymentRequest.id)
 ```
 
 ## Bank Accounts
@@ -100,7 +100,7 @@ const bankAccounts = [{
   },
   ownedByUser: true,
   createdAt: "2023-05-03T11:25:02.401Z",
-}];
+}]
 ```
 
 ### Add US bank account
@@ -111,13 +111,13 @@ At present, you can only add US bank accounts to a user's account. To add a US b
 // Input arguments for creating a US bank account
 
 export interface USBankAccountInput {
-    accountNumber: string
-    email: string
-    holder: string
-    name: string
-    ownedByUser?: boolean | null
-    routingNumber: string
-    subType: BankAccountSubType
+  accountNumber: string
+  email: string
+  holder: string
+  name: string
+  ownedByUser?: boolean | null
+  routingNumber: string
+  subType: BankAccountSubType
 }
 ```
 
@@ -125,13 +125,13 @@ export interface USBankAccountInput {
 import { BankAccountType, BankAccountSubType } from '@spritz-finance/api-client'
 
 const bankAccounts = await client.bankAccounts.create(BankAccountType.USBankAccount, {
-    accountNumber: '123456789',
-    routingNumber: '987654321',
-    email: 'bilbo@shiremail.net',
-    holder: 'Bilbo Baggins',
-    name: 'Precious Savings',
-    ownedByUser: true,
-    subType: BankAccountSubType.Savings,
+  accountNumber: '123456789',
+  routingNumber: '987654321',
+  email: 'bilbo@shiremail.net',
+  holder: 'Bilbo Baggins',
+  name: 'Precious Savings',
+  ownedByUser: true,
+  subType: BankAccountSubType.Savings,
 })
 ```
 
@@ -247,15 +247,15 @@ const payment = await client.payment.getForPaymentRequest(paymentRequest.id);
 
 // Example response
 
- {
-    id: '6368e3a3ec516e9572bbd23b',
-    userId: '63d12d3B577fab6c6382136e',
-    status: 'PENDING',
-    accountId: '6322445f10d3f4d19c4d72fe',
-    amount: 100,
-    feeAmount: null,
-    createdAt: '2022-11-07T10:53:23.998Z'
-  }
+{
+  id: '6368e3a3ec516e9572bbd23b',
+  userId: '63d12d3B577fab6c6382136e',
+  status: 'PENDING',
+  accountId: '6322445f10d3f4d19c4d72fe',
+  amount: 100,
+  feeAmount: null,
+  createdAt: '2022-11-07T10:53:23.998Z'
+}
 
 ```
 
