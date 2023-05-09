@@ -30,17 +30,28 @@ export const createGraphClient = (config: AxiosRequestConfig) => {
     return serviceClient
 }
 
+export const createBaseClient = (config: AxiosRequestConfig) => {
+    const serviceClient = axios.create(config)
+    return serviceClient
+}
+
 export class GraphClient {
     client: AxiosInstance
+    baseClient: AxiosInstance
 
     constructor(environment: Environment, apiKey: string, integrationKey?: string) {
+        const headers = {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + apiKey,
+            ...(integrationKey ? { 'X-INTEGRATION-KEY': integrationKey } : {}),
+        }
         this.client = createGraphClient({
             baseURL: config[environment].graphEndpoint,
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: 'Bearer ' + apiKey,
-                ...(integrationKey ? { 'X-INTEGRATION-KEY': integrationKey } : {}),
-            },
+            headers,
+        })
+        this.baseClient = createBaseClient({
+            baseURL: config[environment].baseEndpoint,
+            headers,
         })
     }
 
