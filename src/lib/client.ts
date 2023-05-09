@@ -35,7 +35,6 @@ export const createBaseClient = (config: AxiosRequestConfig) => {
     return serviceClient
 }
 
-
 export class GraphClient {
     client: AxiosInstance
     baseClient: AxiosInstance
@@ -51,7 +50,7 @@ export class GraphClient {
             headers,
         })
         this.baseClient = createBaseClient({
-            baseURL: config[environment].graphEndpoint,
+            baseURL: config[environment].baseEndpoint,
             headers,
         })
     }
