@@ -42,6 +42,7 @@ export class GraphClient {
     constructor(environment: Environment, apiKey: string, integrationKey?: string) {
         const headers = {
             'Content-Type': 'application/json',
+            Accept: 'application/json',
             Authorization: 'Bearer ' + apiKey,
             ...(integrationKey ? { 'X-INTEGRATION-KEY': integrationKey } : {}),
         }

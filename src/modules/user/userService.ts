@@ -1,6 +1,6 @@
 import CurrentUserQuery from '../../graph/queries/currentUser.graphql'
 import UserVerificationQuery from '../../graph/queries/verification.graphql'
-import { CurrentUser } from "../../graph/queries/__types__"
+import { CurrentUser } from '../../graph/queries/__types__'
 import { GraphClient } from '../../lib/client'
 import { UserVerification } from '../../graph/queries/__types__'
 
@@ -11,11 +11,13 @@ export class UserService {
         this.client = client
     }
 
-    public async createUser(email: string){
+    public async createUser(
+        email: string
+    ): Promise<{ userId: string; email: string; apiKey: string }> {
         const { data } = await this.client.baseClient.post(`/users/integration`, {
-            email
+            email,
         })
-        return data
+        return JSON.parse(data)
     }
 
     public async getCurrentUser() {
@@ -32,5 +34,4 @@ export class UserService {
         })
         return response?.verification ?? null
     }
-
 }

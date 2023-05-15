@@ -20,14 +20,62 @@ A Typescript library for interacting with the Spritz Finance API
 
 ## Usage
 
+Your integration key is provided by Spritz and must always be provided.
+The api key is specific to each user, 
+and is returned once the user is created. Leave the api key blank if you haven't created the user yet. 
+
 ```typescript
 import { SpritzApiClient, Environment } from '@spritz-finance/api-client'
 
 const client = SpritzApiClient.initialize({
   environment: Environment.Staging,
-  apiKey: 'YOUR_USER_API_KEY_HERE',
+  apiKey: 'YOUR_USER_API_KEY_HERE', 
   integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
 })
+```
+
+## User Creation
+
+You start the process by transmitting the user's email address.
+
+```typescript
+// Fetch all bank accounts for the user
+const user = await client.user.create({
+  email: "bilbo@shiremail.net"
+})
+
+// user = {
+//  email: "bilbo@shiremail.net"
+//  userId: "62d17d3b377dab6c1342136e",
+//  apiKey: "ak_ZTBGDcjfdTg3NmYtZDJlZC00ZjYyLThlMDMtZmYwNDJiZDRlMWZm"
+// }
+
+
+```
+
+Once the user is created, set the api client to use the user's api key:
+
+```typescript
+client.setApiKey(user.apiKey)
+```
+
+Now you're ready to issue requests on behalf of the user.
+
+## Basic User Data
+
+Use this to fetch the user's basic data
+
+```typescript
+const userData = await client.user.getCurrentUser()
+```
+
+## User Verification
+
+Use this to get a URL for the user to pass verification, and track the user's verification status.
+You will need to direct the user's browser to go to the provided URL.
+
+```typescript
+const verificationData = await client.user.getUserVerification()
 ```
 
 ## Basic payment flow
