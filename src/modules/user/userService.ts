@@ -4,6 +4,12 @@ import { CurrentUser } from '../../graph/queries/__types__'
 import { GraphClient } from '../../lib/client'
 import { UserVerification } from '../../graph/queries/__types__'
 
+interface CreateUserResponse {
+    userId: string
+    email: string
+    apiKey: string
+}
+
 export class UserService {
     private client: GraphClient
 
@@ -11,13 +17,14 @@ export class UserService {
         this.client = client
     }
 
-    public async createUser(
-        email: string
-    ): Promise<{ userId: string; email: string; apiKey: string }> {
-        const { data } = await this.client.baseClient.post(`/users/integration`, {
-            email,
-        })
-        return JSON.parse(data)
+    public async createUser(email: string) {
+        const { data } = await this.client.baseClient.post<CreateUserResponse>(
+            `/users/integration`,
+            {
+                email,
+            }
+        )
+        return data
     }
 
     public async getCurrentUser() {
