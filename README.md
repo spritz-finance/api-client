@@ -82,7 +82,7 @@ const verificationData = await client.user.getUserVerification()
 
 ```typescript
 // Fetch all bank accounts for the user
-const bankAccounts = await client.bankAccounts.list()
+const bankAccounts = await client.bankAccount.list()
 
 // Choose a bank account to use for the payment request
 const account = bankAccounts[0]
