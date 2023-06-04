@@ -40,7 +40,7 @@ You start the process by transmitting the user's email address.
 
 ```typescript
 // Fetch all bank accounts for the user
-const user = await client.user.create({
+const user = await client.user.createUser({
   email: "bilbo@shiremail.net"
 })
 
