@@ -10,6 +10,10 @@ interface CreateUserResponse {
     apiKey: string
 }
 
+interface CreateUserArgs {
+    email: string
+}
+
 export class UserService {
     private client: GraphClient
 
@@ -17,12 +21,10 @@ export class UserService {
         this.client = client
     }
 
-    public async createUser(email: string) {
+    public async createUser(args: CreateUserArgs) {
         const { data } = await this.client.baseClient.post<CreateUserResponse>(
             `/users/integration`,
-            {
-                email,
-            }
+            args
         )
         return data
     }
