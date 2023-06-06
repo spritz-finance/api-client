@@ -7,6 +7,7 @@ import {
     PayableAccountType,
     BankAccountType,
     BankAccountSubType,
+    VirtualCardType,
 } from './../../../types/globalTypes'
 
 // ====================================================
@@ -17,7 +18,7 @@ export interface UserPayableAccounts_payableAccounts_Bill_institution {
     __typename: 'BankAccountInstitution' | 'BillInstitution'
     id: string
     name: string
-    logo: string
+    logo: string | null
     country: string
     currency: string
 }
@@ -38,7 +39,7 @@ export interface UserPayableAccounts_payableAccounts_BankAccount_institution {
     __typename: 'BankAccountInstitution' | 'BillInstitution'
     id: string
     name: string
-    logo: string
+    logo: string | null
     country: string
     currency: string
 }
@@ -75,9 +76,54 @@ export interface UserPayableAccounts_payableAccounts_BankAccount {
     bankAccountDetails: UserPayableAccounts_payableAccounts_BankAccount_bankAccountDetails
 }
 
+export interface UserPayableAccounts_payableAccounts_VirtualCard_institution {
+    __typename: 'BankAccountInstitution' | 'BillInstitution'
+    id: string
+    name: string
+    logo: string | null
+    country: string
+    currency: string
+}
+
+export interface UserPayableAccounts_payableAccounts_VirtualCard_billingInfo_address {
+    __typename: 'CardHolderAddress'
+    street: string | null
+    street2: string | null
+    city: string | null
+    subdivision: string | null
+    postalCode: string | null
+    countryCode: string | null
+}
+
+export interface UserPayableAccounts_payableAccounts_VirtualCard_billingInfo {
+    __typename: 'BillingInfo'
+    holder: string
+    phone: string
+    email: string
+    address: UserPayableAccounts_payableAccounts_VirtualCard_billingInfo_address | null
+}
+
+export interface UserPayableAccounts_payableAccounts_VirtualCard {
+    __typename: 'VirtualCard'
+    id: string
+    name: string | null
+    userId: string
+    country: string
+    currency: string
+    createdAt: any
+    type: PayableAccountType
+    institution: UserPayableAccounts_payableAccounts_VirtualCard_institution | null
+    mask: string | null
+    balance: number
+    renderSecret: string | null
+    virtualCardType: VirtualCardType
+    billingInfo: UserPayableAccounts_payableAccounts_VirtualCard_billingInfo | null
+}
+
 export type UserPayableAccounts_payableAccounts =
     | UserPayableAccounts_payableAccounts_Bill
     | UserPayableAccounts_payableAccounts_BankAccount
+    | UserPayableAccounts_payableAccounts_VirtualCard
 
 export interface UserPayableAccounts {
     payableAccounts: UserPayableAccounts_payableAccounts[]

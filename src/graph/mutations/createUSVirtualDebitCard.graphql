@@ -1,0 +1,7 @@
+#import "../queries/virtualDebitCardFragment.graphql"
+
+mutation CreateUSVirtualDebitCard {
+    createUSVirtualDebitCard {
+        ...VirtualDebitCardFragment
+    }
+}

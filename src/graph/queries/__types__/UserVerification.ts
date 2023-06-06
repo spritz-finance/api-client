@@ -11,18 +11,18 @@ import { ModuleStatus } from './../../../types/globalTypes'
 
 export interface UserVerification_verification_identity_user {
     __typename: 'UserIdentity'
-    firstName: string
-    lastName: string
-    email: string
-    completedAt: string
+    firstName: string | null
+    lastName: string | null
+    email: string | null
+    completedAt: string | null
 }
 
 export interface UserVerification_verification_identity {
     __typename: 'IdentityModule'
     status: ModuleStatus
-    country: string
+    country: string | null
     verificationUrl: string | null
-    user: UserVerification_verification_identity_user
+    user: UserVerification_verification_identity_user | null
 }
 
 export interface UserVerification_verification {
@@ -32,5 +32,5 @@ export interface UserVerification_verification {
 }
 
 export interface UserVerification {
-    verification: UserVerification_verification
+    verification: UserVerification_verification | null
 }

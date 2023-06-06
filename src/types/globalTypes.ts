@@ -35,9 +35,11 @@ export enum DirectPaymentStatus {
 
 export enum ModuleStatus {
   ACTIVE = "ACTIVE",
+  DISABLED = "DISABLED",
   FAILED = "FAILED",
   INITIALIZED = "INITIALIZED",
   LOADING = "LOADING",
+  RETRY = "RETRY",
   UNAVAILABLE = "UNAVAILABLE",
   UNINITIALIZED = "UNINITIALIZED",
 }
@@ -45,7 +47,7 @@ export enum ModuleStatus {
 export enum PayableAccountType {
   BankAccount = "BankAccount",
   Bill = "Bill",
-  DebitCard = "DebitCard",
+  VirtualCard = "VirtualCard",
 }
 
 export enum PaymentStatus {
@@ -59,6 +61,10 @@ export enum PaymentStatus {
   REVERSED = "REVERSED",
   SCHEDULED = "SCHEDULED",
   SENT = "SENT",
+}
+
+export enum VirtualCardType {
+  USVirtualDebitCard = "USVirtualDebitCard",
 }
 
 export interface CreateDirectPaymentInput {

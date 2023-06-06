@@ -1,0 +1,26 @@
+fragment VirtualDebitCardFragment on VirtualCard {
+    id
+    name
+    userId
+    country
+    currency
+    createdAt
+    type
+    mask
+    balance
+    renderSecret
+    virtualCardType
+    billingInfo {
+        holder
+        phone
+        email
+        address {
+            street
+            street2
+            city
+            subdivision
+            postalCode
+            countryCode
+        }
+    }
+}

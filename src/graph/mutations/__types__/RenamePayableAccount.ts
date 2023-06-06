@@ -7,6 +7,7 @@ import {
     PayableAccountType,
     BankAccountType,
     BankAccountSubType,
+    VirtualCardType,
 } from './../../../types/globalTypes'
 
 // ====================================================
@@ -17,7 +18,7 @@ export interface RenamePayableAccount_renamePayableAccount_Bill_institution {
     __typename: 'BankAccountInstitution' | 'BillInstitution'
     id: string
     name: string
-    logo: string
+    logo: string | null
     country: string
     currency: string
 }
@@ -38,7 +39,7 @@ export interface RenamePayableAccount_renamePayableAccount_BankAccount_instituti
     __typename: 'BankAccountInstitution' | 'BillInstitution'
     id: string
     name: string
-    logo: string
+    logo: string | null
     country: string
     currency: string
 }
@@ -75,9 +76,54 @@ export interface RenamePayableAccount_renamePayableAccount_BankAccount {
     bankAccountDetails: RenamePayableAccount_renamePayableAccount_BankAccount_bankAccountDetails
 }
 
+export interface RenamePayableAccount_renamePayableAccount_VirtualCard_institution {
+    __typename: 'BankAccountInstitution' | 'BillInstitution'
+    id: string
+    name: string
+    logo: string | null
+    country: string
+    currency: string
+}
+
+export interface RenamePayableAccount_renamePayableAccount_VirtualCard_billingInfo_address {
+    __typename: 'CardHolderAddress'
+    street: string | null
+    street2: string | null
+    city: string | null
+    subdivision: string | null
+    postalCode: string | null
+    countryCode: string | null
+}
+
+export interface RenamePayableAccount_renamePayableAccount_VirtualCard_billingInfo {
+    __typename: 'BillingInfo'
+    holder: string
+    phone: string
+    email: string
+    address: RenamePayableAccount_renamePayableAccount_VirtualCard_billingInfo_address | null
+}
+
+export interface RenamePayableAccount_renamePayableAccount_VirtualCard {
+    __typename: 'VirtualCard'
+    id: string
+    name: string | null
+    userId: string
+    country: string
+    currency: string
+    createdAt: any
+    type: PayableAccountType
+    institution: RenamePayableAccount_renamePayableAccount_VirtualCard_institution | null
+    mask: string | null
+    balance: number
+    renderSecret: string | null
+    virtualCardType: VirtualCardType
+    billingInfo: RenamePayableAccount_renamePayableAccount_VirtualCard_billingInfo | null
+}
+
 export type RenamePayableAccount_renamePayableAccount =
     | RenamePayableAccount_renamePayableAccount_Bill
     | RenamePayableAccount_renamePayableAccount_BankAccount
+    | RenamePayableAccount_renamePayableAccount_VirtualCard
 
 export interface RenamePayableAccount {
     renamePayableAccount: RenamePayableAccount_renamePayableAccount

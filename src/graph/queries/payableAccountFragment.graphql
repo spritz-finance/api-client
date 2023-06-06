@@ -19,6 +19,25 @@ fragment PayableAccountFragment on PayableAccount {
             }
         }
     }
+    ... on VirtualCard {
+        mask
+        balance
+        renderSecret
+        virtualCardType
+        billingInfo {
+            holder
+            phone
+            email
+            address {
+                street
+                street2
+                city
+                subdivision
+                postalCode
+                countryCode
+            }
+        }
+    }
     institution {
         id
         name

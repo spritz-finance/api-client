@@ -8,6 +8,7 @@ import {
     PayableAccountType,
     BankAccountType,
     BankAccountSubType,
+    VirtualCardType,
 } from './../../../types/globalTypes'
 
 // ====================================================
@@ -31,7 +32,7 @@ export interface CreateUSBankAccount_createUSBankAccount_institution {
     __typename: 'BankAccountInstitution' | 'BillInstitution'
     id: string
     name: string
-    logo: string
+    logo: string | null
     country: string
     currency: string
 }

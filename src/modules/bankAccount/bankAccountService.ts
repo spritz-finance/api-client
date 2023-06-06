@@ -1,20 +1,25 @@
-import { CreateUSBankAccountVariables } from '../../graph/mutations/__types__/CreateUSBankAccount'
-import { CreateUSBankAccount } from '../../graph/mutations/__types__/CreateUSBankAccount'
-import CreateUSBankAccountMutation from '../../graph/mutations/createUSBankAccount.graphql'
-import RenameBankAccountMutation from '../../graph/mutations/renameBankAccount.graphql'
-import DeleteBankAccountMutation from '../../graph/mutations/deleteBankAccount.graphql'
-import { UserBankAccounts } from '../../graph/queries/__types__'
-import UserBankAccountsQuery from '../../graph/queries/bankAccounts.graphql'
-import { GraphClient } from '../../lib/client'
-import { BankAccountType, USBankAccountInput } from '../../types/globalTypes'
 import {
-    RenameBankAccount,
-    RenameBankAccountVariables,
-} from '../../graph/mutations/__types__/RenameBankAccount'
+    CreateUSBankAccount,
+    CreateUSBankAccountVariables,
+} from '../../graph/mutations/__types__/CreateUSBankAccount'
 import {
     DeleteBankAccount,
     DeleteBankAccountVariables,
+    DeleteBankAccount_deletePayableAccount_BankAccount,
 } from '../../graph/mutations/__types__/DeleteBankAccount'
+import {
+    RenameBankAccount,
+    RenameBankAccountVariables,
+    RenameBankAccount_renamePayableAccount_BankAccount,
+    RenameBankAccount_renamePayableAccount_BankAccount_bankAccountDetails,
+} from '../../graph/mutations/__types__/RenameBankAccount'
+import CreateUSBankAccountMutation from '../../graph/mutations/createUSBankAccount.graphql'
+import DeleteBankAccountMutation from '../../graph/mutations/deleteBankAccount.graphql'
+import RenameBankAccountMutation from '../../graph/mutations/renameBankAccount.graphql'
+import { UserBankAccounts, UserBankAccounts_bankAccounts } from '../../graph/queries/__types__'
+import UserBankAccountsQuery from '../../graph/queries/bankAccounts.graphql'
+import { GraphClient } from '../../lib/client'
+import { BankAccountType, USBankAccountInput } from '../../types/globalTypes'
 
 type CreateInputMapping = {
     [BankAccountType.USBankAccount]: USBankAccountInput
@@ -56,7 +61,7 @@ export class BankAccountService {
         const response = await this.client.query<UserBankAccounts>({
             query: UserBankAccountsQuery,
         })
-        return response?.userBankAccounts ?? null
+        return response?.bankAccounts ?? []
     }
 
     public async rename(accountId: string, name: string) {
@@ -67,7 +72,10 @@ export class BankAccountService {
                 name,
             },
         })
-        return response?.renamePayableAccount ?? null
+        return (
+            (response?.renamePayableAccount as RenameBankAccount_renamePayableAccount_BankAccount) ??
+            null
+        )
     }
 
     public async delete(accountId: string) {
@@ -77,7 +85,10 @@ export class BankAccountService {
                 accountId,
             },
         })
-        return response?.deletePayableAccount ?? null
+        return (
+            (response?.deletePayableAccount as DeleteBankAccount_deletePayableAccount_BankAccount) ??
+            null
+        )
     }
 
     public async create<T extends BankAccountType>(type: T, input: CreateInputMapping[T]) {

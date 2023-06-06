@@ -11,6 +11,7 @@ export default [
     bundle({
         plugins: [
             esbuild({
+                target: 'esnext',
                 optimizeDeps: {
                     include: [
                         'graphql',
@@ -25,13 +26,11 @@ export default [
         output: [
             {
                 file: `dist/spritz-api-client.js`,
-                format: 'cjs',
-                sourcemap: true,
+                format: 'es',
             },
             {
                 file: `dist/spritz-api-client.mjs`,
                 format: 'es',
-                sourcemap: true,
             },
         ],
         external: ['axios'],

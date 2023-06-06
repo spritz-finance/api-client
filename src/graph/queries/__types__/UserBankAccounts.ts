@@ -13,29 +13,29 @@ import {
 // GraphQL query operation: UserBankAccounts
 // ====================================================
 
-export interface UserBankAccounts_userBankAccounts_bankAccountDetails_CanadianBankAccountDetails {
+export interface UserBankAccounts_bankAccounts_bankAccountDetails_CanadianBankAccountDetails {
     __typename: 'CanadianBankAccountDetails'
 }
 
-export interface UserBankAccounts_userBankAccounts_bankAccountDetails_USBankAccountDetails {
+export interface UserBankAccounts_bankAccounts_bankAccountDetails_USBankAccountDetails {
     __typename: 'USBankAccountDetails'
     routingNumber: string
 }
 
-export type UserBankAccounts_userBankAccounts_bankAccountDetails =
-    | UserBankAccounts_userBankAccounts_bankAccountDetails_CanadianBankAccountDetails
-    | UserBankAccounts_userBankAccounts_bankAccountDetails_USBankAccountDetails
+export type UserBankAccounts_bankAccounts_bankAccountDetails =
+    | UserBankAccounts_bankAccounts_bankAccountDetails_CanadianBankAccountDetails
+    | UserBankAccounts_bankAccounts_bankAccountDetails_USBankAccountDetails
 
-export interface UserBankAccounts_userBankAccounts_institution {
+export interface UserBankAccounts_bankAccounts_institution {
     __typename: 'BankAccountInstitution' | 'BillInstitution'
     id: string
     name: string
-    logo: string
+    logo: string | null
     country: string
     currency: string
 }
 
-export interface UserBankAccounts_userBankAccounts {
+export interface UserBankAccounts_bankAccounts {
     __typename: 'BankAccount'
     id: string
     name: string | null
@@ -50,10 +50,10 @@ export interface UserBankAccounts_userBankAccounts {
     holder: string
     email: string
     ownedByUser: boolean
-    bankAccountDetails: UserBankAccounts_userBankAccounts_bankAccountDetails
-    institution: UserBankAccounts_userBankAccounts_institution | null
+    bankAccountDetails: UserBankAccounts_bankAccounts_bankAccountDetails
+    institution: UserBankAccounts_bankAccounts_institution | null
 }
 
 export interface UserBankAccounts {
-    userBankAccounts: UserBankAccounts_userBankAccounts[]
+    bankAccounts: UserBankAccounts_bankAccounts[]
 }

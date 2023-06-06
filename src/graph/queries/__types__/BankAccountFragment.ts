@@ -30,7 +30,7 @@ export interface BankAccountFragment_institution {
     __typename: 'BankAccountInstitution' | 'BillInstitution'
     id: string
     name: string
-    logo: string
+    logo: string | null
     country: string
     currency: string
 }

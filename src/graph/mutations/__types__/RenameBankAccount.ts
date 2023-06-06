@@ -14,7 +14,7 @@ import {
 // ====================================================
 
 export interface RenameBankAccount_renamePayableAccount_Bill {
-    __typename: 'Bill'
+    __typename: 'Bill' | 'VirtualCard'
 }
 
 export interface RenameBankAccount_renamePayableAccount_BankAccount_bankAccountDetails_CanadianBankAccountDetails {
@@ -34,7 +34,7 @@ export interface RenameBankAccount_renamePayableAccount_BankAccount_institution 
     __typename: 'BankAccountInstitution' | 'BillInstitution'
     id: string
     name: string
-    logo: string
+    logo: string | null
     country: string
     currency: string
 }

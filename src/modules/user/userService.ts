@@ -29,6 +29,14 @@ export class UserService {
         return data
     }
 
+    public async create(args: CreateUserArgs) {
+        const { data } = await this.client.baseClient.post<CreateUserResponse>(
+            `/users/integration`,
+            args
+        )
+        return data
+    }
+
     public async getCurrentUser() {
         const response = await this.client.query<CurrentUser>({
             query: CurrentUserQuery,

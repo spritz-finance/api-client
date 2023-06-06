@@ -7,6 +7,7 @@ import {
     PayableAccountType,
     BankAccountType,
     BankAccountSubType,
+    VirtualCardType,
 } from './../../../types/globalTypes'
 
 // ====================================================
@@ -17,7 +18,7 @@ export interface PayableAccountFragment_Bill_institution {
     __typename: 'BankAccountInstitution' | 'BillInstitution'
     id: string
     name: string
-    logo: string
+    logo: string | null
     country: string
     currency: string
 }
@@ -51,7 +52,7 @@ export interface PayableAccountFragment_BankAccount_institution {
     __typename: 'BankAccountInstitution' | 'BillInstitution'
     id: string
     name: string
-    logo: string
+    logo: string | null
     country: string
     currency: string
 }
@@ -75,6 +76,51 @@ export interface PayableAccountFragment_BankAccount {
     institution: PayableAccountFragment_BankAccount_institution | null
 }
 
+export interface PayableAccountFragment_VirtualCard_billingInfo_address {
+    __typename: 'CardHolderAddress'
+    street: string | null
+    street2: string | null
+    city: string | null
+    subdivision: string | null
+    postalCode: string | null
+    countryCode: string | null
+}
+
+export interface PayableAccountFragment_VirtualCard_billingInfo {
+    __typename: 'BillingInfo'
+    holder: string
+    phone: string
+    email: string
+    address: PayableAccountFragment_VirtualCard_billingInfo_address | null
+}
+
+export interface PayableAccountFragment_VirtualCard_institution {
+    __typename: 'BankAccountInstitution' | 'BillInstitution'
+    id: string
+    name: string
+    logo: string | null
+    country: string
+    currency: string
+}
+
+export interface PayableAccountFragment_VirtualCard {
+    __typename: 'VirtualCard'
+    id: string
+    name: string | null
+    userId: string
+    country: string
+    currency: string
+    createdAt: any
+    type: PayableAccountType
+    mask: string | null
+    balance: number
+    renderSecret: string | null
+    virtualCardType: VirtualCardType
+    billingInfo: PayableAccountFragment_VirtualCard_billingInfo | null
+    institution: PayableAccountFragment_VirtualCard_institution | null
+}
+
 export type PayableAccountFragment =
     | PayableAccountFragment_Bill
     | PayableAccountFragment_BankAccount
+    | PayableAccountFragment_VirtualCard
