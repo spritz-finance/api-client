@@ -3,20 +3,19 @@ import {
     CreateUSBankAccountVariables,
 } from '../../graph/mutations/__types__/CreateUSBankAccount'
 import {
-    DeleteBankAccount,
-    DeleteBankAccountVariables,
-    DeleteBankAccount_deletePayableAccount_BankAccount,
-} from '../../graph/mutations/__types__/DeleteBankAccount'
+    DeletePayableAccount,
+    DeletePayableAccountVariables,
+    DeletePayableAccount_deletePayableAccount_BankAccount,
+} from '../../graph/mutations/__types__/DeletePayableAccount'
 import {
     RenameBankAccount,
     RenameBankAccountVariables,
     RenameBankAccount_renamePayableAccount_BankAccount,
-    RenameBankAccount_renamePayableAccount_BankAccount_bankAccountDetails,
 } from '../../graph/mutations/__types__/RenameBankAccount'
 import CreateUSBankAccountMutation from '../../graph/mutations/createUSBankAccount.graphql'
-import DeleteBankAccountMutation from '../../graph/mutations/deleteBankAccount.graphql'
+import DeletePayableAccountMutation from '../../graph/mutations/deletePayableAccount.graphql'
 import RenameBankAccountMutation from '../../graph/mutations/renameBankAccount.graphql'
-import { UserBankAccounts, UserBankAccounts_bankAccounts } from '../../graph/queries/__types__'
+import { UserBankAccounts } from '../../graph/queries/__types__'
 import UserBankAccountsQuery from '../../graph/queries/bankAccounts.graphql'
 import { GraphClient } from '../../lib/client'
 import { BankAccountType, USBankAccountInput } from '../../types/globalTypes'
@@ -79,14 +78,17 @@ export class BankAccountService {
     }
 
     public async delete(accountId: string) {
-        const response = await this.client.query<DeleteBankAccount, DeleteBankAccountVariables>({
-            query: DeleteBankAccountMutation,
+        const response = await this.client.query<
+            DeletePayableAccount,
+            DeletePayableAccountVariables
+        >({
+            query: DeletePayableAccountMutation,
             variables: {
                 accountId,
             },
         })
         return (
-            (response?.deletePayableAccount as DeleteBankAccount_deletePayableAccount_BankAccount) ??
+            (response?.deletePayableAccount as DeletePayableAccount_deletePayableAccount_BankAccount) ??
             null
         )
     }
