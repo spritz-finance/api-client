@@ -21,27 +21,26 @@ A Typescript library for interacting with the Spritz Finance API
 ## Usage
 
 Your integration key is provided by Spritz and must always be provided.
-The api key is specific to each user, 
-and is returned once the user is created. Leave the api key blank if you haven't created the user yet. 
+The api key is specific to each user,
+and is returned once the user is created. Leave the api key blank if you haven't created the user yet.
 
 ```typescript
 import { SpritzApiClient, Environment } from '@spritz-finance/api-client'
 
 const client = SpritzApiClient.initialize({
   environment: Environment.Staging,
-  apiKey: 'YOUR_USER_API_KEY_HERE', 
+  apiKey: 'YOUR_USER_API_KEY_HERE',
   integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
 })
 ```
 
 ## User Creation
 
-You start the process by transmitting the user's email address.
+A new Spritz user can be created by supplying the user's email address.
 
 ```typescript
-// Fetch all bank accounts for the user
-const user = await client.user.createUser({
-  email: "bilbo@shiremail.net"
+const user = await client.user.create({
+  email: 'bilbo@shiremail.net',
 })
 
 // user = {
@@ -49,8 +48,6 @@ const user = await client.user.createUser({
 //  userId: "62d17d3b377dab6c1342136e",
 //  apiKey: "ak_ZTBGDcjfdTg3NmYtZDJlZC00ZjYyLThlMDMtZmYwNDJiZDRlMWZm"
 // }
-
-
 ```
 
 Once the user is created, set the api client to use the user's api key:
@@ -198,6 +195,63 @@ To remove a bank account from a user's account, you can use the following endpoi
 ```typescript
 await client.bankAccounts.delete('62d17d3b377dab6c1342136e')
 ```
+
+## Virtual Cards
+
+Spritz enables the creation of virtual cards, which can be funded using cryptocurrency. Similar to bank accounts, these virtual cards represent an additional type of payable account provided by Spritz. Utilize the endpoints detailed below to interact with the Virtual Card API.
+
+### Fetch a users virtual card
+
+The fetch endpoint returns an object encompassing all the details associated with the virtual card. Please note, this object does not include sensitive card information such as the card number or the CVV.
+
+```typescript
+const virtualCard = await client.virtualCard.fetch()
+```
+
+#### Example response
+
+```typescript
+const virtualCard = {
+  id: '62d17d3b377dab6c1342136e',
+  type: 'VirtualCard',
+  virtualCardType: 'USVirtualDebitCard',
+  userId: '62d17d3b377dab6c1342136e',
+  mask: '0001',
+  country: 'US',
+  currency: 'USD',
+  balance: 0,
+  renderSecret: 'U2FsdGVkX18bLYGYLILf4AeW5fOl8VYxAvKWVDtbZI5DO7swFqkJ2o',
+  billingInfo: {
+    holder: 'Bilbo Baggins',
+    phone: '+123456789',
+    email: 'bilbo@shiremail.net',
+    address: {
+      street: '1 Bagshot Row',
+      street2: '',
+      city: 'Hobbiton',
+      subdivision: 'The Shire',
+      postalCose: '12345',
+      countryCode: 'ME',
+    },
+  },
+}
+```
+
+### Create a US virtual debit card
+
+```typescript
+import { VirtualCardType } from '@spritz-finance/api-client'
+
+const virtualCard = await client.virtualCard.create(VirtualCardType.USVirtualDebitCard)
+```
+
+### Displaying sensitive card details
+
+In order to display the sensitive card details necessary for a user to make payments, you must utilize our drop-in widget, which securely renders the card. This process requires the renderSecret, returned from the standard fetch card endpoint, in combination with the user's API key.
+
+We currently offer and maintain the following packages to assist with the card rendering process:
+
+- [React Native Library](https://www.npmjs.com/package/@spritz-finance/react-native-secure-elements)
 
 ## Payment Requests
 

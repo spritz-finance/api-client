@@ -4,6 +4,7 @@ import { BankAccountService } from './modules/bankAccount/bankAccountService'
 import { PaymentService } from './modules/payment/paymentService'
 import { PaymentRequestService } from './modules/paymentRequest/paymentRequestService'
 import { UserService } from './modules/user/userService'
+import { VirtualCardService } from './modules/virtualCard/virtualCardService'
 
 type ClientParams = { environment: Environment; apiKey: string; integrationKey?: string }
 export class SpritzApiClient {
@@ -12,6 +13,7 @@ export class SpritzApiClient {
     public bankAccount: BankAccountService
     public paymentRequest: PaymentRequestService
     public payment: PaymentService
+    public virtualCard: VirtualCardService
 
     constructor(
         private apiKey: string,
@@ -31,6 +33,7 @@ export class SpritzApiClient {
         this.bankAccount = new BankAccountService(this.client)
         this.paymentRequest = new PaymentRequestService(this.client)
         this.payment = new PaymentService(this.client)
+        this.virtualCard = new VirtualCardService(this.client)
     }
 
     setApiKey(_apiKey: string) {
