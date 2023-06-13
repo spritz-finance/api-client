@@ -251,6 +251,7 @@ In order to display the sensitive card details necessary for a user to make paym
 
 We currently offer and maintain the following packages to assist with the card rendering process:
 
+- [React Library](https://www.npmjs.com/package/@spritz-finance/react-secure-elements)
 - [React Native Library](https://www.npmjs.com/package/@spritz-finance/react-native-secure-elements)
 
 ## Payment Requests
