@@ -7,6 +7,7 @@ import { UserService } from './modules/user/userService'
 import { VirtualCardService } from './modules/virtualCard/virtualCardService'
 
 type ClientParams = { environment: Environment; apiKey: string; integrationKey?: string }
+
 export class SpritzApiClient {
     private client: GraphClient
     public user: UserService
