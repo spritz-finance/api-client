@@ -12,6 +12,13 @@ export enum AccountProvider {
   METHOD_FI = "METHOD_FI",
 }
 
+export enum AccountSyncStatus {
+  Active = "Active",
+  Error = "Error",
+  Syncing = "Syncing",
+  Unavailable = "Unavailable",
+}
+
 export enum BankAccountSubType {
   Business = "Business",
   Checking = "Checking",
@@ -20,6 +27,17 @@ export enum BankAccountSubType {
 
 export enum BankAccountType {
   USBankAccount = "USBankAccount",
+}
+
+export enum BillType {
+  AutoLoan = "AutoLoan",
+  CreditCard = "CreditCard",
+  Loan = "Loan",
+  MobilePhone = "MobilePhone",
+  Mortgage = "Mortgage",
+  StudentLoan = "StudentLoan",
+  Unknown = "Unknown",
+  Utility = "Utility",
 }
 
 export enum DirectPaymentStatus {
@@ -42,6 +60,11 @@ export enum ModuleStatus {
   RETRY = "RETRY",
   UNAVAILABLE = "UNAVAILABLE",
   UNINITIALIZED = "UNINITIALIZED",
+}
+
+export enum PayableAccountOriginator {
+  Provider = "Provider",
+  User = "User",
 }
 
 export enum PayableAccountType {

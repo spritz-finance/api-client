@@ -1,0 +1,7 @@
+#import "../queries/billFragment.graphql"
+
+mutation CreateUSBill($institutionId: String!, $accountNumber: String!, $type: BillType) {
+    addUSBill(institutionId: $institutionId, accountNumber: $accountNumber, type: $type) {
+        ...BillFragment
+    }
+}

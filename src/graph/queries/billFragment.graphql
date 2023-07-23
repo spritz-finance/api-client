@@ -1,0 +1,32 @@
+fragment BillFragment on Bill {
+    id
+    name
+    userId
+    country
+    currency
+    originator
+    payable
+    verifying
+    billType
+    createdAt
+    billAccountDetails {
+        balance
+        amountDue
+        openedAt
+        lastPaymentAmount
+        lastPaymentDate
+        nextPaymentDueDate
+        nextPaymentMinimumAmount
+        lastStatementBalance
+        remainingStatementBalance
+    }
+    dataSync {
+        lastSync
+        syncStatus
+    }
+    institution {
+        id
+        name
+        logo
+    }
+}

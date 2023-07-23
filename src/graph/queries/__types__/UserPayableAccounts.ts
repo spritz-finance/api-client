@@ -4,35 +4,23 @@
 // This file was automatically generated and should not be edited.
 
 import {
+    PayableAccountOriginator,
     PayableAccountType,
     BankAccountType,
     BankAccountSubType,
     VirtualCardType,
+    BillType,
+    AccountSyncStatus,
 } from './../../../types/globalTypes'
 
 // ====================================================
 // GraphQL query operation: UserPayableAccounts
 // ====================================================
 
-export interface UserPayableAccounts_payableAccounts_Bill_institution {
-    __typename: 'BankAccountInstitution' | 'BillInstitution'
-    id: string
-    name: string
-    logo: string | null
-    country: string
-    currency: string
-}
-
-export interface UserPayableAccounts_payableAccounts_Bill {
-    __typename: 'Bill'
-    id: string
-    name: string | null
-    userId: string
-    country: string
-    currency: string
-    createdAt: any
-    type: PayableAccountType
-    institution: UserPayableAccounts_payableAccounts_Bill_institution | null
+export interface UserPayableAccounts_payableAccounts_BankAccount_dataSync {
+    __typename: 'AccountDataSync'
+    lastSync: any | null
+    syncStatus: AccountSyncStatus | null
 }
 
 export interface UserPayableAccounts_payableAccounts_BankAccount_institution {
@@ -40,8 +28,6 @@ export interface UserPayableAccounts_payableAccounts_BankAccount_institution {
     id: string
     name: string
     logo: string | null
-    country: string
-    currency: string
 }
 
 export interface UserPayableAccounts_payableAccounts_BankAccount_bankAccountDetails_CanadianBankAccountDetails {
@@ -64,8 +50,11 @@ export interface UserPayableAccounts_payableAccounts_BankAccount {
     userId: string
     country: string
     currency: string
-    createdAt: any
+    payable: boolean
+    originator: PayableAccountOriginator
     type: PayableAccountType
+    createdAt: any
+    dataSync: UserPayableAccounts_payableAccounts_BankAccount_dataSync | null
     institution: UserPayableAccounts_payableAccounts_BankAccount_institution | null
     accountNumber: string
     bankAccountType: BankAccountType
@@ -76,13 +65,17 @@ export interface UserPayableAccounts_payableAccounts_BankAccount {
     bankAccountDetails: UserPayableAccounts_payableAccounts_BankAccount_bankAccountDetails
 }
 
+export interface UserPayableAccounts_payableAccounts_VirtualCard_dataSync {
+    __typename: 'AccountDataSync'
+    lastSync: any | null
+    syncStatus: AccountSyncStatus | null
+}
+
 export interface UserPayableAccounts_payableAccounts_VirtualCard_institution {
     __typename: 'BankAccountInstitution' | 'BillInstitution'
     id: string
     name: string
     logo: string | null
-    country: string
-    currency: string
 }
 
 export interface UserPayableAccounts_payableAccounts_VirtualCard_billingInfo_address {
@@ -110,8 +103,11 @@ export interface UserPayableAccounts_payableAccounts_VirtualCard {
     userId: string
     country: string
     currency: string
-    createdAt: any
+    payable: boolean
+    originator: PayableAccountOriginator
     type: PayableAccountType
+    createdAt: any
+    dataSync: UserPayableAccounts_payableAccounts_VirtualCard_dataSync | null
     institution: UserPayableAccounts_payableAccounts_VirtualCard_institution | null
     mask: string | null
     balance: number
@@ -120,10 +116,54 @@ export interface UserPayableAccounts_payableAccounts_VirtualCard {
     billingInfo: UserPayableAccounts_payableAccounts_VirtualCard_billingInfo | null
 }
 
+export interface UserPayableAccounts_payableAccounts_Bill_dataSync {
+    __typename: 'AccountDataSync'
+    lastSync: any | null
+    syncStatus: AccountSyncStatus | null
+}
+
+export interface UserPayableAccounts_payableAccounts_Bill_institution {
+    __typename: 'BankAccountInstitution' | 'BillInstitution'
+    id: string
+    name: string
+    logo: string | null
+}
+
+export interface UserPayableAccounts_payableAccounts_Bill_billAccountDetails {
+    __typename: 'BillAccountDetails'
+    balance: number | null
+    amountDue: number | null
+    openedAt: any | null
+    lastPaymentAmount: number | null
+    lastPaymentDate: any | null
+    nextPaymentDueDate: any | null
+    nextPaymentMinimumAmount: number | null
+    lastStatementBalance: number | null
+    remainingStatementBalance: number | null
+}
+
+export interface UserPayableAccounts_payableAccounts_Bill {
+    __typename: 'Bill'
+    id: string
+    name: string | null
+    userId: string
+    country: string
+    currency: string
+    payable: boolean
+    originator: PayableAccountOriginator
+    type: PayableAccountType
+    createdAt: any
+    dataSync: UserPayableAccounts_payableAccounts_Bill_dataSync | null
+    institution: UserPayableAccounts_payableAccounts_Bill_institution | null
+    billType: BillType
+    verifying: boolean
+    billAccountDetails: UserPayableAccounts_payableAccounts_Bill_billAccountDetails | null
+}
+
 export type UserPayableAccounts_payableAccounts =
-    | UserPayableAccounts_payableAccounts_Bill
     | UserPayableAccounts_payableAccounts_BankAccount
     | UserPayableAccounts_payableAccounts_VirtualCard
+    | UserPayableAccounts_payableAccounts_Bill
 
 export interface UserPayableAccounts {
     payableAccounts: UserPayableAccounts_payableAccounts[]

@@ -1,0 +1,7 @@
+#import "./billFragment.graphql"
+
+query UserBills {
+    bills {
+        ...BillFragment
+    }
+}
