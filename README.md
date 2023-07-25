@@ -115,7 +115,7 @@ Spritz provides robust support for bank accounts, allowing you to easily manage 
 You can retrieve a comprehensive list of all bank accounts that have been linked to a user's account using this functionality.
 
 ```typescript
-const bankAccounts = await client.bankAccounts.list()
+const bankAccounts = await client.bankAccount.list()
 ```
 
 #### Example response
@@ -169,7 +169,7 @@ export interface USBankAccountInput {
 ```typescript
 import { BankAccountType, BankAccountSubType } from '@spritz-finance/api-client'
 
-const bankAccounts = await client.bankAccounts.create(BankAccountType.USBankAccount, {
+const bankAccounts = await client.bankAccount.create(BankAccountType.USBankAccount, {
   accountNumber: '123456789',
   routingNumber: '987654321',
   email: 'bilbo@shiremail.net',
@@ -185,7 +185,7 @@ const bankAccounts = await client.bankAccounts.create(BankAccountType.USBankAcco
 You can conveniently change the display name of a bank account using the following endpoint. The first argument specifies the ID of the bank account, while the second argument represents the desired new name for the account.
 
 ```typescript
-const updateAccount = await client.bankAccounts.rename('62d17d3b377dab6c1342136e', 'My new account')
+const updateAccount = await client.bankAccount.rename('62d17d3b377dab6c1342136e', 'My new account')
 ```
 
 ### Delete a bank account
@@ -193,7 +193,144 @@ const updateAccount = await client.bankAccounts.rename('62d17d3b377dab6c1342136e
 To remove a bank account from a user's account, you can use the following endpoint. You only need to specify the ID of the bank account that you want to delete as an argument.
 
 ```typescript
-await client.bankAccounts.delete('62d17d3b377dab6c1342136e')
+await client.bankAccount.delete('62d17d3b377dab6c1342136e')
+```
+
+## Bills
+
+Spritz provides robust support for bank accounts, allowing you to easily manage and interact with a user's bank account. To leverage these capabilities, you can utilize our specific methods and functionalities designed for bank accounts.
+
+### List user bills
+
+You can retrieve a list of all the bills accounts that have been linked to a user's account using this functionality.
+
+```typescript
+const bills = await client.bill.list()
+```
+
+#### Example response
+
+The bills endpoint returns a response comprising an array of all the bills belonging to the user that are available for making payments. This array provides all the necessary information to both display the account details in a user interface and process payments to the respective accounts.
+
+```typescript
+const bills  = [{
+	id: "62d17d3b377dab6c1342136e",
+	name: "Precious Credit Card",
+	type: "Bill",
+	billType: "CreditCard",
+	userId: "62d17d3b377dab6c1342136e",
+	mask: "4567",
+	originator: "User",
+	payable: true,
+	verifying: false,
+	billAccountDetails: {
+		balance: 240.23,
+		amountDue: 28.34,
+		openedAt: "2023-05-03T11:25:02.401Z",
+		lastPaymentAmount: null,
+		lastPaymentDate: null,
+		nextPaymentDueDate: "2023-06-03T11:25:02.401Z",
+		nextPaymentMinimumAmount: 28.34,
+		lastStatementBalance: 180.23,
+		remainingStatementBalance: null,
+	},
+	country: "US",
+	currency: "USD",
+	dataSync {
+		lastSync: "2023-05-03T11:25:02.401Z",
+		syncStatus: "Active",
+	},
+	institution: {
+		id: "62d27d4b277dab3c1342126e",
+		name: "Shire Bank Credit Card",
+		logo: "https://tinyurl.com/shire-bank-logo",
+	},
+	createdAt: "2023-05-03T11:25:02.401Z",
+}]
+```
+
+### Add US bill account
+
+At present, you can only add US bills to a user's account. Adding a bill involves finding the institution who holds the account, and providing the account number for the bill. To add a bill for the user, you can use the following.
+
+```typescript
+import { BillType } from '@spritz-finance/api-client'
+
+const institutions = await client.institution.popularUSBillInstitutions(BillType.CreditCard)
+const billInstitution = institutions[0]
+const accountNumber = '12345678913213'
+
+const bill = await client.bill.create(billInstitution.id, accountNumber, BillType.CreditCard)
+```
+
+### Rename a bill
+
+You can conveniently change the display name of a bill using the following endpoint. The first argument specifies the ID of the bill, while the second argument represents the desired new name for the account.
+
+```typescript
+const updateAccount = await client.bill.rename('62d17d3b377dab6c1342136e', 'My first credit card')
+```
+
+### Delete a bill
+
+To remove a bill from a user's account, you can use the following endpoint. You only need to specify the ID of the bill that you want to delete as an argument.
+
+```typescript
+await client.bill.delete('62d17d3b377dab6c1342136e')
+```
+
+## Bill Institutions
+
+When adding a new bill for a user, we need to provide a reference to the institution who holds the account for the user. As an example, if a user wanted to add their Chase Visa Credit Card to their Spritz account, the Institution of the account would be `Chase Credit Cards` and then the account number provided would be the 16-digit card number for their credit card.
+
+Spritz exposes several endpoints to help users find the Institutions of their bill accounts.
+
+### Fetching popular bill institutions
+
+```typescript
+const popularInstitutions = await client.institution.popularUSBillInstitutions()
+
+// Optionally filter by a specific bill type
+const popularInstitutions = await client.institution.popularUSBillInstitutions(BillType.Mortgage)
+```
+
+### Searching for bill institutions by name
+
+```typescript
+const institutions = await client.institution.searchUSBillInstitutions('american express')
+
+// Optionally filter by a specific bill type
+const institutions = await client.institution.searchUSBillInstitutions(
+  'american express',
+  BillType.CreditCard
+)
+```
+
+## Bill Institutions
+
+When adding a new bill for a user, we need to provide a reference to the institution who holds the account for the user. As an example, if a user wanted to add their Chase Visa Credit Card to their Spritz account, the Institution of the account would be `Chase Credit Cards` and then the account number provided would be the 16-digit card number for their credit card.
+
+Spritz exposes several endpoints to help users find the Institutions of their bill accounts.
+
+### Fetching popular bill institutions
+
+```typescript
+const popularInstitutions = await client.institution.popularUSBillInstitutions()
+
+// Optionally filter by a specific bill type
+const popularInstitutions = await client.institution.popularUSBillInstitutions(BillType.Mortgage)
+```
+
+### Searching for bill institutions by name
+
+```typescript
+const institutions = await client.institution.searchUSBillInstitutions('american express')
+
+// Optionally filter by a specific bill type
+const institutions = await client.institution.searchUSBillInstitutions(
+  'american express',
+  BillType.CreditCard
+)
 ```
 
 ## Virtual Cards
