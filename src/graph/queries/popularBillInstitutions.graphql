@@ -1,0 +1,7 @@
+#import "./payableAccountInstitutionFragment.graphql"
+
+query PopularBillInstitutions($billType: BillType) {
+    popularUSBillInstitutions(billType: $billType) {
+        ...PayableAccountInstitutionFragment
+    }
+}

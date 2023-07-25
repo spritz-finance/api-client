@@ -1,6 +1,8 @@
 import { Environment } from './env'
 import { GraphClient } from './lib/client'
 import { BankAccountService } from './modules/bankAccount/bankAccountService'
+import { BillService } from './modules/bill/billService'
+import { InstitutionService } from './modules/institution/institutionService'
 import { PaymentService } from './modules/payment/paymentService'
 import { PaymentRequestService } from './modules/paymentRequest/paymentRequestService'
 import { UserService } from './modules/user/userService'
@@ -15,6 +17,8 @@ export class SpritzApiClient {
     public paymentRequest: PaymentRequestService
     public payment: PaymentService
     public virtualCard: VirtualCardService
+    public bill: BillService
+    public institution: InstitutionService
 
     constructor(
         private apiKey: string,

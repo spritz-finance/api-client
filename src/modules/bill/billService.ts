@@ -21,7 +21,7 @@ import UserBillsQuery from '../../graph/queries/bills.graphql'
 import { GraphClient } from '../../lib/client'
 import { BillType } from '../../types/globalTypes'
 
-export class BillsService {
+export class BillService {
     private client: GraphClient
 
     constructor(client: GraphClient) {

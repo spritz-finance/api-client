@@ -1,6 +1,7 @@
 export { SpritzApiClient } from './spritzApiClient'
 export * from './env'
 export type {
+    BillType,
     BankAccountSubType,
     BankAccountType,
     DirectPaymentStatus as PaymentRequestStatus,

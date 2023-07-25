@@ -1,0 +1,7 @@
+#import "./payableAccountInstitutionFragment.graphql"
+
+query SearchUSBillInstitutions($searchTerm: String!, $billType: BillType) {
+    searchUSBillInstitutions(searchTerm: $searchTerm, billType: $billType) {
+        ...PayableAccountInstitutionFragment
+    }
+}
