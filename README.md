@@ -198,7 +198,7 @@ await client.bankAccount.delete('62d17d3b377dab6c1342136e')
 
 ## Bills
 
-Spritz provides robust support for bank accounts, allowing you to easily manage and interact with a user's bank account. To leverage these capabilities, you can utilize our specific methods and functionalities designed for bank accounts.
+Spritz provides support for bills, allowing you to easily manage and interact with a user's billing account. To leverage these capabilities, you can utilize our specific methods and functionalities designed for bills.
 
 ### List user bills
 
@@ -277,33 +277,6 @@ To remove a bill from a user's account, you can use the following endpoint. You 
 
 ```typescript
 await client.bill.delete('62d17d3b377dab6c1342136e')
-```
-
-## Bill Institutions
-
-When adding a new bill for a user, we need to provide a reference to the institution who holds the account for the user. As an example, if a user wanted to add their Chase Visa Credit Card to their Spritz account, the Institution of the account would be `Chase Credit Cards` and then the account number provided would be the 16-digit card number for their credit card.
-
-Spritz exposes several endpoints to help users find the Institutions of their bill accounts.
-
-### Fetching popular bill institutions
-
-```typescript
-const popularInstitutions = await client.institution.popularUSBillInstitutions()
-
-// Optionally filter by a specific bill type
-const popularInstitutions = await client.institution.popularUSBillInstitutions(BillType.Mortgage)
-```
-
-### Searching for bill institutions by name
-
-```typescript
-const institutions = await client.institution.searchUSBillInstitutions('american express')
-
-// Optionally filter by a specific bill type
-const institutions = await client.institution.searchUSBillInstitutions(
-  'american express',
-  BillType.CreditCard
-)
 ```
 
 ## Bill Institutions
