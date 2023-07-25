@@ -39,6 +39,8 @@ export class SpritzApiClient {
         this.paymentRequest = new PaymentRequestService(this.client)
         this.payment = new PaymentService(this.client)
         this.virtualCard = new VirtualCardService(this.client)
+        this.bill = new BillService(this.client)
+        this.institution = new InstitutionService(this.client)
     }
 
     setApiKey(_apiKey: string) {
