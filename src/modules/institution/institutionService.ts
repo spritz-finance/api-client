@@ -4,7 +4,8 @@ import {
     SearchUSBillInstitutions,
     SearchUSBillInstitutionsVariables,
 } from '../../graph/queries/__types__'
-import PopularUSBillInstitutionsQuery from '../../graph/queries/bills.graphql'
+import PopularUSBillInstitutionsQuery from '../../graph/queries/popularBillInstitutions.graphql'
+import SearchUSBillInstitutionsQuery from '../../graph/queries/searchUSBillInstitutions.graphql'
 import { GraphClient } from '../../lib/client'
 import { BillType } from '../../types/globalTypes'
 
@@ -33,7 +34,7 @@ export class InstitutionService {
             SearchUSBillInstitutions,
             SearchUSBillInstitutionsVariables
         >({
-            query: PopularUSBillInstitutionsQuery,
+            query: SearchUSBillInstitutionsQuery,
             variables: {
                 searchTerm,
                 billType: type ?? null,

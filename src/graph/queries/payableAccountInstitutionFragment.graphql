@@ -2,7 +2,6 @@ fragment PayableAccountInstitutionFragment on PayableAccountInstitution {
     id
     country
     currency
-    createdAt
     name
     logo
 }
