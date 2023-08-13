@@ -18,6 +18,76 @@ A Typescript library for interacting with the Spritz Finance API
  yarn add @spritz-finance/api-client
 ```
 
+## Table of contents
+
+- [Interacting with the Spritz API](#interacting-with-the-spritz-api)
+  - [Creating a user](#creating-a-user)
+  - [Capabilities of the API Key:](#capabilities-of-the-api-key-)
+- [Usage](#usage)
+- [Creating a user](#creating-a-user-1)
+  - [Setting the User API Key](#setting-the-user-api-key)
+- [Basic User Data](#basic-user-data)
+- [User Verification](#user-verification)
+  - [Overview](#overview)
+  - [Process](#process)
+  - [How to Present Verification Flow to the User](#how-to-present-verification-flow-to-the-user)
+- [Basic payment flow](#basic-payment-flow)
+  - [Note on Issuing the Blockchain Transaction](#note-on-issuing-the-blockchain-transaction)
+  - [Example](#example)
+- [Accounts](#accounts)
+  - [Account Types](#account-types)
+  - [Commonalities & Differences](#commonalities---differences)
+  - [Bank Accounts](#bank-accounts)
+    - [List user bank accounts](#list-user-bank-accounts)
+    - [Add US bank account](#add-us-bank-account)
+  - [Bills](#bills)
+    - [List user bills](#list-user-bills)
+    - [Add US bill account](#add-us-bill-account)
+  - [Virtual Card](#virtual-card)
+    - [Fetch a users virtual card](#fetch-a-users-virtual-card)
+    - [Create a US virtual debit card](#create-a-us-virtual-debit-card)
+    - [Displaying sensitive card details](#displaying-sensitive-card-details)
+- [Renaming accounts](#renaming-accounts)
+  - [Rename a bank account](#rename-a-bank-account)
+  - [Rename a bill](#rename-a-bill)
+- [Deleting accounts](#deleting-accounts)
+  - [Delete a bank account](#delete-a-bank-account)
+  - [Delete a bill](#delete-a-bill)
+- [Bill Institutions](#bill-institutions)
+  - [Fetching popular bill institutions](#fetching-popular-bill-institutions)
+  - [Searching for bill institutions by name](#searching-for-bill-institutions-by-name)
+- [Payment Requests](#payment-requests)
+  - [Create a payment request](#create-a-payment-request)
+  - [Fulfil a payment request (EVM transactions)](#fulfil-a-payment-request--evm-transactions-)
+  - [Transaction fees](#transaction-fees)
+- [Payments](#payments)
+  - [Retrieve the payment for a payment request](#retrieve-the-payment-for-a-payment-request)
+  - [Retrieve all payments for an account](#retrieve-all-payments-for-an-account)
+
+## Interacting with the Spritz API
+
+**Purpose**: As an integrator, this guide will assist you in creating users and performing user-specific operations on the Spritz platform using the provided API key.
+
+### Creating a user
+
+When you create a user using your integration key:
+
+- You will receive an `API key` specific to that user.
+- This enables you to interact with the Spritz platform on the user's behalf.
+
+### Capabilities of the API Key:
+
+Using the user-specific API key, you can:
+
+1. **Identity Verification**: Guide a user through the identity verification process.
+2. **Account Addition**:
+   - Add Bills for the user.
+   - Register Bank accounts.
+   - Issue Virtual cards.
+3. **Payment Requests**: Initiate payment requests to the aforementioned accounts.
+4. **Blockchain Transactions**: Issue blockchain-based transactions to fulfill the payment requests.
+5. **Payment Status**: Query the status of payments directed to the user's accounts.
+
 ## Usage
 
 Your integration key is provided by Spritz and must always be provided.
@@ -34,23 +104,26 @@ const client = SpritzApiClient.initialize({
 })
 ```
 
-## User Creation
+## Creating a user
 
-A new Spritz user can be created by supplying the user's email address.
+To create a new Spritz user, all you need is the user's email address. Note that trying to create a user with an email that already exists in the Spritz platform will throw an error.
 
 ```typescript
 const user = await client.user.create({
   email: 'bilbo@shiremail.net',
 })
 
-// user = {
-//  email: "bilbo@shiremail.net"
-//  userId: "62d17d3b377dab6c1342136e",
-//  apiKey: "ak_ZTBGDcjfdTg3NmYtZDJlZC00ZjYyLThlMDMtZmYwNDJiZDRlMWZm"
-// }
+// Response
+user = {
+  email: "bilbo@shiremail.net"
+  userId: "62d17d3b377dab6c1342136e",
+  apiKey: "ak_ZTBGDcjfdTg3NmYtZDJlZC00ZjYyLThlMDMtZmYwNDJiZDRlMWZm"
+}
 ```
 
-Once the user is created, set the api client to use the user's api key:
+### Setting the User API Key
+
+After creating a user, you can easily set the user's API key onto your initialized client using the provided method:
 
 ```typescript
 client.setApiKey(user.apiKey)
@@ -68,14 +141,58 @@ const userData = await client.user.getCurrentUser()
 
 ## User Verification
 
-Use this to get a URL for the user to pass verification, and track the user's verification status.
-You will need to direct the user's browser to go to the provided URL.
+**Purpose**: To ensure users are properly identified before interacting with the Spritz platform.
+
+### Overview
+
+All users must undergo basic identity verification before they can engage with the Spritz platform's features.
+
+### Process
+
+1. **User Creation**: Upon the creation of a new user, their default verification status will be set to `INITIALIZED`.
+
+2. **Checking Verification Status**: Use the `getUserVerification` method to retrieve the current verification status of a user.
+3. **Verification Transition**: Once a user completes the identity verification process, their status will change from `INITIALIZED` to `ACTIVE`. Only then can the user fully interact with the platform.
+
+4. **Getting Verification URL**: When you request a user's verification status, the response will provide a `verificationUrl`. This URL is essential for the user to proceed with their identity verification.
+
+### How to Present Verification Flow to the User
+
+Here are some options on how you can present the `verificationUrl` to the user:
+
+- **Browser**: Open the URL in a new browser tab.
+- **In-App**: Embed the URL in an iframe within your application.
+- **Mobile**: If your platform is mobile-based, open the URL in a native mobile web view.
+- **Email**: Send users an email containing the link, prompting them to complete the identity verification.
 
 ```typescript
 const verificationData = await client.user.getUserVerification()
 ```
 
 ## Basic payment flow
+
+Execute a payment in a few simple steps:
+
+1. **Select an Account**: Choose the account you wish to pay to.
+2. **Initiate Payment Request**: Use the account's ID, your desired payment amount, and the chosen blockchain network to create a payment request.
+3. **Retrieve Transaction Data**: Use the `getWeb3PaymentParams` method to obtain the necessary transaction data for fulfilling the payment request.
+4. **Blockchain Transaction**: Issue the required blockchain transaction from the user's wallet.
+5. **Payment Confirmation**: After blockchain transaction confirmation, check the status of the TradFi payment.
+
+### Note on Issuing the Blockchain Transaction
+
+For Spritz to process a TradFi payment to an account, we need to receive a blockchain transaction on our smart contract, which provides us the crypto funds. As an integrator, it's essential to manage how the blockchain transaction is initiated from the user's wallet to Spritz.
+
+- **Wallet Apps**: If your application functions as a wallet, prompt the user to sign a transaction using data from `getWeb3PaymentParams`.
+- **Web-based Dapps**: Use your existing connection to the user's wallet to prompt a transaction.
+
+If your application doesn't have a connection to the user's wallet, consider implementing one. Some popular options include:
+
+- [Web3Modal (Web-based)](https://github.com/WalletConnect/web3modal)
+- [Web3Modal (React Native)](https://github.com/WalletConnect/modal-react-native)
+- [Web3-Onboard](https://onboard.blocknative.com/docs/overview/introduction#features)
+
+### Example
 
 ```typescript
 // Fetch all bank accounts for the user
@@ -106,21 +223,40 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
 const payment = await client.payment.getForPaymentRequest(paymentRequest.id)
 ```
 
-## Bank Accounts
+## Accounts
 
-Spritz provides robust support for bank accounts, allowing you to easily manage and interact with a user's bank account. To leverage these capabilities, you can utilize our specific methods and functionalities designed for bank accounts.
+Spritz emphasizes its capabilities in account handling and payment processing.
 
-### List user bank accounts
+### Account Types
 
-You can retrieve a comprehensive list of all bank accounts that have been linked to a user's account using this functionality.
+Spritz supports three distinct types of accounts:
+
+1. **Bank Account**
+2. **Bill**
+3. **Virtual Card**
+
+Though each account type possesses its unique creation process and specific properties, it's important to understand that all of them are uniformly termed as an "account" within the Spritz platform.
+
+### Commonalities & Differences
+
+- **Common Properties**: Every type of account shares certain properties consistent across the platform.
+- **Unique Properties**: Each account type also has attributes specific to its nature and functionality.
+
+Recognizing these nuances is crucial for optimal interaction with the Spritz platform's account-related features.
+
+### Bank Accounts
+
+Spritz offers a dedicated interface to manage bank accounts, allowing seamless listing and addition of bank account details for users.
+
+#### List user bank accounts
+
+To retrieve all bank accounts linked to a user:
 
 ```typescript
 const bankAccounts = await client.bankAccount.list()
 ```
 
-#### Example response
-
-The bank accounts endpoint returns a standard response comprising an array of all the user-added bank accounts that are available for making payments. This array provides all the necessary information to both display the account details in a user interface and process payments to the respective accounts.
+The `bankAccount.list()` method returns an array of user-linked bank accounts, complete with essential details to display in a UI and facilitate payments:
 
 ```typescript
 const bankAccounts = [{
@@ -148,13 +284,14 @@ const bankAccounts = [{
 }]
 ```
 
-### Add US bank account
+#### Add US bank account
 
-At present, you can only add US bank accounts to a user's account. To add a US bank account for the user, you can use the following.
+Currently, Spritz supports the addition of US bank accounts:
+
+The input structure for adding a US bank account is defined as:
 
 ```typescript
 // Input arguments for creating a US bank account
-
 export interface USBankAccountInput {
   accountNumber: string
   email: string
@@ -180,78 +317,62 @@ const bankAccounts = await client.bankAccount.create(BankAccountType.USBankAccou
 })
 ```
 
-### Rename a bank account
+### Bills
 
-You can conveniently change the display name of a bank account using the following endpoint. The first argument specifies the ID of the bank account, while the second argument represents the desired new name for the account.
+Spritz provides robust support for bills, allowing seamless management and interaction with user billing accounts. Below is a guide to the methods and functionalities specifically designed for handling bills within Spritz.
 
-```typescript
-const updateAccount = await client.bankAccount.rename('62d17d3b377dab6c1342136e', 'My new account')
-```
+#### List user bills
 
-### Delete a bank account
-
-To remove a bank account from a user's account, you can use the following endpoint. You only need to specify the ID of the bank account that you want to delete as an argument.
-
-```typescript
-await client.bankAccount.delete('62d17d3b377dab6c1342136e')
-```
-
-## Bills
-
-Spritz provides support for bills, allowing you to easily manage and interact with a user's billing account. To leverage these capabilities, you can utilize our specific methods and functionalities designed for bills.
-
-### List user bills
-
-You can retrieve a list of all the bills accounts that have been linked to a user's account using this functionality.
+To retrieve all bill accounts associated with a user:
 
 ```typescript
 const bills = await client.bill.list()
 ```
 
-#### Example response
-
-The bills endpoint returns a response comprising an array of all the bills belonging to the user that are available for making payments. This array provides all the necessary information to both display the account details in a user interface and process payments to the respective accounts.
+The `bill.list()` method returns an array of user-associated bills, complete with essential details for display in a UI and for processing payments:
 
 ```typescript
-const bills  = [{
-	id: "62d17d3b377dab6c1342136e",
-	name: "Precious Credit Card",
-	type: "Bill",
-	billType: "CreditCard",
-	userId: "62d17d3b377dab6c1342136e",
-	mask: "4567",
-	originator: "User",
-	payable: true,
-	verifying: false,
-	billAccountDetails: {
-		balance: 240.23,
-		amountDue: 28.34,
-		openedAt: "2023-05-03T11:25:02.401Z",
-		lastPaymentAmount: null,
-		lastPaymentDate: null,
-		nextPaymentDueDate: "2023-06-03T11:25:02.401Z",
-		nextPaymentMinimumAmount: 28.34,
-		lastStatementBalance: 180.23,
-		remainingStatementBalance: null,
-	},
-	country: "US",
-	currency: "USD",
-	dataSync {
-		lastSync: "2023-05-03T11:25:02.401Z",
-		syncStatus: "Active",
-	},
-	institution: {
-		id: "62d27d4b277dab3c1342126e",
-		name: "Shire Bank Credit Card",
-		logo: "https://tinyurl.com/shire-bank-logo",
-	},
-	createdAt: "2023-05-03T11:25:02.401Z",
-}]
+const bills = [
+  {
+    id: '62d17d3b377dab6c1342136e',
+    name: 'Precious Credit Card',
+    type: 'Bill',
+    billType: 'CreditCard',
+    userId: '62d17d3b377dab6c1342136e',
+    mask: '4567',
+    originator: 'User',
+    payable: true,
+    verifying: false,
+    billAccountDetails: {
+      balance: 240.23,
+      amountDue: 28.34,
+      openedAt: '2023-05-03T11:25:02.401Z',
+      lastPaymentAmount: null,
+      lastPaymentDate: null,
+      nextPaymentDueDate: '2023-06-03T11:25:02.401Z',
+      nextPaymentMinimumAmount: 28.34,
+      lastStatementBalance: 180.23,
+      remainingStatementBalance: null,
+    },
+    country: 'US',
+    currency: 'USD',
+    dataSync: {
+      lastSync: '2023-05-03T11:25:02.401Z',
+      syncStatus: 'Active',
+    },
+    institution: {
+      id: '62d27d4b277dab3c1342126e',
+      name: 'Shire Bank Credit Card',
+      logo: 'https://tinyurl.com/shire-bank-logo',
+    },
+    createdAt: '2023-05-03T11:25:02.401Z',
+  },
+]
 ```
 
-### Add US bill account
+#### Add US bill account
 
-At present, you can only add US bills to a user's account. Adding a bill involves finding the institution who holds the account, and providing the account number for the bill. To add a bill for the user, you can use the following.
+Currently, Spritz allows the addition of US bill accounts only. The process involves identifying the institution managing the bill and inputting the bill's account number. Here's a guide on how to add a bill for a user:
 
 ```typescript
 import { BillType } from '@spritz-finance/api-client'
@@ -263,12 +384,88 @@ const accountNumber = '12345678913213'
 const bill = await client.bill.create(billInstitution.id, accountNumber, BillType.CreditCard)
 ```
 
+### Virtual Card
+
+Spritz offers the ability to create virtual cards that users can fund using cryptocurrency. These virtual cards represent an alternative payment account offered by Spritz. To effectively interact with the Virtual Card feature, use the API endpoints detailed below.
+
+#### Fetch a users virtual card
+
+The fetch endpoint returns an object containing details associated with the virtual card. Importantly, this object excludes sensitive card information such as the card number and the CVV.
+
+```typescript
+const virtualCard = await client.virtualCard.fetch()
+```
+
+```typescript
+const virtualCard = {
+  id: '62d17d3b377dab6c1342136e',
+  type: 'VirtualCard',
+  virtualCardType: 'USVirtualDebitCard',
+  userId: '62d17d3b377dab6c1342136e',
+  mask: '0001',
+  country: 'US',
+  currency: 'USD',
+  balance: 0,
+  renderSecret: 'U2FsdGVkX18bLYGYLILf4AeW5fOl8VYxAvKWVDtbZI5DO7swFqkJ2o',
+  billingInfo: {
+    holder: 'Bilbo Baggins',
+    phone: '+123456789',
+    email: 'bilbo@shiremail.net',
+    address: {
+      street: '1 Bagshot Row',
+      street2: '',
+      city: 'Hobbiton',
+      subdivision: 'The Shire',
+      postalCode: '12345',
+      countryCode: 'ME',
+    },
+  },
+}
+```
+
+#### Create a US virtual debit card
+
+```typescript
+import { VirtualCardType } from '@spritz-finance/api-client'
+
+const virtualCard = await client.virtualCard.create(VirtualCardType.USVirtualDebitCard)
+```
+
+#### Displaying sensitive card details
+
+To show the sensitive card details that users require for payment transactions, you must integrate our dedicated drop-in widget. This widget securely renders card details. Use the renderSecret, obtained from the standard fetch card endpoint, in conjunction with the user's API key.
+
+We currently support and maintain the following packages for the card rendering process:
+
+- [React Library](https://www.npmjs.com/package/@spritz-finance/react-secure-elements)
+- [React Native Library](https://www.npmjs.com/package/@spritz-finance/react-native-secure-elements)
+
+## Renaming accounts
+
+### Rename a bank account
+
+You can conveniently change the display name of a bank account using the following endpoint. The first argument specifies the ID of the bank account, while the second argument represents the desired new name for the account.
+
+```typescript
+const updateAccount = await client.bankAccount.rename('62d17d3b377dab6c1342136e', 'My new account')
+```
+
 ### Rename a bill
 
 You can conveniently change the display name of a bill using the following endpoint. The first argument specifies the ID of the bill, while the second argument represents the desired new name for the account.
 
 ```typescript
 const updateAccount = await client.bill.rename('62d17d3b377dab6c1342136e', 'My first credit card')
+```
+
+## Deleting accounts
+
+### Delete a bank account
+
+To remove a bank account from a user's account, you can use the following endpoint. You only need to specify the ID of the bank account that you want to delete as an argument.
+
+```typescript
+await client.bankAccount.delete('62d17d3b377dab6c1342136e')
 ```
 
 ### Delete a bill
@@ -305,64 +502,6 @@ const institutions = await client.institution.searchUSBillInstitutions(
   BillType.CreditCard
 )
 ```
-
-## Virtual Cards
-
-Spritz enables the creation of virtual cards, which can be funded using cryptocurrency. Similar to bank accounts, these virtual cards represent an additional type of payable account provided by Spritz. Utilize the endpoints detailed below to interact with the Virtual Card API.
-
-### Fetch a users virtual card
-
-The fetch endpoint returns an object encompassing all the details associated with the virtual card. Please note, this object does not include sensitive card information such as the card number or the CVV.
-
-```typescript
-const virtualCard = await client.virtualCard.fetch()
-```
-
-#### Example response
-
-```typescript
-const virtualCard = {
-  id: '62d17d3b377dab6c1342136e',
-  type: 'VirtualCard',
-  virtualCardType: 'USVirtualDebitCard',
-  userId: '62d17d3b377dab6c1342136e',
-  mask: '0001',
-  country: 'US',
-  currency: 'USD',
-  balance: 0,
-  renderSecret: 'U2FsdGVkX18bLYGYLILf4AeW5fOl8VYxAvKWVDtbZI5DO7swFqkJ2o',
-  billingInfo: {
-    holder: 'Bilbo Baggins',
-    phone: '+123456789',
-    email: 'bilbo@shiremail.net',
-    address: {
-      street: '1 Bagshot Row',
-      street2: '',
-      city: 'Hobbiton',
-      subdivision: 'The Shire',
-      postalCose: '12345',
-      countryCode: 'ME',
-    },
-  },
-}
-```
-
-### Create a US virtual debit card
-
-```typescript
-import { VirtualCardType } from '@spritz-finance/api-client'
-
-const virtualCard = await client.virtualCard.create(VirtualCardType.USVirtualDebitCard)
-```
-
-### Displaying sensitive card details
-
-In order to display the sensitive card details necessary for a user to make payments, you must utilize our drop-in widget, which securely renders the card. This process requires the renderSecret, returned from the standard fetch card endpoint, in combination with the user's API key.
-
-We currently offer and maintain the following packages to assist with the card rendering process:
-
-- [React Library](https://www.npmjs.com/package/@spritz-finance/react-secure-elements)
-- [React Native Library](https://www.npmjs.com/package/@spritz-finance/react-native-secure-elements)
 
 ## Payment Requests
 

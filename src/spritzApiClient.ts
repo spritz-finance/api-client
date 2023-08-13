@@ -8,7 +8,7 @@ import { PaymentRequestService } from './modules/paymentRequest/paymentRequestSe
 import { UserService } from './modules/user/userService'
 import { VirtualCardService } from './modules/virtualCard/virtualCardService'
 
-type ClientParams = { environment: Environment; apiKey: string; integrationKey?: string }
+type ClientParams = { environment: Environment; apiKey?: string; integrationKey?: string }
 
 export class SpritzApiClient {
     private client: GraphClient

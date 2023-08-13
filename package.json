@@ -1,6 +1,6 @@
 {
     "name": "@spritz-finance/api-client",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "description": "Typescript library for interacting with the Spritz Finance API",
     "main": "dist/spritz-api-client.js",
     "module": "dist/spritz-api-client.mjs",
@@ -25,7 +25,8 @@
         "build": "rollup -c",
         "prepublishOnly": "npm run build",
         "codegen": "bash codegen.sh",
-        "test": "jest"
+        "test": "jest",
+        "demo": "tsx ./demo.ts"
     },
     "devDependencies": {
         "@rollup/plugin-graphql": "^2.0.3",
@@ -35,7 +36,7 @@
         "@typescript-eslint/eslint-plugin": "^5.57.0",
         "@typescript-eslint/parser": "^5.57.0",
         "apollo": "^2.34.0",
-        "dotenv": "^16.0.3",
+        "dotenv": "^16.3.1",
         "esbuild": "^0.17.14",
         "eslint": "^8.37.0",
         "eslint-config-prettier": "^8.8.0",
@@ -52,6 +53,7 @@
         "ts-jest": "^29.1.0",
         "ts-node": "^10.9.1",
         "tslib": "^2.5.0",
+        "tsx": "^3.12.7",
         "typescript": "^5.0.2"
     },
     "dependencies": {

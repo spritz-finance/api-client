@@ -9,7 +9,7 @@ interface QueryParams<V = any> {
     variables?: V
 }
 
-class SpritzApiError extends Error {
+export class SpritzApiError extends Error {
     date: Date
 
     constructor(message: string, ...params: any[]) {

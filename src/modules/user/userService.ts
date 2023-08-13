@@ -1,8 +1,8 @@
+import axios from 'axios'
+import { CurrentUser, UserVerification } from '../../graph/queries/__types__'
 import CurrentUserQuery from '../../graph/queries/currentUser.graphql'
 import UserVerificationQuery from '../../graph/queries/verification.graphql'
-import { CurrentUser } from '../../graph/queries/__types__'
-import { GraphClient } from '../../lib/client'
-import { UserVerification } from '../../graph/queries/__types__'
+import { GraphClient, SpritzApiError } from '../../lib/client'
 
 interface CreateUserResponse {
     userId: string
@@ -22,19 +22,24 @@ export class UserService {
     }
 
     public async createUser(args: CreateUserArgs) {
-        const { data } = await this.client.baseClient.post<CreateUserResponse>(
-            `/users/integration`,
-            args
-        )
-        return data
+        try {
+            const { data } = await this.client.baseClient.post<CreateUserResponse>(
+                `/users/integration`,
+                args
+            )
+            return data
+        } catch (error: any) {
+            if (axios.isAxiosError(error)) {
+                const message = error.response?.data ?? error.message ?? 'Unknown Error'
+                throw new SpritzApiError(`Spritz Request Error: ${message}`)
+            } else {
+                throw new SpritzApiError(`Spritz Request Error: ${error.message}`)
+            }
+        }
     }
 
     public async create(args: CreateUserArgs) {
-        const { data } = await this.client.baseClient.post<CreateUserResponse>(
-            `/users/integration`,
-            args
-        )
-        return data
+        return this.createUser(args)
     }
 
     public async getCurrentUser() {
