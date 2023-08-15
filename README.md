@@ -63,6 +63,11 @@ A Typescript library for interacting with the Spritz Finance API
 - [Payments](#payments)
   - [Retrieve the payment for a payment request](#retrieve-the-payment-for-a-payment-request)
   - [Retrieve all payments for an account](#retrieve-all-payments-for-an-account)
+- [Webhooks](#webhooks)
+  - [Supported webhook events](#supported-webhook-events)
+    - [Account Events](#account-events)
+    - [Payment Events](#payment-events)
+  - [Setting up webhooks](#setting-up-webhooks)
 
 ## Interacting with the Spritz API
 
@@ -629,4 +634,51 @@ const payments = await client.payment.listForAccount(account.id)
         createdAt: '2022-11-07T10:53:23.998Z',
     },
 ]
+```
+
+## Webhooks
+
+Instead of making a request to get information, webhooks send information to your specified endpoint as soon as an event occurs. Spritz's integration offers a variety of webhook events that can be crucial for maintaining data integrity and responsiveness in applications. Let's dive into how you can best utilize these.
+
+### Supported webhook events
+
+Spritz currently supports the following webhook events:
+
+#### Account Events
+
+- `account.created`: Triggered when a new account is created.
+- `account.updated`: Triggered when details of an account are updated.
+- `account.deleted`: Triggered when an account is deleted.
+
+#### Payment Events
+
+- `payment.created`: Triggered when a new payment is initiated.
+- `payment.updated`: Triggered when details of a payment are updated.
+- `payment.completed`: Triggered when a payment is successfully completed.
+- `payment.refunded`: Triggered when a payment is refunded.
+
+These events allow you to respond to changes in the account and payments for a user.
+
+### Setting up webhooks
+
+To set up a webhook with Spritz, you'll need to provide:
+
+1. **URL**: The endpoint URL where Spritz will send the webhook data.
+2. **Events**: The specific events you want to listen for.
+
+```typescript
+const webhook = await client.webhook.create({
+  url: 'https://my.webhook.url/spritz',
+  events: ['account.created', 'account.updated', 'account.deleted'],
+})
+```
+
+Upon receiving a webhook, your server will get a payload with the following structure:
+
+```json
+{
+  "userId": "user-id-here",
+  "id": "resource-id-here",
+  "eventName": "name-of-the-event-here"
+}
 ```

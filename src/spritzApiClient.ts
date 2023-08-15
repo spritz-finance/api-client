@@ -7,6 +7,7 @@ import { PaymentService } from './modules/payment/paymentService'
 import { PaymentRequestService } from './modules/paymentRequest/paymentRequestService'
 import { UserService } from './modules/user/userService'
 import { VirtualCardService } from './modules/virtualCard/virtualCardService'
+import { WebhookService } from './modules/webhook/webhookService'
 
 type ClientParams = { environment: Environment; apiKey?: string; integrationKey?: string }
 
@@ -19,6 +20,7 @@ export class SpritzApiClient {
     public virtualCard: VirtualCardService
     public bill: BillService
     public institution: InstitutionService
+    public webhook: WebhookService
 
     constructor(
         private apiKey: string,
@@ -41,6 +43,7 @@ export class SpritzApiClient {
         this.virtualCard = new VirtualCardService(this.client)
         this.bill = new BillService(this.client)
         this.institution = new InstitutionService(this.client)
+        this.webhook = new WebhookService(this.client)
     }
 
     setApiKey(_apiKey: string) {
