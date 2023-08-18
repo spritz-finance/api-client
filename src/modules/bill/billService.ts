@@ -18,13 +18,13 @@ import DeletePayableAccountMutation from '../../graph/mutations/deletePayableAcc
 import RenamePayableAccountMutation from '../../graph/mutations/renamePayableAccount.graphql'
 import { UserBills } from '../../graph/queries/__types__'
 import UserBillsQuery from '../../graph/queries/bills.graphql'
-import { GraphClient } from '../../lib/client'
+import { SpritzClient } from '../../lib/client'
 import { BillType } from '../../types/globalTypes'
 
 export class BillService {
-    private client: GraphClient
+    private client: SpritzClient
 
-    constructor(client: GraphClient) {
+    constructor(client: SpritzClient) {
         this.client = client
     }
 

@@ -12,7 +12,7 @@ import {
     TransactionPriceVariables,
 } from '../../graph/queries/__types__'
 import SpritzPayParamsQuery from '../../graph/queries/spritzPayParams.graphql'
-import { GraphClient } from '../../lib/client'
+import { SpritzClient } from '../../lib/client'
 import { AccountProvider } from '../../types/globalTypes'
 import { isValidEthereumAddress } from '../../utils/address'
 import { roundCurrency } from '../../utils/roundCurrency'
@@ -22,9 +22,9 @@ type PaymentRequest = CreatePaymentRequest_createDirectPayment
 type Web3PaymentParams = GetSpritzPayParams_spritzPayParams
 
 export class PaymentRequestService {
-    private client: GraphClient
+    private client: SpritzClient
 
-    constructor(client: GraphClient) {
+    constructor(client: SpritzClient) {
         this.client = client
     }
 
@@ -60,7 +60,7 @@ export class PaymentRequestService {
     public async getWeb3PaymentParams(input: {
         paymentRequest: PaymentRequest
         paymentTokenAddress: string
-    }): Promise<Web3PaymentParams> {
+    }) {
         const validTokenAddress = isValidEthereumAddress(input.paymentTokenAddress)
         if (!validTokenAddress) throw new Error('Invalid token address')
 

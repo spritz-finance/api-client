@@ -15,6 +15,7 @@ export default [
                 optimizeDeps: {
                     include: [
                         'graphql',
+                        'abort-controller',
                         'ethereum-cryptography/keccak',
                         'ethereum-cryptography/utils',
                     ],
@@ -33,7 +34,7 @@ export default [
                 format: 'es',
             },
         ],
-        external: ['axios'],
+        external: ['cross-fetch'],
     }),
     bundle({
         plugins: [dts()],
