@@ -49,7 +49,7 @@ export class VirtualCardService {
         return response?.virtualDebitCard ?? null
     }
 
-    public async create<T extends VirtualCardType>(type: T, input: CreateInputMapping[T]) {
+    public async create<T extends VirtualCardType>(type: T, input?: CreateInputMapping[T]) {
         const config = getCreateMutationConfig(type, input)
         if (!config) throw new Error('Invalid virtual card type')
 
