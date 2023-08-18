@@ -6,13 +6,13 @@ import {
 } from '../../graph/queries/__types__'
 import PopularUSBillInstitutionsQuery from '../../graph/queries/popularBillInstitutions.graphql'
 import SearchUSBillInstitutionsQuery from '../../graph/queries/searchUSBillInstitutions.graphql'
-import { GraphClient } from '../../lib/client'
+import { SpritzClient } from '../../lib/client'
 import { BillType } from '../../types/globalTypes'
 
 export class InstitutionService {
-    private client: GraphClient
+    private client: SpritzClient
 
-    constructor(client: GraphClient) {
+    constructor(client: SpritzClient) {
         this.client = client
     }
 

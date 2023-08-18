@@ -2,7 +2,7 @@ import { CreateUSVirtualDebitCard } from '../../graph/mutations/__types__/Create
 import CreateUSVirtualDebitCardMutation from '../../graph/mutations/createUSVirtualDebitCard.graphql'
 import { UserVirtualDebitCard } from '../../graph/queries/__types__'
 import UserVirtualDebitCardQuery from '../../graph/queries/virtualDebitCard.graphql'
-import { GraphClient } from '../../lib/client'
+import { SpritzClient } from '../../lib/client'
 import { VirtualCardType } from '../../types/globalTypes'
 
 type CreateInputMapping = {
@@ -36,9 +36,9 @@ const getCreateMutationConfig = <T extends VirtualCardType>(
 }
 
 export class VirtualCardService {
-    private client: GraphClient
+    private client: SpritzClient
 
-    constructor(client: GraphClient) {
+    constructor(client: SpritzClient) {
         this.client = client
     }
 

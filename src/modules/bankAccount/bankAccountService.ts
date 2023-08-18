@@ -17,7 +17,7 @@ import DeletePayableAccountMutation from '../../graph/mutations/deletePayableAcc
 import RenameBankAccountMutation from '../../graph/mutations/renameBankAccount.graphql'
 import { UserBankAccounts } from '../../graph/queries/__types__'
 import UserBankAccountsQuery from '../../graph/queries/bankAccounts.graphql'
-import { GraphClient } from '../../lib/client'
+import { SpritzClient } from '../../lib/client'
 import { BankAccountType, USBankAccountInput } from '../../types/globalTypes'
 
 type CreateInputMapping = {
@@ -50,9 +50,9 @@ const getCreateMutationConfig = <T extends BankAccountType>(
 }
 
 export class BankAccountService {
-    private client: GraphClient
+    private client: SpritzClient
 
-    constructor(client: GraphClient) {
+    constructor(client: SpritzClient) {
         this.client = client
     }
 

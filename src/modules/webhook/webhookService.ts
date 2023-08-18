@@ -1,5 +1,4 @@
-import axios from 'axios'
-import { GraphClient, SpritzApiError } from '../../lib/client'
+import { SpritzClient } from '../../lib/client'
 
 const EVENTS = [
     'account.created',
@@ -21,32 +20,23 @@ export type IntegratorWebhook = {
     createdAt: string
 }
 
-type CreateWebhookArgs = {
+type CreateWebhookParams = {
     url: string
     events: WebhookEvent[]
 }
 
 export class WebhookService {
-    private client: GraphClient
+    private client: SpritzClient
 
-    constructor(client: GraphClient) {
+    constructor(client: SpritzClient) {
         this.client = client
     }
 
-    public async create(args: CreateWebhookArgs) {
-        try {
-            const { data } = await this.client.baseClient.post<IntegratorWebhook>(
-                `/users/integrators/webhooks`,
-                args
-            )
-            return data
-        } catch (error: any) {
-            if (axios.isAxiosError(error)) {
-                const message = error.response?.data ?? error.message ?? 'Unknown Error'
-                throw new SpritzApiError(`Spritz Request Error: ${message}`)
-            } else {
-                throw new SpritzApiError(`Spritz Request Error: ${error.message}`)
-            }
-        }
+    public async create(args: CreateWebhookParams) {
+        return this.client.request<IntegratorWebhook, CreateWebhookParams>({
+            method: 'post',
+            path: '/users/integrators/webhooks',
+            body: args,
+        })
     }
 }

@@ -6,12 +6,12 @@ import {
 } from '../../graph/queries/__types__'
 import PaymentRequestPaymentQuery from '../../graph/queries/paymentForPaymentRequest.graphql'
 import AccountPaymentsQuery from '../../graph/queries/paymentsForAccount.graphql'
-import { GraphClient } from '../../lib/client'
+import { SpritzClient } from '../../lib/client'
 
 export class PaymentService {
-    private client: GraphClient
+    private client: SpritzClient
 
-    constructor(client: GraphClient) {
+    constructor(client: SpritzClient) {
         this.client = client
     }
 
