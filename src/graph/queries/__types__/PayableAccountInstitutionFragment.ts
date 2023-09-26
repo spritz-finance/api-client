@@ -12,7 +12,6 @@ export interface PayableAccountInstitutionFragment {
     id: string
     country: string
     currency: string
-    createdAt: any
     name: string
     logo: string | null
 }

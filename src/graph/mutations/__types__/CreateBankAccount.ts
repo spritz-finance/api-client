@@ -4,7 +4,7 @@
 // This file was automatically generated and should not be edited.
 
 import {
-    USBankAccountInput,
+    BankAccountInput,
     PayableAccountOriginator,
     PayableAccountType,
     BankAccountType,
@@ -15,36 +15,36 @@ import {
 } from './../../../types/globalTypes'
 
 // ====================================================
-// GraphQL mutation operation: CreateUSBankAccount
+// GraphQL mutation operation: CreateBankAccount
 // ====================================================
 
-export interface CreateUSBankAccount_createUSBankAccount_bankAccountDetails_CanadianBankAccountDetails {
+export interface CreateBankAccount_createBankAccount_bankAccountDetails_CanadianBankAccountDetails {
     __typename: 'CanadianBankAccountDetails'
 }
 
-export interface CreateUSBankAccount_createUSBankAccount_bankAccountDetails_USBankAccountDetails {
+export interface CreateBankAccount_createBankAccount_bankAccountDetails_USBankAccountDetails {
     __typename: 'USBankAccountDetails'
     routingNumber: string
 }
 
-export type CreateUSBankAccount_createUSBankAccount_bankAccountDetails =
-    | CreateUSBankAccount_createUSBankAccount_bankAccountDetails_CanadianBankAccountDetails
-    | CreateUSBankAccount_createUSBankAccount_bankAccountDetails_USBankAccountDetails
+export type CreateBankAccount_createBankAccount_bankAccountDetails =
+    | CreateBankAccount_createBankAccount_bankAccountDetails_CanadianBankAccountDetails
+    | CreateBankAccount_createBankAccount_bankAccountDetails_USBankAccountDetails
 
-export interface CreateUSBankAccount_createUSBankAccount_dataSync {
+export interface CreateBankAccount_createBankAccount_dataSync {
     __typename: 'AccountDataSync'
     lastSync: any | null
     syncStatus: AccountSyncStatus | null
 }
 
-export interface CreateUSBankAccount_createUSBankAccount_institution {
+export interface CreateBankAccount_createBankAccount_institution {
     __typename: 'BankAccountInstitution' | 'BillInstitution'
     id: string
     name: string
     logo: string | null
 }
 
-export interface CreateUSBankAccount_createUSBankAccount {
+export interface CreateBankAccount_createBankAccount {
     __typename: 'BankAccount'
     id: string
     name: string | null
@@ -61,15 +61,15 @@ export interface CreateUSBankAccount_createUSBankAccount {
     holder: string
     email: string
     ownedByUser: boolean
-    bankAccountDetails: CreateUSBankAccount_createUSBankAccount_bankAccountDetails
-    dataSync: CreateUSBankAccount_createUSBankAccount_dataSync | null
-    institution: CreateUSBankAccount_createUSBankAccount_institution | null
+    bankAccountDetails: CreateBankAccount_createBankAccount_bankAccountDetails
+    dataSync: CreateBankAccount_createBankAccount_dataSync | null
+    institution: CreateBankAccount_createBankAccount_institution | null
 }
 
-export interface CreateUSBankAccount {
-    createUSBankAccount: CreateUSBankAccount_createUSBankAccount
+export interface CreateBankAccount {
+    createBankAccount: CreateBankAccount_createBankAccount
 }
 
-export interface CreateUSBankAccountVariables {
-    createUSAccountInput: USBankAccountInput
+export interface CreateBankAccountVariables {
+    createAccountInput: BankAccountInput
 }

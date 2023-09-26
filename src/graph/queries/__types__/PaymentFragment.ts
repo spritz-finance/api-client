@@ -14,7 +14,7 @@ export interface PaymentFragment {
     id: string
     userId: any
     status: PaymentStatus
-    accountId: any | null
+    accountId: any
     amount: number | null
     feeAmount: number | null
     createdAt: any

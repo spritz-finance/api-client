@@ -1,6 +1,6 @@
 {
     "name": "@spritz-finance/api-client",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "description": "Typescript library for interacting with the Spritz Finance API",
     "main": "dist/spritz-api-client.js",
     "module": "dist/spritz-api-client.mjs",
@@ -57,6 +57,7 @@
         "typescript": "^5.1.6"
     },
     "dependencies": {
-        "cross-fetch": "^4.0.0"
+        "cross-fetch": "^4.0.0",
+        "zod": "^3.22.2"
     }
 }

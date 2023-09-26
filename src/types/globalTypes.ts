@@ -26,6 +26,7 @@ export enum BankAccountSubType {
 }
 
 export enum BankAccountType {
+  CABankAccount = "CABankAccount",
   USBankAccount = "USBankAccount",
 }
 
@@ -90,6 +91,17 @@ export enum VirtualCardType {
   USVirtualDebitCard = "USVirtualDebitCard",
 }
 
+export interface BankAccountInput {
+  accountNumber: string;
+  details?: any | null;
+  email?: string | null;
+  holder?: string | null;
+  name: string;
+  ownedByUser?: boolean | null;
+  subType: BankAccountSubType;
+  type: BankAccountType;
+}
+
 export interface CreateDirectPaymentInput {
   accountId: string;
   amount: number;
@@ -99,16 +111,6 @@ export interface CreateDirectPaymentInput {
   subscriptionId?: string | null;
   testPayment?: boolean | null;
   tokenAddress?: string | null;
-}
-
-export interface USBankAccountInput {
-  accountNumber: string;
-  email: string;
-  holder: string;
-  name: string;
-  ownedByUser?: boolean | null;
-  routingNumber: string;
-  subType: BankAccountSubType;
 }
 
 //==============================================================

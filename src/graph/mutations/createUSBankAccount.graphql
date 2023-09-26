@@ -1,7 +1,0 @@
-#import "../queries/payableAccountFragment.graphql"
-
-mutation CreateUSBankAccount($createUSAccountInput: USBankAccountInput!) {
-    createUSBankAccount(createUSAccountInput: $createUSAccountInput) {
-        ...PayableAccountFragment
-    }
-}

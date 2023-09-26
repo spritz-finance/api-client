@@ -1,6 +1,6 @@
 export { SpritzApiClient } from './spritzApiClient'
 export * from './env'
-export type { CreateDirectPaymentInput, USBankAccountInput } from './types/globalTypes'
+export type { CreateDirectPaymentInput, BankAccountInput } from './types/globalTypes'
 export {
     BillType,
     BankAccountSubType,

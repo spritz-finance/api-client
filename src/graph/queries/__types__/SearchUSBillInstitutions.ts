@@ -14,7 +14,6 @@ export interface SearchUSBillInstitutions_searchUSBillInstitutions {
     id: string
     country: string
     currency: string
-    createdAt: any
     name: string
     logo: string | null
 }

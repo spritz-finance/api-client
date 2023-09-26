@@ -1,7 +1,8 @@
+import { z } from 'zod'
 import {
-    CreateUSBankAccount,
-    CreateUSBankAccountVariables,
-} from '../../graph/mutations/__types__/CreateUSBankAccount'
+    CreateBankAccount,
+    CreateBankAccountVariables,
+} from '../../graph/mutations/__types__/CreateBankAccount'
 import {
     DeletePayableAccount,
     DeletePayableAccountVariables,
@@ -12,41 +13,30 @@ import {
     RenameBankAccountVariables,
     RenameBankAccount_renamePayableAccount_BankAccount,
 } from '../../graph/mutations/__types__/RenameBankAccount'
-import CreateUSBankAccountMutation from '../../graph/mutations/createUSBankAccount.graphql'
+import CreateBankAccountMutation from '../../graph/mutations/createBankAccount.graphql'
 import DeletePayableAccountMutation from '../../graph/mutations/deletePayableAccount.graphql'
 import RenameBankAccountMutation from '../../graph/mutations/renameBankAccount.graphql'
 import { UserBankAccounts } from '../../graph/queries/__types__'
 import UserBankAccountsQuery from '../../graph/queries/bankAccounts.graphql'
 import { SpritzClient } from '../../lib/client'
-import { BankAccountType, USBankAccountInput } from '../../types/globalTypes'
+import { BankAccountInput, BankAccountType } from '../../types/globalTypes'
+import { raise } from '../../utils/raise'
+import { BankAccountDetailsValidation } from './validation'
+
+type BaseBankAccountInput = Omit<BankAccountInput, 'details' | 'type'>
+
+type UsBankAccountInput = BaseBankAccountInput & {
+    routingNumber: string
+}
+
+type CaBankAccountInput = BaseBankAccountInput & {
+    transitNumber: string
+    institutionNumber: string
+}
 
 type CreateInputMapping = {
-    [BankAccountType.USBankAccount]: USBankAccountInput
-}
-
-type CreateMutationMapping = {
-    [BankAccountType.USBankAccount]: {
-        query: CreateUSBankAccount
-        variables: CreateUSBankAccountVariables
-        response: keyof CreateUSBankAccount
-    }
-}
-
-const mutationConfig = {
-    [BankAccountType.USBankAccount]: (
-        input: CreateInputMapping[BankAccountType.USBankAccount]
-    ) => ({
-        query: CreateUSBankAccountMutation,
-        variables: { createUSAccountInput: input },
-        response: 'createUSBankAccount',
-    }),
-}
-
-const getCreateMutationConfig = <T extends BankAccountType>(
-    type: T,
-    input: CreateInputMapping[T]
-) => {
-    return mutationConfig[type]?.(input) ?? null
+    [BankAccountType.USBankAccount]: UsBankAccountInput
+    [BankAccountType.CABankAccount]: CaBankAccountInput
 }
 
 export class BankAccountService {
@@ -94,17 +84,34 @@ export class BankAccountService {
     }
 
     public async create<T extends BankAccountType>(type: T, input: CreateInputMapping[T]) {
-        const config = getCreateMutationConfig(type, input)
-        if (!config) throw new Error('Invalid bank account type')
+        const validator = BankAccountDetailsValidation[type] ?? raise('Invalid bank account type')
 
-        const response = await this.client.query<
-            CreateMutationMapping[T]['query'],
-            CreateMutationMapping[T]['variables']
-        >({
-            query: config.query,
-            variables: config.variables,
-        })
+        try {
+            const details = validator.parse(input)
+            const response = await this.client.query<CreateBankAccount, CreateBankAccountVariables>(
+                {
+                    query: CreateBankAccountMutation,
+                    variables: {
+                        createAccountInput: {
+                            accountNumber: input.accountNumber,
+                            name: input.name,
+                            type,
+                            subType: input.subType,
+                            details,
+                            email: input.email ?? null,
+                            ownedByUser: input.ownedByUser ?? null,
+                            holder: input.holder ?? null,
+                        },
+                    },
+                }
+            )
 
-        return response?.[config.response as keyof CreateMutationMapping[T]['query']] ?? null
+            return response?.createBankAccount ?? null
+        } catch (err) {
+            if (err instanceof z.ZodError) {
+                throw new Error(err?.issues?.[0]?.message ?? 'Input validation failure')
+            }
+            throw err
+        }
     }
 }
