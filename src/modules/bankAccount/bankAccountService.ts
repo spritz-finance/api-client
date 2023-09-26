@@ -25,11 +25,11 @@ import { BankAccountDetailsValidation } from './validation'
 
 type BaseBankAccountInput = Omit<BankAccountInput, 'details' | 'type'>
 
-type UsBankAccountInput = BaseBankAccountInput & {
+export type UsBankAccountInput = BaseBankAccountInput & {
     routingNumber: string
 }
 
-type CaBankAccountInput = BaseBankAccountInput & {
+export type CaBankAccountInput = BaseBankAccountInput & {
     transitNumber: string
     institutionNumber: string
 }
