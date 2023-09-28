@@ -40,6 +40,7 @@ A Typescript library for interacting with the Spritz Finance API
   - [Bank Accounts](#bank-accounts)
     - [List user bank accounts](#list-user-bank-accounts)
     - [Add US bank account](#add-us-bank-account)
+    - [Add Canadian bank account](#add-canadian-bank-account)
   - [Bills](#bills)
     - [List user bills](#list-user-bills)
     - [Add US bill account](#add-us-bill-account)
@@ -314,7 +315,40 @@ import { BankAccountType, BankAccountSubType } from '@spritz-finance/api-client'
 const bankAccounts = await client.bankAccount.create(BankAccountType.USBankAccount, {
   accountNumber: '123456789',
   routingNumber: '987654321',
-  email: 'bilbo@shiremail.net',
+  holder: 'Bilbo Baggins',
+  name: 'Precious Savings',
+  ownedByUser: true,
+  subType: BankAccountSubType.Savings,
+})
+```
+
+#### Add Canadian bank account
+
+Currently, Spritz supports the addition of Canadian bank accounts:
+
+The input structure for adding a Canadian bank account is defined as:
+
+```typescript
+// Input arguments for creating a Canadian bank account
+export interface CABankAccountInput {
+  accountNumber: string
+  email?: string
+  holder: string
+  name: string
+  ownedByUser?: boolean | null
+  transitNumber: string
+  institutionNumber: string
+  subType: BankAccountSubType
+}
+```
+
+```typescript
+import { BankAccountType, BankAccountSubType } from '@spritz-finance/api-client'
+
+const bankAccounts = await client.bankAccount.create(BankAccountType.CABankAccount, {
+  accountNumber: '123456789',
+  transitNumber: '12345',
+  institutionNumber: '123',
   holder: 'Bilbo Baggins',
   name: 'Precious Savings',
   ownedByUser: true,
