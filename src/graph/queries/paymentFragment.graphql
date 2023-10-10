@@ -7,4 +7,5 @@ fragment PaymentFragment on Payment {
     feeAmount
     createdAt
     deliveryMethod
+    paymentRequestId
 }

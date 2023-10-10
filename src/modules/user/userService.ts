@@ -9,7 +9,26 @@ interface CreateUserResponse {
     apiKey: string
 }
 
+interface RequestApiKeyResponse {
+    success: boolean
+}
+
+interface RequestApiKeyParams {
+    email: string
+}
+
 interface CreateUserParams {
+    email: string
+}
+
+interface AuthorizeApiKeyResponse {
+    apiKey: string
+    userId: any
+    email: string
+}
+
+interface AuthorizeApiKeyParams {
+    otp: any
     email: string
 }
 
@@ -30,6 +49,24 @@ export class UserService {
 
     public async create(args: CreateUserParams) {
         return this.createUser(args)
+    }
+
+    public async requestApiKey(email: string) {
+        return this.client.request<RequestApiKeyResponse, RequestApiKeyParams>({
+            method: 'post',
+            path: '/users/integration/user/request-key',
+            body: {
+                email,
+            },
+        })
+    }
+
+    public async authorizeApiKeyWithOTP(args: AuthorizeApiKeyParams) {
+        return this.client.request<AuthorizeApiKeyResponse, AuthorizeApiKeyParams>({
+            method: 'post',
+            path: '/users/integration/user/validate-otp',
+            body: args,
+        })
     }
 
     public async getCurrentUser() {

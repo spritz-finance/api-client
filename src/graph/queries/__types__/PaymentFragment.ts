@@ -19,4 +19,5 @@ export interface PaymentFragment {
     feeAmount: number | null
     createdAt: any
     deliveryMethod: PaymentDeliveryMethod | null
+    paymentRequestId: string | null
 }
