@@ -7,6 +7,7 @@ import {
     PayableAccountType,
     BankAccountType,
     BankAccountSubType,
+    PaymentDeliveryMethod,
 } from './../../../types/globalTypes'
 
 // ====================================================
@@ -48,9 +49,10 @@ export interface UserBankAccounts_bankAccounts {
     bankAccountType: BankAccountType
     bankAccountSubType: BankAccountSubType
     holder: string
-    email: string
+    email: string | null
     ownedByUser: boolean
     bankAccountDetails: UserBankAccounts_bankAccounts_bankAccountDetails
+    deliveryMethods: PaymentDeliveryMethod[]
     institution: UserBankAccounts_bankAccounts_institution | null
 }
 

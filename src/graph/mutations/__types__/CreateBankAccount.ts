@@ -59,7 +59,7 @@ export interface CreateBankAccount_createBankAccount {
     bankAccountType: BankAccountType
     bankAccountSubType: BankAccountSubType
     holder: string
-    email: string
+    email: string | null
     ownedByUser: boolean
     bankAccountDetails: CreateBankAccount_createBankAccount_bankAccountDetails
     dataSync: CreateBankAccount_createBankAccount_dataSync | null

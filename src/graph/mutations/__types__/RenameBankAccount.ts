@@ -7,6 +7,7 @@ import {
     PayableAccountType,
     BankAccountType,
     BankAccountSubType,
+    PaymentDeliveryMethod,
 } from './../../../types/globalTypes'
 
 // ====================================================
@@ -52,9 +53,10 @@ export interface RenameBankAccount_renamePayableAccount_BankAccount {
     bankAccountType: BankAccountType
     bankAccountSubType: BankAccountSubType
     holder: string
-    email: string
+    email: string | null
     ownedByUser: boolean
     bankAccountDetails: RenameBankAccount_renamePayableAccount_BankAccount_bankAccountDetails
+    deliveryMethods: PaymentDeliveryMethod[]
     institution: RenameBankAccount_renamePayableAccount_BankAccount_institution | null
 }
 

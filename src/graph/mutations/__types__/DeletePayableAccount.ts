@@ -60,7 +60,7 @@ export interface DeletePayableAccount_deletePayableAccount_BankAccount {
     bankAccountType: BankAccountType
     bankAccountSubType: BankAccountSubType
     holder: string
-    email: string
+    email: string | null
     ownedByUser: boolean
     bankAccountDetails: DeletePayableAccount_deletePayableAccount_BankAccount_bankAccountDetails
 }

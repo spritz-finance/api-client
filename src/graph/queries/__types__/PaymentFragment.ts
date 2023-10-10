@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PaymentStatus } from './../../../types/globalTypes'
+import { PaymentStatus, PaymentDeliveryMethod } from './../../../types/globalTypes'
 
 // ====================================================
 // GraphQL fragment: PaymentFragment
@@ -18,4 +18,5 @@ export interface PaymentFragment {
     amount: number | null
     feeAmount: number | null
     createdAt: any
+    deliveryMethod: PaymentDeliveryMethod | null
 }

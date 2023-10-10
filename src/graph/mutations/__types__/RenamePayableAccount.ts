@@ -60,7 +60,7 @@ export interface RenamePayableAccount_renamePayableAccount_BankAccount {
     bankAccountType: BankAccountType
     bankAccountSubType: BankAccountSubType
     holder: string
-    email: string
+    email: string | null
     ownedByUser: boolean
     bankAccountDetails: RenamePayableAccount_renamePayableAccount_BankAccount_bankAccountDetails
 }

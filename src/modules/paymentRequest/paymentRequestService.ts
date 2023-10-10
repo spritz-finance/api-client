@@ -7,19 +7,16 @@ import CreatePaymentRequestMutation from '../../graph/mutations/createPaymentReq
 import {
     GetSpritzPayParams,
     GetSpritzPayParamsVariables,
-    GetSpritzPayParams_spritzPayParams,
     TransactionPrice,
     TransactionPriceVariables,
 } from '../../graph/queries/__types__'
 import SpritzPayParamsQuery from '../../graph/queries/spritzPayParams.graphql'
 import { SpritzClient } from '../../lib/client'
-import { AccountProvider } from '../../types/globalTypes'
 import { isValidEthereumAddress } from '../../utils/address'
 import { roundCurrency } from '../../utils/roundCurrency'
 import { CreatePaymentRequestInput } from '../types'
 
 type PaymentRequest = CreatePaymentRequest_createDirectPayment
-type Web3PaymentParams = GetSpritzPayParams_spritzPayParams
 
 export class PaymentRequestService {
     private client: SpritzClient
@@ -38,7 +35,6 @@ export class PaymentRequestService {
                 createDirectPaymentInput: {
                     ...input,
                     amount: roundCurrency(input.amount),
-                    provider: AccountProvider.CHECKBOOK,
                 },
             },
         })
