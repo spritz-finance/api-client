@@ -19,6 +19,7 @@ export interface AccountPayments_paymentsForAccount {
     feeAmount: number | null
     createdAt: any
     deliveryMethod: PaymentDeliveryMethod | null
+    paymentRequestId: string | null
 }
 
 export interface AccountPayments {

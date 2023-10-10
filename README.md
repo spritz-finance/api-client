@@ -26,6 +26,7 @@ A Typescript library for interacting with the Spritz Finance API
 - [Usage](#usage)
 - [Creating a user](#creating-a-user-1)
   - [Setting the User API Key](#setting-the-user-api-key)
+- [Reauthorizing a user](#reauthorizing-a-user)
 - [Basic User Data](#basic-user-data)
 - [User Verification](#user-verification)
   - [Overview](#overview)
@@ -136,6 +137,19 @@ client.setApiKey(user.apiKey)
 ```
 
 Now you're ready to issue requests on behalf of the user.
+
+## Reauthorizing a user
+
+There is a scenrio where you may need to get access to a users API key again. This can happen if you are trying to sign in a user that already has a Spritz account, or if you have lost access to their API key. In this case, you can reauthorize the user by providing their email. The process is that we will send the user an OTP code to their email, and then the user must pass that code on to you to confirm that they are allowing you to interact with their account on their behalf.
+
+```typescript
+const { success } = await client.user.requestApiKey('bilbo@shiremail.net')
+
+const { apiKey, userId, email } = await client.user.authorizeApiKeyWithOTP({
+  email: 'bilbo@shiremail.net',
+  otp: '123456',
+})
+```
 
 ## Basic User Data
 
