@@ -8,4 +8,5 @@ fragment PaymentRequestFragment on DirectPayment {
     amountDue
     network
     createdAt
+    deliveryMethod
 }

@@ -20,4 +20,5 @@ export interface PaymentRequestFragment {
     amountDue: number
     network: string
     createdAt: any
+    deliveryMethod: string | null
 }

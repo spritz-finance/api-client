@@ -60,7 +60,7 @@ export interface UserPayableAccounts_payableAccounts_BankAccount {
     bankAccountType: BankAccountType
     bankAccountSubType: BankAccountSubType
     holder: string
-    email: string
+    email: string | null
     ownedByUser: boolean
     bankAccountDetails: UserPayableAccounts_payableAccounts_BankAccount_bankAccountDetails
 }

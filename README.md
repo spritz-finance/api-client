@@ -287,6 +287,7 @@ const bankAccounts = [{
   },
   ownedByUser: true,
   createdAt: "2023-05-03T11:25:02.401Z",
+  deliveryMethods: ['STANDARD', 'INSTANT']
 }]
 ```
 
@@ -405,6 +406,7 @@ const bills = [
       logo: 'https://tinyurl.com/shire-bank-logo',
     },
     createdAt: '2023-05-03T11:25:02.401Z',
+    deliveryMethods: ['STANDARD']
   },
 ]
 ```
@@ -557,6 +559,7 @@ const paymentRequest = await client.paymentRequest.create({
 	amount: 100,
 	accountId: account.id,
 	network: PaymentNetwork.Ethereum,
+  deliveryMethod: 'INSTANT'
 });
 
 // Example response

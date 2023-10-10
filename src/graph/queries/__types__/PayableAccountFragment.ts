@@ -58,7 +58,7 @@ export interface PayableAccountFragment_BankAccount {
     bankAccountType: BankAccountType
     bankAccountSubType: BankAccountSubType
     holder: string
-    email: string
+    email: string | null
     ownedByUser: boolean
     bankAccountDetails: PayableAccountFragment_BankAccount_bankAccountDetails
     dataSync: PayableAccountFragment_BankAccount_dataSync | null

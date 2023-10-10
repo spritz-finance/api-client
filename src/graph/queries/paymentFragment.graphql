@@ -6,4 +6,5 @@ fragment PaymentFragment on Payment {
     amount
     feeAmount
     createdAt
+    deliveryMethod
 }

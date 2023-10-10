@@ -18,6 +18,7 @@ fragment BankAccountFragment on BankAccount {
                 routingNumber
             }
         }
+        deliveryMethods
     }
     institution {
         id

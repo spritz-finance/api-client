@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PaymentStatus } from './../../../types/globalTypes'
+import { PaymentStatus, PaymentDeliveryMethod } from './../../../types/globalTypes'
 
 // ====================================================
 // GraphQL query operation: AccountPayments
@@ -18,6 +18,7 @@ export interface AccountPayments_paymentsForAccount {
     amount: number | null
     feeAmount: number | null
     createdAt: any
+    deliveryMethod: PaymentDeliveryMethod | null
 }
 
 export interface AccountPayments {

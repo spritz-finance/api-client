@@ -20,6 +20,7 @@ export interface CreatePaymentRequest_createDirectPayment {
     amountDue: number
     network: string
     createdAt: any
+    deliveryMethod: string | null
 }
 
 export interface CreatePaymentRequest {
