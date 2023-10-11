@@ -1,0 +1,7 @@
+#import "./paymentFragment.graphql"
+
+query Payment($paymentId: String!) {
+    payment(paymentId: $paymentId) {
+        ...PaymentFragment
+    }
+}
