@@ -20,6 +20,9 @@ export interface AccountPayments_paymentsForAccount {
     createdAt: any
     deliveryMethod: PaymentDeliveryMethod | null
     paymentRequestId: string | null
+    targetCurrency: string | null
+    targetCurrencyAmount: number
+    targetCurrencyRate: number | null
 }
 
 export interface AccountPayments {

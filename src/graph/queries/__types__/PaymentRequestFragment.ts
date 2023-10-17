@@ -21,4 +21,7 @@ export interface PaymentRequestFragment {
     network: string
     createdAt: any
     deliveryMethod: string | null
+    targetCurrency: string | null
+    targetCurrencyAmount: number
+    targetCurrencyRate: number
 }

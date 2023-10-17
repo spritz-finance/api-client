@@ -8,4 +8,7 @@ fragment PaymentFragment on Payment {
     createdAt
     deliveryMethod
     paymentRequestId
+    targetCurrency
+    targetCurrencyAmount
+    targetCurrencyRate
 }

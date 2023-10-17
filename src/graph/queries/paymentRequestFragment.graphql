@@ -9,4 +9,7 @@ fragment PaymentRequestFragment on DirectPayment {
     network
     createdAt
     deliveryMethod
+    targetCurrency
+    targetCurrencyAmount
+    targetCurrencyRate
 }

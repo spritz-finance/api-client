@@ -21,6 +21,9 @@ export interface CreatePaymentRequest_createDirectPayment {
     network: string
     createdAt: any
     deliveryMethod: string | null
+    targetCurrency: string | null
+    targetCurrencyAmount: number
+    targetCurrencyRate: number
 }
 
 export interface CreatePaymentRequest {
