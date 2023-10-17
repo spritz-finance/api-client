@@ -54,7 +54,7 @@ export class UserService {
     public async requestApiKey(email: string) {
         return this.client.request<RequestApiKeyResponse, RequestApiKeyParams>({
             method: 'post',
-            path: '/users/integration/user/request-key',
+            path: '/users/request-key',
             body: {
                 email,
             },
@@ -64,7 +64,7 @@ export class UserService {
     public async authorizeApiKeyWithOTP(args: AuthorizeApiKeyParams) {
         return this.client.request<AuthorizeApiKeyResponse, AuthorizeApiKeyParams>({
             method: 'post',
-            path: '/users/integration/user/validate-otp',
+            path: '/users/validate-key',
             body: args,
         })
     }
