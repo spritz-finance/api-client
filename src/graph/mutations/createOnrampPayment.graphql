@@ -1,4 +1,4 @@
-#import "../queries/OnrampPaymentFragment.graphql"
+#import "../queries/onrampPaymentFragment.graphql"
 
 mutation CreateOnrampPayment($createOnrampPaymentInput: CreateOnrampPaymentInput!) {
     createOnrampPayment(createOnrampPaymentInput: $createOnrampPaymentInput) {

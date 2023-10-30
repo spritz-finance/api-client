@@ -1,4 +1,4 @@
-#import "../queries/OnrampPaymentFragment.graphql"
+#import "./onrampPaymentFragment.graphql"
 
 query OnrampPayments {
     onrampPayments {
