@@ -1,0 +1,7 @@
+#import "../queries/OnrampPaymentFragment.graphql"
+
+query OnrampPayments {
+    onrampPayments {
+        ...OnrampPaymentFragment
+    }
+}

@@ -1,0 +1,21 @@
+fragment OnrampPaymentFragment on OnRampPayment {
+    id
+    amount
+    feeAmount
+    depositInstructions {
+        amount
+        currency
+        bankName
+        bankAddress
+        bankBeneficiaryName
+        bankRoutingNumber
+        bankAccountNumber
+        paymentMethod
+        depositMessage
+    }
+    network
+    token
+    address
+    status
+    createdAt
+}
