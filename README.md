@@ -65,6 +65,9 @@ A Typescript library for interacting with the Spritz Finance API
 - [Payments](#payments)
   - [Retrieve the payment for a payment request](#retrieve-the-payment-for-a-payment-request)
   - [Retrieve all payments for an account](#retrieve-all-payments-for-an-account)
+- [Onramp Payments](#onramp-payments)
+  - [Create an onramp payment](#create-onramp-payment)
+  - [Retrieve all onramp payments for an account](#retrieve-all-onramp-payments-for-an-account)
 - [Webhooks](#webhooks)
   - [Supported webhook events](#supported-webhook-events)
     - [Account Events](#account-events)
@@ -420,7 +423,7 @@ const bills = [
       logo: 'https://tinyurl.com/shire-bank-logo',
     },
     createdAt: '2023-05-03T11:25:02.401Z',
-    deliveryMethods: ['STANDARD']
+    deliveryMethods: ['STANDARD'],
   },
 ]
 ```
@@ -685,6 +688,81 @@ const payments = await client.payment.listForAccount(account.id)
         createdAt: '2022-11-07T10:53:23.998Z',
     },
 ]
+```
+
+## Onramp Payments
+
+Onramp Payments are orders to buy crypto stablecoins with a bank transfer. Upon creating an onramp payment, you will receive deposit instructions to fulfill that order. When the bank transfer has been received and disbursed, the status of that onramp payment will change.
+
+### Create onramp payment
+
+```typescript
+const onrampPayment = await client.onrampPayment.create({
+  token: 'USDC' // Supported: currently only 'USDC'
+  network: 'ethereum' // supported: 'ethereum', 'polygon', 'avalanche'
+  amount: 100, // How much token to purchase (100 USDC)
+  address: '0xbB76483e33e01315438D8F6CF1Aee9C9b85f433b', // Wallet address to disburse tokens to
+  paymentMethod: 'ACH' // 'WIRE' or 'ACH'
+});
+
+// Example response
+
+{
+  "id": "653fab35ad263e5ae8b0e605",
+  "amount": 100,
+  "feeAmount": 1.5,
+  "depositInstructions": {
+    "amount": 101.5,
+    "currency": "USD",
+    "bankName": "Bank of Nowhere",
+    "bankAddress": "1800 North Pole St., Orlando, FL 32801",
+    "bankBeneficiaryName": "Bridge Ventures Inc",
+    "bankRoutingNumber": "123456789",
+    "bankAccountNumber": "11223344556677",
+    "paymentMethod": "WIRE",
+    "depositMessage": "BVI72D90851F051F4189",
+  },
+  "network": "ethereum",
+  "token": "USDC",
+  "address": "0xbb76483e33e01315438d8f6cf1aee9c9b85f433b",
+  "status": "AWAITING_FUNDS",
+  "createdAt": "2023-10-30T13:10:13.521Z",
+}
+
+
+```
+
+### Retrieve all onramp payments for an account
+
+```typescript
+const payments = await client.onrampPayment.list()
+
+// Example response
+
+[
+  {
+    "id": "653fab35ad263e5ae8b0e605",
+    "amount": 100,
+    "feeAmount": 1.5,
+    "depositInstructions": {
+      "amount": 101.5,
+      "currency": "USD",
+      "bankName": "Bank of Nowhere",
+      "bankAddress": "1800 North Pole St., Orlando, FL 32801",
+      "bankBeneficiaryName": "Bridge Ventures Inc",
+      "bankRoutingNumber": "123456789",
+      "bankAccountNumber": "11223344556677",
+      "paymentMethod": "WIRE",
+      "depositMessage": "BVI72D90851F051F4189"
+    },
+    "network": "ethereum",
+    "token": "USDC",
+    "address": "0xbb76483e33e01315438d8f6cf1aee9c9b85f433b",
+    "status": "AWAITING_FUNDS",
+    "createdAt": "2023-10-30T13:10:13.521Z"
+  }
+]
+
 ```
 
 ## Webhooks

@@ -1,0 +1,7 @@
+#import "../queries/OnrampPaymentFragment.graphql"
+
+mutation CreateOnrampPayment($createOnrampPaymentInput: CreateOnrampPaymentInput!) {
+    createOnrampPayment(createOnrampPaymentInput: $createOnrampPaymentInput) {
+        ...OnrampPaymentFragment
+    }
+}
