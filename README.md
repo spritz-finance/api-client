@@ -49,6 +49,7 @@ A Typescript library for interacting with the Spritz Finance API
     - [Fetch a users virtual card](#fetch-a-users-virtual-card)
     - [Create a US virtual debit card](#create-a-us-virtual-debit-card)
     - [Displaying sensitive card details](#displaying-sensitive-card-details)
+  - [Address Book](#address-book)
 - [Renaming accounts](#renaming-accounts)
   - [Rename a bank account](#rename-a-bank-account)
   - [Rename a bill](#rename-a-bill)
@@ -497,6 +498,32 @@ We currently support and maintain the following packages for the card rendering 
 
 - [React Library](https://www.npmjs.com/package/@spritz-finance/react-secure-elements)
 - [React Native Library](https://www.npmjs.com/package/@spritz-finance/react-native-secure-elements)
+
+## Address Book
+
+Each account created in Spritz is allocated a unique on-chain payment address for each network. Tokens transferred to this address will be picked up and credited to the account. A list of the addresses, one per network, is available under the `paymentAddresses` property. Refer to the Spritz UI for which tokens are accepted for these addresses -- generally, we accept at least USDC and USDT on all networks which we integrate with.
+
+```typescript
+[
+  {
+    id: '62d17d3b377dab6c1342136e',
+    name: 'Precious Credit Card',
+    type: 'Bill',
+    billType: 'CreditCard',
+    ...
+    paymentAddresses: [
+      {
+        network: 'ethereum',
+        address: '0xc0ffee254729296a45a3885639AC7E10F9d54979',
+      },
+      {
+        network: 'polygon',
+        address: '0xc0ffee254729296a45a3885639AC7E10F9d54979',
+      },
+    ],
+  },
+]
+```
 
 ## Renaming accounts
 
