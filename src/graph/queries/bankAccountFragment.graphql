@@ -27,4 +27,8 @@ fragment BankAccountFragment on BankAccount {
         country
         currency
     }
+    paymentAddresses {
+        network
+        address
+    }
 }

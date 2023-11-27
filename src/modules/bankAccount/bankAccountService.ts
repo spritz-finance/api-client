@@ -34,9 +34,17 @@ export type CaBankAccountInput = BaseBankAccountInput & {
     institutionNumber: string
 }
 
+export type IbanAccountInput = BaseBankAccountInput
+
+export type UKBankAccountInput = BaseBankAccountInput & {
+    sortCode: string
+}
+
 type CreateInputMapping = {
     [BankAccountType.USBankAccount]: UsBankAccountInput
     [BankAccountType.CABankAccount]: CaBankAccountInput
+    [BankAccountType.IbanAccount]: IbanAccountInput
+    [BankAccountType.UKBankAccount]: UKBankAccountInput
 }
 
 export class BankAccountService {

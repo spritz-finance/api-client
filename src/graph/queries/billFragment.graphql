@@ -29,4 +29,8 @@ fragment BillFragment on Bill {
         name
         logo
     }
+    paymentAddresses {
+        network
+        address
+    }
 }

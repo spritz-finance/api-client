@@ -8,22 +8,22 @@
 // ====================================================
 
 export interface GetSpritzPayParams_spritzPayParams {
-    __typename: 'PaymentParams'
-    contractAddress: string
-    method: string
-    calldata: string
-    value: string | null
-    requiredTokenInput: string
-    suggestedGasLimit: string | null
+  __typename: "PaymentParams";
+  contractAddress: string;
+  method: string;
+  calldata: string;
+  value: string | null;
+  requiredTokenInput: string;
+  suggestedGasLimit: string | null;
 }
 
 export interface GetSpritzPayParams {
-    spritzPayParams: GetSpritzPayParams_spritzPayParams
+  spritzPayParams: GetSpritzPayParams_spritzPayParams;
 }
 
 export interface GetSpritzPayParamsVariables {
-    tokenAddress: string
-    amount: number
-    reference: string
-    network: string
+  tokenAddress: string;
+  amount: number;
+  reference: string;
+  network: string;
 }

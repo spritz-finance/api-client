@@ -8,9 +8,9 @@
 // ====================================================
 
 export interface TransactionPrice {
-    transactionPrice: number
+  transactionPrice: number;
 }
 
 export interface TransactionPriceVariables {
-    amount: number
+  amount: number;
 }

@@ -8,10 +8,10 @@
 // ====================================================
 
 export interface PayableAccountInstitutionFragment {
-    __typename: 'BankAccountInstitution' | 'BillInstitution'
-    id: string
-    country: string
-    currency: string
-    name: string
-    logo: string | null
+  __typename: "BankAccountInstitution" | "BillInstitution";
+  id: string;
+  country: string;
+  currency: string;
+  name: string;
+  logo: string | null;
 }

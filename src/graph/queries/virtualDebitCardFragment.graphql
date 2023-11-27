@@ -23,4 +23,8 @@ fragment VirtualDebitCardFragment on VirtualCard {
             countryCode
         }
     }
+    paymentAddresses {
+        network
+        address
+    }
 }
