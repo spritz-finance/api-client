@@ -40,6 +40,7 @@ export default [
         RequestInit: 'readonly',
         RequestInfo: 'readonly',
         AbortController: 'readonly',
+        AbortSignal: 'readonly',
         TextEncoder: 'readonly',
         TextDecoder: 'readonly',
         Headers: 'readonly',

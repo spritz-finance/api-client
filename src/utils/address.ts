@@ -10,16 +10,16 @@ export function isValidEthereumAddress(tokenAddress: string): boolean {
     if (!/^0[xX][0-9a-fA-F]{40}$/.test(tokenAddress)) {
         return false
     }
-    
+
     // Normalize the address to have lowercase 0x prefix
     const normalizedAddress = '0x' + tokenAddress.slice(2)
     const addressPart = normalizedAddress.slice(2)
-    
+
     // If it's all lowercase or all uppercase, it's valid (no checksum)
     if (addressPart === addressPart.toLowerCase() || addressPart === addressPart.toUpperCase()) {
         return true
     }
-    
+
     // For mixed case, use viem's strict validation
     return isAddress(normalizedAddress)
 }

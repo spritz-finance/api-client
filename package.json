@@ -49,6 +49,7 @@
         "eslint-plugin-prettier": "5.5.1",
         "graphql": "15.8.0",
         "graphql-tag": "^2.12.6",
+        "msw": "^2.10.4",
         "prettier": "3.6.2",
         "rimraf": "^4.4.1",
         "rollup": "4.45.1",
@@ -58,6 +59,7 @@
         "tsx": "^3.12.7",
         "typescript": "5.8.3",
         "viem": "^2.31.7",
+        "vite-plugin-graphql-loader": "^4.0.4",
         "vitest": "^3.2.4",
         "zod": "4.0.5"
     },

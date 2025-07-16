@@ -5,6 +5,7 @@ import { Environment } from '../env'
 import { validatePositiveInteger } from '../utils/validatePositiveInteger'
 import { APIConnectionError, APIConnectionTimeoutError, APIError, SpritzApiError } from './error'
 import { gracefulParseJSON } from '../utils/json'
+import { validateGraphQLQuery, sanitizeGraphQLVariables } from '../utils/graphqlSecurity'
 
 interface QueryParams<V = any> {
     query: DocumentNode
@@ -65,9 +66,15 @@ export class SpritzClient {
     }
 
     async query<Q = any, V = any>({ query, variables }: QueryParams<V>) {
+        // Validate GraphQL query for security
+        validateGraphQLQuery(query)
+
+        // Sanitize variables to prevent injection attacks
+        const sanitizedVariables = sanitizeGraphQLVariables(variables)
+
         return this.sendQuery<V>({
             query,
-            variables,
+            variables: sanitizedVariables,
         })
             .then((res) => parseAPIResponse<GraphQLResponseData<Q>>(res))
             .then(({ response, headers }) => {
@@ -175,10 +182,10 @@ export class SpritzClient {
         controller: AbortController
     ): Promise<Response> {
         const { signal, ...options } = req || {}
-        
+
         // Use AbortSignal.any to combine signals (Node 20+)
         const timeoutSignal = AbortSignal.timeout(timeoutMs)
-        const combinedSignal = signal 
+        const combinedSignal = signal
             ? AbortSignal.any([signal, timeoutSignal, controller.signal])
             : AbortSignal.any([timeoutSignal, controller.signal])
 
@@ -196,12 +203,15 @@ export class SpritzClient {
         const contentLength = this.calculateContentLength(body)
         const timeout = this.timeout
 
-        const reqHeaders: Record<string, string> = {
+        const baseHeaders = {
             ...(contentLength && { 'Content-Length': contentLength }),
             ...this.defaultHeaders(),
         }
 
-        Object.keys(reqHeaders).forEach((key) => reqHeaders[key] === null && delete reqHeaders[key])
+        // Safely filter out null values to prevent prototype pollution
+        const reqHeaders: Record<string, string> = Object.fromEntries(
+            Object.entries(baseHeaders).filter(([_, value]) => value !== null)
+        )
 
         const req: RequestInit = {
             method: 'POST',
@@ -225,12 +235,15 @@ export class SpritzClient {
         const contentLength = this.calculateContentLength(body)
         const timeout = this.timeout
 
-        const reqHeaders: Record<string, string> = {
+        const baseHeaders = {
             ...(contentLength && { 'Content-Length': contentLength }),
             ...this.defaultHeaders(),
         }
 
-        Object.keys(reqHeaders).forEach((key) => reqHeaders[key] === null && delete reqHeaders[key])
+        // Safely filter out null values to prevent prototype pollution
+        const reqHeaders: Record<string, string> = Object.fromEntries(
+            Object.entries(baseHeaders).filter(([_, value]) => value !== null)
+        )
 
         const req: RequestInit = {
             method,

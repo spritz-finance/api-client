@@ -7,3 +7,4 @@ src/.DS_Store
 .idea
 .env
 demo.ts
+coverage/
