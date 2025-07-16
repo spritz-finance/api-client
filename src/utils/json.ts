@@ -1,7 +1,7 @@
 export const gracefulParseJSON = (text: string) => {
     try {
         return JSON.parse(text)
-    } catch (err) {
+    } catch {
         return undefined
     }
 }

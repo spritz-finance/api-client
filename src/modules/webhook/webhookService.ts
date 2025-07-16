@@ -1,15 +1,13 @@
 import { SpritzClient } from '../../lib/client'
 
-const EVENTS = [
-    'account.created',
-    'account.updated',
-    'account.deleted',
-    'payment.created',
-    'payment.updated',
-    'payment.completed',
-    'payment.refunded',
-] as const
-export type WebhookEvent = (typeof EVENTS)[number]
+export type WebhookEvent =
+    | 'account.created'
+    | 'account.updated'
+    | 'account.deleted'
+    | 'payment.created'
+    | 'payment.updated'
+    | 'payment.completed'
+    | 'payment.refunded'
 
 export type IntegratorWebhook = {
     id: string

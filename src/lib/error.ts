@@ -36,8 +36,8 @@ export class APIError extends Error {
                 ? error.message
                 : JSON.stringify(error.message)
             : error
-            ? JSON.stringify(error)
-            : message || 'Unknown error occurred'
+              ? JSON.stringify(error)
+              : message || 'Unknown error occurred'
     }
 
     static generate(

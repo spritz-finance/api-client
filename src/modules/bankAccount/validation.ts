@@ -24,7 +24,10 @@ const IbanAccountDetailsValidation = z.object({
         .string()
         .min(15, { message: 'IBAN must be at least 15 characters long' })
         .max(34, { message: 'IBAN must be at most 34 characters long' })
-        .regex(/^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/, 'IBAN must start with 2 letters, followed by 2 digits, then alphanumeric characters'),
+        .regex(
+            /^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/,
+            'IBAN must start with 2 letters, followed by 2 digits, then alphanumeric characters'
+        ),
 })
 
 const UKBankAccountDetailsValidation = z.object({

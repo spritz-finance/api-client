@@ -20,11 +20,11 @@ const checkAddressCheckSum = (data: string): boolean => {
         // the nth letter should be uppercase if the nth digit of casemap is 1
         const hashChar = addressHash[i]
         const addressChar = address[i]
-        
+
         if (!hashChar || !addressChar) {
             return false
         }
-        
+
         if (
             (parseInt(hashChar, 16) > 7 && addressChar.toUpperCase() !== addressChar) ||
             (parseInt(hashChar, 16) <= 7 && addressChar.toLowerCase() !== addressChar)
