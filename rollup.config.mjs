@@ -21,7 +21,7 @@ export default [
         ],
         output: [
             {
-                file: `dist/spritz-api-client.js`,
+                file: `dist/spritz-api-client.cjs`,
                 format: 'cjs',
             },
             {
