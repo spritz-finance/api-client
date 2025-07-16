@@ -16,8 +16,7 @@ export default [
                     include: [
                         'graphql',
                         'abort-controller',
-                        'ethereum-cryptography/keccak',
-                        'ethereum-cryptography/utils',
+                        'viem',
                     ],
                 },
                 minify: true,
@@ -34,7 +33,7 @@ export default [
                 format: 'es',
             },
         ],
-        external: ['cross-fetch'],
+        external: ['cross-fetch', 'zod'], // Keep cross-fetch and zod external since they're in dependencies
     }),
     bundle({
         plugins: [dts()],
