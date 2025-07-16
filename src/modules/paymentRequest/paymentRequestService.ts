@@ -4,12 +4,7 @@ import {
     CreatePaymentRequest_createDirectPayment,
 } from '../../graph/mutations/__types__/CreatePaymentRequest'
 import CreatePaymentRequestMutation from '../../graph/mutations/createPaymentRequest.graphql'
-import {
-    GetSpritzPayParams,
-    GetSpritzPayParamsVariables,
-    TransactionPrice,
-    TransactionPriceVariables,
-} from '../../graph/queries/__types__'
+import { GetSpritzPayParams, GetSpritzPayParamsVariables } from '../../graph/queries/__types__'
 import SpritzPayParamsQuery from '../../graph/queries/spritzPayParams.graphql'
 import { SpritzClient } from '../../lib/client'
 import { isValidEthereumAddress } from '../../utils/address'
@@ -42,16 +37,16 @@ export class PaymentRequestService {
         return response?.createDirectPayment
     }
 
-    public async transactionPrice(paymentAmount: number) {
-        const response = await this.client.query<TransactionPrice, TransactionPriceVariables>({
-            query: CreatePaymentRequestMutation,
-            variables: {
-                amount: roundCurrency(paymentAmount),
-            },
-        })
+    // public async transactionPrice(paymentAmount: number) {
+    //     const response = await this.client.query<TransactionPrice, TransactionPriceVariables>({
+    //         query: CreatePaymentRequestMutation,
+    //         variables: {
+    //             amount: roundCurrency(paymentAmount),
+    //         },
+    //     })
 
-        return response?.transactionPrice ?? 0
-    }
+    //     return response?.transactionPrice ?? 0
+    // }
 
     public async getWeb3PaymentParams(input: {
         paymentRequest: PaymentRequest

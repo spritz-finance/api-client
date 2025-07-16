@@ -8,18 +8,18 @@
 // ====================================================
 
 export interface CurrentUser_me {
-  __typename: "User";
-  id: string;
-  sub: string;
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  picture: string | null;
-  phone: string | null;
-  createdAt: any;
-  timezone: string;
+    __typename: 'User'
+    id: string
+    sub: string | null
+    email: string | null
+    firstName: string | null
+    lastName: string | null
+    picture: string | null
+    phone: string | null
+    createdAt: any
+    timezone: string | null
 }
 
 export interface CurrentUser {
-  me: CurrentUser_me;
+    me: CurrentUser_me
 }
