@@ -6,3 +6,4 @@ src/.DS_Store
 */**/.DS_STORE
 .idea
 .env
+demo.ts
