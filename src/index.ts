@@ -1,4 +1,5 @@
 export { SpritzApiClient } from './spritzApiClient'
+export type { ClientOptions } from './spritzApiClient'
 export * from './env'
 export type {
     CreateDirectPaymentInput,

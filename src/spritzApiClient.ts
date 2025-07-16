@@ -80,8 +80,8 @@ export class SpritzApiClient {
 
     public static initialize({
         environment = Environment.Staging,
-        apiKey = undefined,
-        integrationKey = undefined,
+        apiKey,
+        integrationKey,
         dangerouslyAllowBrowser = false,
     }: ClientOptions) {
         const client = new SpritzApiClient(
