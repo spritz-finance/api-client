@@ -60,11 +60,13 @@
         "vitest": "^3.2.4"
     },
     "dependencies": {
-        "cross-fetch": "4.1.0",
         "graphql": "15.8.0",
         "zod": "4.0.5"
     },
     "resolutions": {
         "graphql": "15.8.0"
+    },
+    "engines": {
+        "node": ">=20.0.0"
     }
 }

@@ -1,4 +1,3 @@
-import fetch from 'cross-fetch'
 import { DocumentNode, OperationDefinitionNode, print } from 'graphql'
 import { castToError, Headers } from './util'
 import { config } from '../config'
@@ -176,13 +175,14 @@ export class SpritzClient {
         controller: AbortController
     ): Promise<Response> {
         const { signal, ...options } = req || {}
-        if (signal) signal.addEventListener('abort', () => controller.abort())
+        
+        // Use AbortSignal.any to combine signals (Node 20+)
+        const timeoutSignal = AbortSignal.timeout(timeoutMs)
+        const combinedSignal = signal 
+            ? AbortSignal.any([signal, timeoutSignal, controller.signal])
+            : AbortSignal.any([timeoutSignal, controller.signal])
 
-        const timeout = setTimeout(() => controller.abort(), timeoutMs)
-
-        return fetch(url, { ...options }).finally(() => {
-            clearTimeout(timeout)
-        })
+        return fetch(url, { ...options, signal: combinedSignal })
     }
 
     private buildGraphRequest<V = any>({ query, variables }: QueryParams<V>) {
