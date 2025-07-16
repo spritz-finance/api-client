@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
         "lib": ["ESNext", "DOM", "DOM.Iterable", "ScriptHost", "ES2017.Object", "ES2017.String"],
+        "types": ["vitest/globals"],
         "outDir": "dist",
         "rootDir": "src",
         "target": "esnext",
