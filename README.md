@@ -18,44 +18,87 @@ A Typescript library for interacting with the Spritz Finance API
  yarn add @spritz-finance/api-client
 ```
 
+## Quick Start
+
+Get started with Spritz in minutes:
+
+```typescript
+import { 
+  SpritzApiClient, 
+  Environment, 
+  PaymentNetwork,
+  BankAccountType,
+  BankAccountSubType 
+} from '@spritz-finance/api-client'
+
+// Initialize the client with your integration key
+const client = SpritzApiClient.initialize({
+  environment: Environment.Staging,
+  integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
+})
+
+// Create a user
+const user = await client.user.create({
+  email: 'user@example.com',
+})
+
+// Set the user's API key
+client.setApiKey(user.apiKey)
+
+// Add a bank account
+const bankAccount = await client.bankAccount.create(BankAccountType.USBankAccount, {
+  accountNumber: '123456789',
+  routingNumber: '987654321',
+  holder: 'John Doe',
+  name: 'My Checking Account',
+  ownedByUser: true,
+  subType: BankAccountSubType.Checking,
+})
+
+// Create a payment request
+const paymentRequest = await client.paymentRequest.create({
+  amount: 100,
+  accountId: bankAccount.id,
+  network: PaymentNetwork.Ethereum,
+})
+
+// Get transaction data for blockchain payment
+const transactionData = await client.paymentRequest.getWeb3PaymentParams({
+  paymentRequest,
+  paymentTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC on mainnet
+})
+
+// Use transactionData to execute blockchain transaction in your app
+```
+
 ## Table of contents
 
-- [Interacting with the Spritz API](#interacting-with-the-spritz-api)
+- [Quick Start](#quick-start)
+- [Installation](#installation)
+- [API Overview](#api-overview)
   - [Creating a user](#creating-a-user)
-  - [Capabilities of the API Key:](#capabilities-of-the-api-key-)
+  - [Capabilities of the API Key](#capabilities-of-the-api-key)
 - [Usage](#usage)
-- [Creating a user](#creating-a-user-1)
+- [User Management](#user-management)
+  - [Creating a user](#creating-a-user-1)
   - [Setting the User API Key](#setting-the-user-api-key)
-- [Reauthorizing a user](#reauthorizing-a-user)
-- [Basic User Data](#basic-user-data)
-- [User Verification](#user-verification)
-  - [Overview](#overview)
-  - [Process](#process)
-  - [How to Present Verification Flow to the User](#how-to-present-verification-flow-to-the-user)
-- [Basic payment flow](#basic-payment-flow)
+  - [Reauthorizing a user](#reauthorizing-a-user)
+  - [Basic User Data](#basic-user-data)
+  - [User Verification](#user-verification)
+- [Payment Flow](#payment-flow)
+  - [Basic payment flow](#basic-payment-flow)
   - [Note on Issuing the Blockchain Transaction](#note-on-issuing-the-blockchain-transaction)
   - [Example](#example)
 - [Accounts](#accounts)
   - [Account Types](#account-types)
   - [Commonalities & Differences](#commonalities---differences)
   - [Bank Accounts](#bank-accounts)
-    - [List user bank accounts](#list-user-bank-accounts)
-    - [Add US bank account](#add-us-bank-account)
-    - [Add Canadian bank account](#add-canadian-bank-account)
   - [Bills](#bills)
-    - [List user bills](#list-user-bills)
-    - [Add US bill account](#add-us-bill-account)
   - [Virtual Card](#virtual-card)
-    - [Fetch a users virtual card](#fetch-a-users-virtual-card)
-    - [Create a US virtual debit card](#create-a-us-virtual-debit-card)
-    - [Displaying sensitive card details](#displaying-sensitive-card-details)
   - [Address Book](#address-book)
-- [Renaming accounts](#renaming-accounts)
-  - [Rename a bank account](#rename-a-bank-account)
-  - [Rename a bill](#rename-a-bill)
-- [Deleting accounts](#deleting-accounts)
-  - [Delete a bank account](#delete-a-bank-account)
-  - [Delete a bill](#delete-a-bill)
+- [Account Management](#account-management)
+  - [Renaming accounts](#renaming-accounts)
+  - [Deleting accounts](#deleting-accounts)
 - [Bill Institutions](#bill-institutions)
   - [Fetching popular bill institutions](#fetching-popular-bill-institutions)
   - [Searching for bill institutions by name](#searching-for-bill-institutions-by-name)
@@ -71,11 +114,9 @@ A Typescript library for interacting with the Spritz Finance API
   - [Retrieve all onramp payments for an account](#retrieve-all-onramp-payments-for-an-account)
 - [Webhooks](#webhooks)
   - [Supported webhook events](#supported-webhook-events)
-    - [Account Events](#account-events)
-    - [Payment Events](#payment-events)
   - [Setting up webhooks](#setting-up-webhooks)
 
-## Interacting with the Spritz API
+## API Overview
 
 **Purpose**: As an integrator, this guide will assist you in creating users and performing user-specific operations on the Spritz platform using the provided API key.
 
@@ -86,7 +127,7 @@ When you create a user using your integration key:
 - You will receive an `API key` specific to that user.
 - This enables you to interact with the Spritz platform on the user's behalf.
 
-### Capabilities of the API Key:
+### Capabilities of the API Key
 
 Using the user-specific API key, you can:
 
@@ -115,7 +156,9 @@ const client = SpritzApiClient.initialize({
 })
 ```
 
-## Creating a user
+## User Management
+
+### Creating a user
 
 To create a new Spritz user, all you need is the user's email address. Note that trying to create a user with an email that already exists in the Spritz platform will throw an error.
 
@@ -142,7 +185,7 @@ client.setApiKey(user.apiKey)
 
 Now you're ready to issue requests on behalf of the user.
 
-## Reauthorizing a user
+### Reauthorizing a user
 
 There is a scenrio where you may need to get access to a users API key again. This can happen if you are trying to sign in a user that already has a Spritz account, or if you have lost access to their API key. In this case, you can reauthorize the user by providing their email. The process is that we will send the user an OTP code to their email, and then the user must pass that code on to you to confirm that they are allowing you to interact with their account on their behalf.
 
@@ -155,7 +198,7 @@ const { apiKey, userId, email } = await client.user.authorizeApiKeyWithOTP({
 })
 ```
 
-## Basic User Data
+### Basic User Data
 
 Use this to fetch the user's basic data
 
@@ -163,7 +206,7 @@ Use this to fetch the user's basic data
 const userData = await client.user.getCurrentUser()
 ```
 
-## User Verification
+### User Verification
 
 **Purpose**: To ensure users are properly identified before interacting with the Spritz platform.
 
@@ -193,7 +236,9 @@ Here are some options on how you can present the `verificationUrl` to the user:
 const verificationData = await client.user.getUserVerification()
 ```
 
-## Basic payment flow
+## Payment Flow
+
+### Basic payment flow
 
 Execute a payment in a few simple steps:
 
@@ -525,9 +570,11 @@ Each account created in Spritz is allocated a unique on-chain payment address fo
 ]
 ```
 
-## Renaming accounts
+## Account Management
 
-### Rename a bank account
+### Renaming accounts
+
+#### Rename a bank account
 
 You can conveniently change the display name of a bank account using the following endpoint. The first argument specifies the ID of the bank account, while the second argument represents the desired new name for the account.
 
@@ -535,7 +582,7 @@ You can conveniently change the display name of a bank account using the followi
 const updateAccount = await client.bankAccount.rename('62d17d3b377dab6c1342136e', 'My new account')
 ```
 
-### Rename a bill
+#### Rename a bill
 
 You can conveniently change the display name of a bill using the following endpoint. The first argument specifies the ID of the bill, while the second argument represents the desired new name for the account.
 
@@ -543,9 +590,9 @@ You can conveniently change the display name of a bill using the following endpo
 const updateAccount = await client.bill.rename('62d17d3b377dab6c1342136e', 'My first credit card')
 ```
 
-## Deleting accounts
+### Deleting accounts
 
-### Delete a bank account
+#### Delete a bank account
 
 To remove a bank account from a user's account, you can use the following endpoint. You only need to specify the ID of the bank account that you want to delete as an argument.
 
@@ -553,7 +600,7 @@ To remove a bank account from a user's account, you can use the following endpoi
 await client.bankAccount.delete('62d17d3b377dab6c1342136e')
 ```
 
-### Delete a bill
+#### Delete a bill
 
 To remove a bill from a user's account, you can use the following endpoint. You only need to specify the ID of the bill that you want to delete as an argument.
 
