@@ -1,6 +1,6 @@
+import graphql from '@rollup/plugin-graphql'
 import dts from 'rollup-plugin-dts'
 import esbuild from 'rollup-plugin-esbuild'
-import graphql from '@rollup/plugin-graphql'
 
 const bundle = (config) => ({
     ...config,
@@ -13,11 +13,7 @@ export default [
             esbuild({
                 target: 'esnext',
                 optimizeDeps: {
-                    include: [
-                        'graphql',
-                        'abort-controller',
-                        'viem',
-                    ],
+                    include: ['graphql', 'viem', 'zod'],
                 },
                 minify: true,
             }),
@@ -33,7 +29,7 @@ export default [
                 format: 'es',
             },
         ],
-        external: ['cross-fetch', 'zod'], // Keep cross-fetch and zod external since they're in dependencies
+        external: [],
     }),
     bundle({
         plugins: [dts()],

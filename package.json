@@ -47,6 +47,7 @@
         "eslint": "9.31.0",
         "eslint-config-prettier": "10.1.5",
         "eslint-plugin-prettier": "5.5.1",
+        "graphql": "15.8.0",
         "graphql-tag": "^2.12.6",
         "prettier": "3.6.2",
         "rimraf": "^4.4.1",
@@ -57,14 +58,14 @@
         "tsx": "^3.12.7",
         "typescript": "5.8.3",
         "viem": "^2.31.7",
-        "vitest": "^3.2.4"
-    },
-    "dependencies": {
-        "graphql": "15.8.0",
+        "vitest": "^3.2.4",
         "zod": "4.0.5"
     },
+    "dependencies": {},
     "resolutions": {
-        "graphql": "15.8.0"
+        "graphql": "15.8.0",
+        "@apollo/federation": "0.38.1",
+        "vite": "^6.0.0"
     },
     "engines": {
         "node": ">=20.0.0"
