@@ -6,20 +6,10 @@
 import { ModuleStatus } from './../../../types/globalTypes'
 
 // ====================================================
-// GraphQL query operation: CurrentUser
+// GraphQL mutation operation: RetryFailedVerification
 // ====================================================
 
-export interface CurrentUser_me {
-    __typename: 'User'
-    id: string
-    email: string | null
-    firstName: string | null
-    lastName: string | null
-    createdAt: any
-    timezone: string | null
-}
-
-export interface CurrentUser_verification_identity {
+export interface RetryFailedVerification_retryFailedVerification_identity {
     __typename: 'IdentityModule'
     canRetry: boolean
     status: ModuleStatus
@@ -27,13 +17,12 @@ export interface CurrentUser_verification_identity {
     verificationUrl: string | null
 }
 
-export interface CurrentUser_verification {
+export interface RetryFailedVerification_retryFailedVerification {
     __typename: 'Verification'
     userId: any
-    identity: CurrentUser_verification_identity
+    identity: RetryFailedVerification_retryFailedVerification_identity
 }
 
-export interface CurrentUser {
-    me: CurrentUser_me
-    verification: CurrentUser_verification | null
+export interface RetryFailedVerification {
+    retryFailedVerification: RetryFailedVerification_retryFailedVerification
 }

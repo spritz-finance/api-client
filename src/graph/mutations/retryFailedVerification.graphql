@@ -1,0 +1,7 @@
+#import "../queries/verificationFragment.graphql"
+
+mutation RetryFailedVerification {
+    retryFailedVerification {
+        ...VerificationFragment
+    }
+}

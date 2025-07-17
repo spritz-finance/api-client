@@ -10,12 +10,9 @@
 export interface UserFragment {
     __typename: 'User'
     id: string
-    sub: string | null
     email: string | null
     firstName: string | null
     lastName: string | null
-    picture: string | null
-    phone: string | null
     createdAt: any
     timezone: string | null
 }

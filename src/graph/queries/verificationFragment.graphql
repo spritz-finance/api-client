@@ -1,0 +1,9 @@
+fragment VerificationFragment on Verification {
+    userId
+    identity {
+        canRetry
+        status
+        country
+        verificationUrl
+    }
+}

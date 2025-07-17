@@ -1,7 +1,9 @@
-import { CurrentUser, UserVerification } from '../../graph/queries/__types__'
+import { RetryFailedVerification } from '../../graph/mutations/__types__/RetryFailedVerification'
+import RetryFailedVerificationQuery from '../../graph/mutations/retryFailedVerification.graphql'
+import { CurrentUser } from '../../graph/queries/__types__'
 import CurrentUserQuery from '../../graph/queries/currentUser.graphql'
-import UserVerificationQuery from '../../graph/queries/verification.graphql'
 import { SpritzClient } from '../../lib/client'
+import { transformUserResponse } from './transform'
 
 interface CreateUserResponse {
     userId: string
@@ -19,6 +21,7 @@ interface RequestApiKeyParams {
 
 interface CreateUserParams {
     email: string
+    timezone?: string | null
 }
 
 interface AuthorizeApiKeyResponse {
@@ -73,14 +76,13 @@ export class UserService {
         const response = await this.client.query<CurrentUser>({
             query: CurrentUserQuery,
         })
-
-        return response?.me ?? null
+        return transformUserResponse(response)
     }
 
-    public async getUserVerification() {
-        const response = await this.client.query<UserVerification>({
-            query: UserVerificationQuery,
+    public async retryFailedVerification() {
+        await this.client.query<RetryFailedVerification>({
+            query: RetryFailedVerificationQuery,
         })
-        return response?.verification ?? null
+        return this.getCurrentUser()
     }
 }

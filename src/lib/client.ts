@@ -70,11 +70,11 @@ export class SpritzClient {
         validateGraphQLQuery(query)
 
         // Sanitize variables to prevent injection attacks
-        const sanitizedVariables = sanitizeGraphQLVariables(variables)
+        const sanitizedVariables = sanitizeGraphQLVariables(variables as Record<string, any>)
 
         return this.sendQuery<V>({
             query,
-            variables: sanitizedVariables,
+            variables: sanitizedVariables as V,
         })
             .then((res) => parseAPIResponse<GraphQLResponseData<Q>>(res))
             .then(({ response, headers }) => {

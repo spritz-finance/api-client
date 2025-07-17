@@ -216,12 +216,13 @@ All users must undergo basic identity verification before they can engage with t
 
 ### Process
 
-1. **User Creation**: Upon the creation of a new user, their default verification status will be set to `INITIALIZED`.
+1. **User Creation**: Upon the creation of a new user, their default verification status will be set to `NotStarted`.
 
-2. **Checking Verification Status**: Use the `getUserVerification` method to retrieve the current verification status of a user.
-3. **Verification Transition**: Once a user completes the identity verification process, their status will change from `INITIALIZED` to `ACTIVE`. Only then can the user fully interact with the platform.
+2. **Checking Verification Status**: The user's verification data is included in the `getCurrentUser` response, including verification status, verification URL, verified country, and retry capability.
 
-4. **Getting Verification URL**: When you request a user's verification status, the response will provide a `verificationUrl`. This URL is essential for the user to proceed with their identity verification.
+3. **Verification Transition**: Once a user completes the identity verification process, their status will change from `NotStarted` to `Verified`. Only then can the user fully interact with the platform.
+
+4. **Getting Verification URL**: The verification URL is included in the user data response and is essential for the user to proceed with their identity verification.
 
 ### How to Present Verification Flow to the User
 
@@ -233,7 +234,12 @@ Here are some options on how you can present the `verificationUrl` to the user:
 - **Email**: Send users an email containing the link, prompting them to complete the identity verification.
 
 ```typescript
-const verificationData = await client.user.getUserVerification()
+const userData = await client.user.getCurrentUser()
+// Access verification data directly from user object
+const verificationStatus = userData.verificationStatus
+const verificationUrl = userData.verificationUrl
+const verifiedCountry = userData.verifiedCountry
+const canRetryVerification = userData.canRetryVerification
 ```
 
 ## Payment Flow

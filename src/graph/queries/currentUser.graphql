@@ -1,7 +1,11 @@
 #import "./userFragment.graphql"
+#import "./verificationFragment.graphql"
 
 query CurrentUser {
     me {
         ...UserFragment
+    }
+    verification {
+        ...VerificationFragment
     }
 }
