@@ -29,7 +29,7 @@ export default [
                 format: 'es',
             },
         ],
-        external: [],
+        external: ['@solana/web3.js'],
     }),
     bundle({
         plugins: [dts()],
