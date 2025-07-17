@@ -1,6 +1,6 @@
 {
     "name": "@spritz-finance/api-client",
-    "version": "0.4.4",
+    "version": "0.4.5",
     "description": "Typescript library for interacting with the Spritz Finance API",
     "type": "module",
     "main": "dist/spritz-api-client.cjs",
@@ -42,7 +42,6 @@
     },
     "devDependencies": {
         "@rollup/plugin-graphql": "2.0.5",
-        "@solana/web3.js": "^1.98.2",
         "@types/graphql": "^14.5.0",
         "@types/node": "^20.5.0",
         "@typescript-eslint/eslint-plugin": "8.37.0",
@@ -72,7 +71,9 @@
         "vitest": "^3.2.4",
         "zod": "4.0.5"
     },
-    "dependencies": {},
+    "dependencies": {
+        "@solana/web3.js": "^1.98.2"
+    },
     "resolutions": {
         "graphql": "15.8.0",
         "@apollo/federation": "0.38.1",
