@@ -1,4 +1,5 @@
 import { isAddress } from 'viem'
+import { PublicKey } from '@solana/web3.js'
 
 /**
  * Validates if a string is a valid Ethereum address
@@ -22,4 +23,17 @@ export function isValidEthereumAddress(tokenAddress: string): boolean {
 
     // For mixed case, use viem's strict validation
     return isAddress(normalizedAddress)
+}
+
+/**
+ * Validates if a string is a valid Solana address (public key)
+ * Solana addresses are base58-encoded 32-byte public keys
+ */
+export function isValidSolanaAddress(address: string): boolean {
+    try {
+        new PublicKey(address)
+        return true
+    } catch {
+        return false
+    }
 }

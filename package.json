@@ -42,6 +42,7 @@
     },
     "devDependencies": {
         "@rollup/plugin-graphql": "2.0.5",
+        "@solana/web3.js": "^1.98.2",
         "@types/graphql": "^14.5.0",
         "@types/node": "^20.5.0",
         "@typescript-eslint/eslint-plugin": "8.37.0",

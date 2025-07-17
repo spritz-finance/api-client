@@ -13,7 +13,7 @@ import { WebhookService } from './modules/webhook/webhookService'
 
 export type ClientOptions = {
     /**
-     * Defaults to Environment.Staging.
+     * Defaults to Environment.Sandbox.
      */
     environment?: Environment
 
@@ -79,7 +79,7 @@ export class SpritzApiClient {
     }
 
     public static initialize({
-        environment = Environment.Staging,
+        environment = Environment.Sandbox,
         apiKey,
         integrationKey,
         dangerouslyAllowBrowser = false,

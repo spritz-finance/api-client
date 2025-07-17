@@ -23,17 +23,17 @@ A Typescript library for interacting with the Spritz Finance API
 Get started with Spritz in minutes:
 
 ```typescript
-import { 
-  SpritzApiClient, 
-  Environment, 
+import {
+  SpritzApiClient,
+  Environment,
   PaymentNetwork,
   BankAccountType,
-  BankAccountSubType 
+  BankAccountSubType,
 } from '@spritz-finance/api-client'
 
 // Initialize the client with your integration key
 const client = SpritzApiClient.initialize({
-  environment: Environment.Staging,
+  environment: Environment.Sandbox,
   integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
 })
 
@@ -150,7 +150,7 @@ and is returned once the user is created. Leave the api key blank if you haven't
 import { SpritzApiClient, Environment } from '@spritz-finance/api-client'
 
 const client = SpritzApiClient.initialize({
-  environment: Environment.Staging,
+  environment: Environment.Sandbox,
   apiKey: 'YOUR_USER_API_KEY_HERE',
   integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
 })
@@ -815,31 +815,32 @@ const onrampPayment = await client.onrampPayment.create({
 ### Retrieve all onramp payments for an account
 
 ```typescript
-const payments = await client.onrampPayment.list()[
-  // Example response
+const payments =
+  await client.onrampPayment.list()[
+    // Example response
 
-  {
-    id: '653fab35ad263e5ae8b0e605',
-    amount: 100,
-    feeAmount: 1.5,
-    depositInstructions: {
-      amount: 101.5,
-      currency: 'USD',
-      bankName: 'Bank of Nowhere',
-      bankAddress: '1800 North Pole St., Orlando, FL 32801',
-      bankBeneficiaryName: 'Bridge Ventures Inc',
-      bankRoutingNumber: '123456789',
-      bankAccountNumber: '11223344556677',
-      paymentMethod: 'WIRE',
-      depositMessage: 'BVI72D90851F051F4189',
-    },
-    network: 'ethereum',
-    token: 'USDC',
-    address: '0xbb76483e33e01315438d8f6cf1aee9c9b85f433b',
-    status: 'AWAITING_FUNDS',
-    createdAt: '2023-10-30T13:10:13.521Z',
-  }
-]
+    {
+      id: '653fab35ad263e5ae8b0e605',
+      amount: 100,
+      feeAmount: 1.5,
+      depositInstructions: {
+        amount: 101.5,
+        currency: 'USD',
+        bankName: 'Bank of Nowhere',
+        bankAddress: '1800 North Pole St., Orlando, FL 32801',
+        bankBeneficiaryName: 'Bridge Ventures Inc',
+        bankRoutingNumber: '123456789',
+        bankAccountNumber: '11223344556677',
+        paymentMethod: 'WIRE',
+        depositMessage: 'BVI72D90851F051F4189',
+      },
+      network: 'ethereum',
+      token: 'USDC',
+      address: '0xbb76483e33e01315438d8f6cf1aee9c9b85f433b',
+      status: 'AWAITING_FUNDS',
+      createdAt: '2023-10-30T13:10:13.521Z',
+    }
+  ]
 ```
 
 ## Webhooks

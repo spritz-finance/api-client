@@ -1,4 +1,4 @@
 export enum Environment {
-    Staging = 'staging',
+    Sandbox = 'staging',
     Production = 'production',
 }

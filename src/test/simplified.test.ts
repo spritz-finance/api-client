@@ -5,10 +5,10 @@ import { isValidEthereumAddress } from '../utils/address'
 
 describe('Spritz API Client - Core Functionality', () => {
     const client = SpritzApiClient.initialize({
-        environment: Environment.Staging,
+        environment: Environment.Sandbox,
         apiKey: 'ak_test_key',
         integrationKey: 'ik_test_key',
-        dangerouslyAllowBrowser: true
+        dangerouslyAllowBrowser: true,
     })
 
     describe('Client initialization', () => {
@@ -46,7 +46,7 @@ describe('Spritz API Client - Core Functionality', () => {
             const result = await client.paymentRequest.create({
                 accountId: 'bank-account-123',
                 amount: 100,
-                network: 'ethereum'
+                network: 'ethereum',
             })
             expect(result).toHaveProperty('id')
             expect(result).toHaveProperty('status')
@@ -56,11 +56,11 @@ describe('Spritz API Client - Core Functionality', () => {
             const paymentRequest = {
                 id: 'payment-request-123',
                 amountDue: 100,
-                network: 'ethereum'
+                network: 'ethereum',
             }
             const result = await client.paymentRequest.getWeb3PaymentParams({
                 paymentRequest: paymentRequest as any,
-                paymentTokenAddress: '0x6C6384490e2Dd490E7AA5B95C1Bf5a2137dA12c3'
+                paymentTokenAddress: '0x6C6384490e2Dd490E7AA5B95C1Bf5a2137dA12c3',
             })
             expect(result).toHaveProperty('contractAddress')
             expect(result).toHaveProperty('method')

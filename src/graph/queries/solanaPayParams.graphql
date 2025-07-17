@@ -1,0 +1,16 @@
+query GetSolanaPayParams(
+    $tokenAddress: String!
+    $amount: Float!
+    $reference: String!
+    $signer: String!
+) {
+    solanaParams(
+        tokenAddress: $tokenAddress
+        amount: $amount
+        reference: $reference
+        signer: $signer
+    ) {
+        transactionSerialized
+        transaction
+    }
+}
