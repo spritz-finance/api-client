@@ -1,6 +1,6 @@
 {
     "name": "@spritz-finance/api-client",
-    "version": "0.4.1",
+    "version": "0.4.2",
     "description": "Typescript library for interacting with the Spritz Finance API",
     "type": "module",
     "main": "dist/spritz-api-client.cjs",
@@ -37,7 +37,8 @@
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
         "test:ui": "vitest --ui",
-        "demo": "tsx ./demo.ts"
+        "demo": "tsx ./demo.ts",
+        "bump:patch": "node bump.js patch"
     },
     "devDependencies": {
         "@rollup/plugin-graphql": "2.0.5",
