@@ -8,3 +8,4 @@ src/.DS_Store
 .env
 demo.ts
 coverage/
+.claude/

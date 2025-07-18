@@ -105,6 +105,7 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
 - [Payment Requests](#payment-requests)
   - [Create a payment request](#create-a-payment-request)
   - [Fulfil a payment request (EVM transactions)](#fulfil-a-payment-request--evm-transactions-)
+  - [Fulfil a payment request (Solana transactions)](#fulfil-a-payment-request--solana-transactions-)
   - [Transaction fees](#transaction-fees)
 - [Payments](#payments)
   - [Retrieve the payment for a payment request](#retrieve-the-payment-for-a-payment-request)
@@ -707,6 +708,35 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
 ```
 
 The contract address (to), calldata (data), and value are the primary components used to execute the blockchain transaction. You can use the `requiredTokenInput` to verify that the user's wallet has sufficient funds to complete the payment before initiating the transaction.
+
+### Fulfil a payment request (Solana transactions)
+
+For Solana payments, you need to obtain a versioned transaction that can be signed and submitted to the Solana network.
+
+```typescript
+import {PaymentNetwork} from '@spritz-finance/api-client';
+
+const paymentRequest = await client.paymentRequest.create({
+	amount: 100,
+	accountId: account.id,
+	network: PaymentNetwork.Solana,
+});
+
+const transactionData = await client.paymentRequest.getSolanaPaymentParams({
+	paymentRequest,
+	paymentTokenAddress: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC on Solana
+	signer: 'YourSolanaWalletAddress...',
+})
+
+// Example response
+
+{
+  versionedTransaction: VersionedTransaction, // Deserialized transaction ready to sign
+  transactionSerialized: 'base64EncodedTransaction...' // Base64 encoded transaction
+}
+```
+
+The `versionedTransaction` is a deserialized Solana transaction that can be signed with your wallet and submitted to the network. The `transactionSerialized` contains the same transaction in base64 encoded format if needed for your implementation.
 
 ### Transaction fees
 
