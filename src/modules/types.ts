@@ -7,10 +7,12 @@ export enum PaymentNetwork {
     Arbitrum = 'arbitrum',
     Binance = 'binance-smart-chain',
     Avalanche = 'avalanche',
+    Base = 'base',
     Bitcoin = 'bitcoin',
-    BitcoinTestnet = 'bitcoin-testnet',
     Dash = 'dash',
-    DashTestnet = 'dash-testnet',
+    Tron = 'tron',
+    Solana = 'solana',
+    Sui = 'sui',
 }
 
 export interface CreatePaymentRequestInput {
