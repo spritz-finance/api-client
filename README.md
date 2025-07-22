@@ -29,6 +29,7 @@ import {
   PaymentNetwork,
   BankAccountType,
   BankAccountSubType,
+  DebitCardNetwork,
 } from '@spritz-finance/api-client'
 
 // Initialize the client with your integration key
@@ -93,6 +94,7 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
   - [Account Types](#account-types)
   - [Commonalities & Differences](#commonalities---differences)
   - [Bank Accounts](#bank-accounts)
+  - [Debit Cards](#debit-cards)
   - [Bills](#bills)
   - [Virtual Card](#virtual-card)
   - [Address Book](#address-book)
@@ -305,11 +307,12 @@ Spritz emphasizes its capabilities in account handling and payment processing.
 
 ### Account Types
 
-Spritz supports three distinct types of accounts:
+Spritz supports four distinct types of accounts:
 
 1. **Bank Account**
-2. **Bill**
-3. **Virtual Card**
+2. **Debit Card**
+3. **Bill**
+4. **Virtual Card**
 
 Though each account type possesses its unique creation process and specific properties, it's important to understand that all of them are uniformly termed as an "account" within the Spritz platform.
 
@@ -426,6 +429,67 @@ const bankAccounts = await client.bankAccount.create(BankAccountType.CABankAccou
   subType: BankAccountSubType.Savings,
 })
 ```
+
+### Debit Cards
+
+Spritz provides support for adding debit cards as payment accounts, allowing users to make payments directly to their debit cards.
+
+#### List user debit cards
+
+To retrieve all debit cards linked to a user:
+
+```typescript
+const debitCards = await client.debitCard.list()
+```
+
+The `debitCard.list()` method returns an array of user-linked debit cards:
+
+```typescript
+const debitCards = [{
+  id: "62d17d3b377dab6c1342136e",
+  type: "DebitCard",
+  name: "My Visa Debit",
+  userId: "62d17d3b377dab6c1342136e",
+  country: "US",
+  currency: "USD",
+  payable: true,
+  debitCardNetwork: "Visa",
+  expirationDate: "12/25",
+  cardNumber: "4111111111111111",
+  mask: "1111",
+  createdAt: "2023-01-01T00:00:00Z",
+  paymentCount: 5,
+  externalId: "ext-123"
+}]
+```
+
+#### Add a debit card
+
+To add a new debit card for a user:
+
+```typescript
+import { DebitCardNetwork } from '@spritz-finance/api-client'
+
+const debitCard = await client.debitCard.create({
+  name: 'My Visa Debit',
+  cardNumber: '4111111111111111',
+  expirationDate: '12/25',
+})
+```
+
+The input structure for adding a debit card is:
+
+```typescript
+export interface DebitCardInput {
+  name?: string | null      // Optional name for the card
+  cardNumber: string        // Full card number (13-19 digits)
+  expirationDate: string    // Expiration date in MM/YY format
+}
+```
+
+Supported debit card networks:
+- `Visa`
+- `Mastercard`
 
 ### Bills
 
@@ -589,6 +653,14 @@ You can conveniently change the display name of a bank account using the followi
 const updateAccount = await client.bankAccount.rename('62d17d3b377dab6c1342136e', 'My new account')
 ```
 
+#### Rename a debit card
+
+You can change the display name of a debit card:
+
+```typescript
+const updatedCard = await client.debitCard.rename('62d17d3b377dab6c1342136e', 'My primary debit card')
+```
+
 #### Rename a bill
 
 You can conveniently change the display name of a bill using the following endpoint. The first argument specifies the ID of the bill, while the second argument represents the desired new name for the account.
@@ -605,6 +677,14 @@ To remove a bank account from a user's account, you can use the following endpoi
 
 ```typescript
 await client.bankAccount.delete('62d17d3b377dab6c1342136e')
+```
+
+#### Delete a debit card
+
+To remove a debit card from a user's account:
+
+```typescript
+await client.debitCard.delete('62d17d3b377dab6c1342136e')
 ```
 
 #### Delete a bill
