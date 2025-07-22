@@ -19,6 +19,7 @@ import { UserDebitCards } from '../../graph/queries/__types__'
 import UserDebitCardsQuery from '../../graph/queries/debitCards.graphql'
 import { SpritzClient } from '../../lib/client'
 import { DebitCardInput } from '../../types/globalTypes'
+import { DebitCardValidation } from './validation'
 
 export class DebitCardService {
     private client: SpritzClient
@@ -65,13 +66,25 @@ export class DebitCardService {
     }
 
     public async create(input: DebitCardInput) {
-        const response = await this.client.query<CreateDebitCard, CreateDebitCardVariables>({
-            query: CreateDebitCardMutation,
-            variables: {
-                createDebitCardInput: input,
-            },
-        })
+        try {
+            const validatedInput = DebitCardValidation.parse(input)
+            const response = await this.client.query<CreateDebitCard, CreateDebitCardVariables>({
+                query: CreateDebitCardMutation,
+                variables: {
+                    createDebitCardInput: {
+                        ...input,
+                        cardNumber: validatedInput.cardNumber, // Use the transformed card number
+                    },
+                },
+            })
 
-        return response?.createDebitCard ?? null
+            return response?.createDebitCard ?? null
+        } catch (err) {
+            if (err instanceof Error && 'issues' in err) {
+                const zodError = err as any
+                throw new Error(zodError?.issues?.[0]?.message ?? 'Input validation failure')
+            }
+            throw err
+        }
     }
 }
