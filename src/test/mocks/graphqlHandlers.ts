@@ -91,6 +91,127 @@ export const graphqlHandlers = [
         })
     }),
 
+    // User Debit Cards Query
+    graphql.query('UserDebitCards', () => {
+        return HttpResponse.json({
+            data: {
+                debitCards: [
+                    {
+                        id: 'debit-card-123',
+                        type: 'DebitCard',
+                        name: 'Test Visa Card',
+                        userId: 'user-123',
+                        country: 'US',
+                        currency: 'USD',
+                        payable: true,
+                        debitCardNetwork: 'Visa',
+                        expirationDate: '12/25',
+                        cardNumber: '4111111111111111',
+                        mask: '1111',
+                        createdAt: '2023-01-01T00:00:00Z',
+                        paymentCount: 5,
+                        externalId: 'ext-123'
+                    },
+                    {
+                        id: 'debit-card-456',
+                        type: 'DebitCard',
+                        name: 'Test Mastercard',
+                        userId: 'user-123',
+                        country: 'US',
+                        currency: 'USD',
+                        payable: true,
+                        debitCardNetwork: 'Mastercard',
+                        expirationDate: '06/26',
+                        cardNumber: '5555555555554444',
+                        mask: '4444',
+                        createdAt: '2023-01-02T00:00:00Z',
+                        paymentCount: 3,
+                        externalId: 'ext-456'
+                    }
+                ]
+            }
+        })
+    }),
+
+    // Create Debit Card Mutation
+    graphql.mutation('CreateDebitCard', () => {
+        return HttpResponse.json({
+            data: {
+                createDebitCard: {
+                    id: 'debit-card-789',
+                    type: 'DebitCard',
+                    name: 'Test Debit Card',
+                    userId: 'user-123',
+                    country: 'US',
+                    currency: 'USD',
+                    payable: true,
+                    debitCardNetwork: 'Visa',
+                    expirationDate: '12/25',
+                    cardNumber: '4111111111111111',
+                    mask: '1111',
+                    createdAt: '2023-01-03T00:00:00Z',
+                    paymentCount: 0,
+                    externalId: 'ext-789'
+                }
+            }
+        })
+    }),
+
+    // Rename Debit Card Mutation
+    graphql.mutation('RenameDebitCard', () => {
+        return HttpResponse.json({
+            data: {
+                renamePayableAccount: {
+                    __typename: 'DebitCard',
+                    id: 'debit-card-123',
+                    type: 'DebitCard',
+                    name: 'Updated Card Name',
+                    userId: 'user-123',
+                    country: 'US',
+                    currency: 'USD',
+                    payable: true,
+                    debitCardNetwork: 'Visa',
+                    expirationDate: '12/25',
+                    cardNumber: '4111111111111111',
+                    mask: '1111',
+                    createdAt: '2023-01-01T00:00:00Z',
+                    paymentCount: 5,
+                    externalId: 'ext-123'
+                }
+            }
+        })
+    }),
+
+    // Delete Payable Account Mutation (handles debit cards too)
+    graphql.mutation('DeletePayableAccount', ({ variables }) => {
+        if (variables.accountId === 'debit-card-123') {
+            return HttpResponse.json({
+                data: {
+                    deletePayableAccount: {
+                        __typename: 'DebitCard',
+                        id: 'debit-card-123',
+                        type: 'DebitCard',
+                        name: 'Test Visa Card',
+                        userId: 'user-123',
+                        country: 'US',
+                        currency: 'USD',
+                        payable: false,
+                        debitCardNetwork: 'Visa',
+                        expirationDate: '12/25',
+                        cardNumber: '4111111111111111',
+                        mask: '1111',
+                        createdAt: '2023-01-01T00:00:00Z',
+                        paymentCount: 5,
+                        externalId: 'ext-123'
+                    }
+                }
+            })
+        }
+        return HttpResponse.json({
+            data: { deletePayableAccount: null }
+        })
+    }),
+
     // Default fallback for unhandled GraphQL operations
     graphql.operation(() => {
         return HttpResponse.json({

@@ -5,11 +5,13 @@ export type {
     CreateDirectPaymentInput,
     BankAccountInput,
     CreateOnrampPaymentInput,
+    DebitCardInput,
 } from './types/globalTypes'
 export {
     BillType,
     BankAccountSubType,
     BankAccountType,
+    DebitCardNetwork,
     DirectPaymentStatus as PaymentRequestStatus,
     PayableAccountType,
     PaymentStatus,

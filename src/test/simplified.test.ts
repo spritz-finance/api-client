@@ -89,4 +89,42 @@ describe('Spritz API Client - Core Functionality', () => {
             expect(result.status).toBe('COMPLETED')
         })
     })
+
+    describe('Debit card service', () => {
+        it('should list debit cards', async () => {
+            const result = await client.debitCard.list()
+            expect(Array.isArray(result)).toBe(true)
+            expect(result).toHaveLength(2)
+            expect(result[0]).toHaveProperty('id')
+            expect(result[0]).toHaveProperty('name')
+            expect(result[0]).toHaveProperty('cardNumber')
+            expect(result[0]).toHaveProperty('expirationDate')
+        })
+
+        it('should create a debit card', async () => {
+            const result = await client.debitCard.create({
+                name: 'Test Debit Card',
+                cardNumber: '4111111111111111',
+                expirationDate: '12/25',
+            })
+            expect(result).toHaveProperty('id')
+            expect(result).toHaveProperty('name')
+            expect(result?.name).toBe('Test Debit Card')
+            expect(result?.cardNumber).toBe('4111111111111111')
+            expect(result?.expirationDate).toBe('12/25')
+        })
+
+        it('should rename a debit card', async () => {
+            const result = await client.debitCard.rename('debit-card-123', 'Updated Card Name')
+            expect(result).toHaveProperty('id')
+            expect(result).toHaveProperty('name')
+            expect(result?.name).toBe('Updated Card Name')
+        })
+
+        it('should delete a debit card', async () => {
+            const result = await client.debitCard.delete('debit-card-123')
+            expect(result).toHaveProperty('id')
+            expect(result?.id).toBe('debit-card-123')
+        })
+    })
 })

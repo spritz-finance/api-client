@@ -1,0 +1,18 @@
+mutation CreateDebitCard($createDebitCardInput: DebitCardInput!) {
+    createDebitCard(createDebitCardInput: $createDebitCardInput) {
+        id
+        type
+        name
+        userId
+        country
+        currency
+        payable
+        debitCardNetwork
+        expirationDate
+        cardNumber
+        mask
+        createdAt
+        paymentCount
+        externalId
+    }
+}

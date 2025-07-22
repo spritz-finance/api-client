@@ -1,0 +1,16 @@
+fragment DebitCardFragment on DebitCard {
+    id
+    type
+    name
+    userId
+    country
+    currency
+    payable
+    debitCardNetwork
+    expirationDate
+    cardNumber
+    mask
+    createdAt
+    paymentCount
+    externalId
+}

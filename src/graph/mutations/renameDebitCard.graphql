@@ -1,0 +1,20 @@
+mutation RenameDebitCard($accountId: String!, $name: String!) {
+    renamePayableAccount(accountId: $accountId, name: $name) {
+        ... on DebitCard {
+            id
+            type
+            name
+            userId
+            country
+            currency
+            payable
+            debitCardNetwork
+            expirationDate
+            cardNumber
+            mask
+            createdAt
+            paymentCount
+            externalId
+        }
+    }
+}

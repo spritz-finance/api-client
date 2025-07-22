@@ -38,6 +38,11 @@ export enum BillType {
   Utility = "Utility",
 }
 
+export enum DebitCardNetwork {
+  Mastercard = "Mastercard",
+  Visa = "Visa",
+}
+
 export enum DirectPaymentStatus {
   COMPLETED = "COMPLETED",
   CONFIRMED = "CONFIRMED",
@@ -150,6 +155,12 @@ export interface CreateOnrampPaymentInput {
   network: string;
   token: string;
   paymentMethod: string;
+}
+
+export interface DebitCardInput {
+  name?: string | null;
+  cardNumber: string;
+  expirationDate: string;
 }
 
 //==============================================================

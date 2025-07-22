@@ -1,0 +1,7 @@
+#import "./debitCardFragment.graphql"
+
+query UserDebitCards {
+    debitCards {
+        ...DebitCardFragment
+    }
+}
