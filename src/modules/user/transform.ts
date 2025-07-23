@@ -9,10 +9,10 @@ type User = CurrentUser_me & {
 }
 
 export enum VerificationStatus {
-    NotStarted = 'NotStarted',
-    Verified = 'Verified',
-    Failed = 'Failed',
-    Disabled = 'Disabled',
+    NotStarted = 'not_started',
+    Verified = 'verified',
+    Failed = 'failed',
+    Disabled = 'disabled',
 }
 
 function transformModuleStatus(moduleStatus = ModuleStatus.INITIALIZED) {
