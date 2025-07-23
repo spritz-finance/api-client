@@ -974,6 +974,10 @@ Spritz currently supports the following webhook events:
 - `payment.completed`: Triggered when a payment is successfully completed.
 - `payment.refunded`: Triggered when a payment is refunded.
 
+#### Verification Events
+
+- `verification.status.updated`: Triggered when a user's verification status changes.
+
 These events allow you to respond to changes in the account and payments for a user.
 
 ### Setting up webhooks
@@ -999,3 +1003,23 @@ Upon receiving a webhook, your server will get a payload with the following stru
   "eventName": "name-of-the-event-here"
 }
 ```
+
+### Webhook security and signing
+
+Each webhook request is signed using an HMAC SHA256 signature, based on the exact JSON payload sent in the body. This signature is included in the Signature HTTP header of the request.
+
+The secret key used to compute the signature is the webhook secret you set when configuring your webhook integration. If you have not set a webhook secret, there will be no Signature header in the webhook request.
+
+You can verify webhook authenticity by computing the HMAC signature and comparing it to the Signature header included in the webhook request.
+
+#### Example: Verifying a webhook signature (Node.js)
+
+```typescript
+import { createHmac } from "crypto";
+
+const signature = createHmac("sha256", <YOUR_WEBHOOK_SECRET>)
+  .update(<REQUEST_BODY_AS_JSON_STRING>) // JSON.stringify(payload)
+  .digest("hex");
+```
+
+Ensure that the computed signature matches the Signature header received in the webhook request before processing the payload.

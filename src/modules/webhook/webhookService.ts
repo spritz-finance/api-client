@@ -8,6 +8,7 @@ export type WebhookEvent =
     | 'payment.updated'
     | 'payment.completed'
     | 'payment.refunded'
+    | 'verification.status.updated'
 
 export type IntegratorWebhook = {
     id: string
@@ -35,6 +36,14 @@ export class WebhookService {
             method: 'post',
             path: '/users/integrators/webhooks',
             body: args,
+        })
+    }
+
+    public async updateWebhookSecret(secret: string) {
+        return this.client.request<{ success: boolean }, { secret: string }>({
+            method: 'post',
+            path: '/users/integrators/webhook-secret',
+            body: { secret },
         })
     }
 }
