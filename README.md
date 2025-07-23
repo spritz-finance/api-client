@@ -1023,3 +1023,14 @@ const signature = createHmac("sha256", <YOUR_WEBHOOK_SECRET>)
 ```
 
 Ensure that the computed signature matches the Signature header received in the webhook request before processing the payload.
+
+### Setting webhook secret
+
+To add or update a webhook secret for signing webhook requests:
+
+```typescript
+const result = await client.webhook.updateWebhookSecret('your-webhook-secret-here')
+// Returns: { success: true }
+```
+
+This secret will be used to sign all subsequent webhook requests sent to your endpoint. Always store your webhook secret securely and never expose it in client-side code.
