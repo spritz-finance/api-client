@@ -30,6 +30,7 @@ import {
   BankAccountType,
   BankAccountSubType,
   DebitCardNetwork,
+  AmountMode,
 } from '@spritz-finance/api-client'
 
 // Initialize the client with your integration key
@@ -730,14 +731,24 @@ A payment request refers to the intent to initiate a payment to a specific accou
 
 To initiate a payment request for a specific account, you can use the following functionality. The required inputs for creating a payment request include the ID of the account to be paid, the amount of the fiat payment in USD, and the network on which the blockchain transaction will settle.
 
+#### Amount Mode
+
+When creating a payment request, you can specify how the amount should be calculated using the `amountMode` parameter:
+
+- **`TOTAL_AMOUNT`**: The payer covers the entire amount including fees. The specified amount is the total that will be deducted from the payer's wallet.
+- **`AMOUNT_RECEIVED`** (default): The payment that arrives in the bank account excludes fees. The specified amount is what the recipient will receive, and fees are added on top.
+
+This allows you to control whether fees are included in or added to the specified amount.
+
 ```typescript
-import {PaymentNetwork} from '@spritz-finance/api-client';
+import {PaymentNetwork, AmountMode} from '@spritz-finance/api-client';
 
 const paymentRequest = await client.paymentRequest.create({
 	amount: 100,
 	accountId: account.id,
 	network: PaymentNetwork.Ethereum,
-  deliveryMethod: 'INSTANT'
+  deliveryMethod: 'INSTANT',
+  amountMode: AmountMode.TOTAL_AMOUNT // Optional, defaults to AMOUNT_RECEIVED
 });
 
 // Example response
