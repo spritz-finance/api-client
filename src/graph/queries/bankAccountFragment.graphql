@@ -10,7 +10,6 @@ fragment BankAccountFragment on BankAccount {
         accountNumber
         bankAccountType
         bankAccountSubType
-        holder
         email
         ownedByUser
         bankAccountDetails {

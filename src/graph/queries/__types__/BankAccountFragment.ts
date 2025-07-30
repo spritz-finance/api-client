@@ -54,7 +54,6 @@ export interface BankAccountFragment {
     accountNumber: string
     bankAccountType: BankAccountType
     bankAccountSubType: BankAccountSubType
-    holder: string
     email: string | null
     ownedByUser: boolean
     bankAccountDetails: BankAccountFragment_bankAccountDetails | null

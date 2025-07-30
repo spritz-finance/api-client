@@ -124,12 +124,11 @@ export interface BankAccountAddressInput {
 }
 
 export interface BankAccountInput {
-  name: string;
+  name?: string | null;
   email?: string | null;
   accountNumber: string;
   type: BankAccountType;
   ownedByUser?: boolean | null;
-  holder?: string | null;
   holderFirstName?: string | null;
   holderLastName?: string | null;
   address?: BankAccountAddressInput | null;

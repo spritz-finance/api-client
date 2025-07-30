@@ -102,13 +102,12 @@ export class BankAccountService {
                     variables: {
                         createAccountInput: {
                             accountNumber: input.accountNumber,
-                            name: input.name,
+                            name: input.name ?? null,
                             type,
                             subType: input.subType,
                             details,
                             email: input.email ?? null,
                             ownedByUser: input.ownedByUser ?? null,
-                            holder: input.holder ?? null,
                         },
                     },
                 }

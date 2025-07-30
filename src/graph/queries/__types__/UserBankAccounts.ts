@@ -54,7 +54,6 @@ export interface UserBankAccounts_bankAccounts {
     accountNumber: string
     bankAccountType: BankAccountType
     bankAccountSubType: BankAccountSubType
-    holder: string
     email: string | null
     ownedByUser: boolean
     bankAccountDetails: UserBankAccounts_bankAccounts_bankAccountDetails | null
