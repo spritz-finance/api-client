@@ -50,7 +50,6 @@ client.setApiKey(user.apiKey)
 const bankAccount = await client.bankAccount.create(BankAccountType.USBankAccount, {
   accountNumber: '123456789',
   routingNumber: '987654321',
-  holder: 'John Doe',
   name: 'My Checking Account',
   ownedByUser: true,
   subType: BankAccountSubType.Checking,
@@ -352,7 +351,6 @@ const bankAccounts = [{
   country: "US",
   currency: "USD",
   email: "bilbo@shiremail.net",
-  holder: "Bilbo Baggins",
   institution: {
     id: "62d27d4b277dab3c1342126e",
     name: "Shire Bank",
@@ -374,9 +372,8 @@ The input structure for adding a US bank account is defined as:
 // Input arguments for creating a US bank account
 export interface USBankAccountInput {
   accountNumber: string
-  email: string
-  holder: string
-  name: string
+  email?: string | null
+  name?: string | null
   ownedByUser?: boolean | null
   routingNumber: string
   subType: BankAccountSubType
@@ -389,7 +386,6 @@ import { BankAccountType, BankAccountSubType } from '@spritz-finance/api-client'
 const bankAccounts = await client.bankAccount.create(BankAccountType.USBankAccount, {
   accountNumber: '123456789',
   routingNumber: '987654321',
-  holder: 'Bilbo Baggins',
   name: 'Precious Savings',
   ownedByUser: true,
   subType: BankAccountSubType.Savings,
@@ -407,7 +403,6 @@ The input structure for adding a Canadian bank account is defined as:
 export interface CABankAccountInput {
   accountNumber: string
   email?: string
-  holder: string
   name: string
   ownedByUser?: boolean | null
   transitNumber: string
@@ -423,7 +418,6 @@ const bankAccounts = await client.bankAccount.create(BankAccountType.CABankAccou
   accountNumber: '123456789',
   transitNumber: '12345',
   institutionNumber: '123',
-  holder: 'Bilbo Baggins',
   name: 'Precious Savings',
   ownedByUser: true,
   subType: BankAccountSubType.Savings,
@@ -445,22 +439,24 @@ const debitCards = await client.debitCard.list()
 The `debitCard.list()` method returns an array of user-linked debit cards:
 
 ```typescript
-const debitCards = [{
-  id: "62d17d3b377dab6c1342136e",
-  type: "DebitCard",
-  name: "My Visa Debit",
-  userId: "62d17d3b377dab6c1342136e",
-  country: "US",
-  currency: "USD",
-  payable: true,
-  debitCardNetwork: "Visa",
-  expirationDate: "12/25",
-  cardNumber: "4111111111111111",
-  mask: "1111",
-  createdAt: "2023-01-01T00:00:00Z",
-  paymentCount: 5,
-  externalId: "ext-123"
-}]
+const debitCards = [
+  {
+    id: '62d17d3b377dab6c1342136e',
+    type: 'DebitCard',
+    name: 'My Visa Debit',
+    userId: '62d17d3b377dab6c1342136e',
+    country: 'US',
+    currency: 'USD',
+    payable: true,
+    debitCardNetwork: 'Visa',
+    expirationDate: '12/25',
+    cardNumber: '4111111111111111',
+    mask: '1111',
+    createdAt: '2023-01-01T00:00:00Z',
+    paymentCount: 5,
+    externalId: 'ext-123',
+  },
+]
 ```
 
 #### Add a debit card
@@ -481,13 +477,14 @@ The input structure for adding a debit card is:
 
 ```typescript
 export interface DebitCardInput {
-  name?: string | null      // Optional name for the card
-  cardNumber: string        // Full card number (13-19 digits)
-  expirationDate: string    // Expiration date in MM/YY format
+  name?: string | null // Optional name for the card
+  cardNumber: string // Full card number (13-19 digits)
+  expirationDate: string // Expiration date in MM/YY format
 }
 ```
 
 Supported debit card networks:
+
 - `Visa`
 - `Mastercard`
 
@@ -658,7 +655,10 @@ const updateAccount = await client.bankAccount.rename('62d17d3b377dab6c1342136e'
 You can change the display name of a debit card:
 
 ```typescript
-const updatedCard = await client.debitCard.rename('62d17d3b377dab6c1342136e', 'My primary debit card')
+const updatedCard = await client.debitCard.rename(
+  '62d17d3b377dab6c1342136e',
+  'My primary debit card'
+)
 ```
 
 #### Rename a bill
