@@ -14,6 +14,11 @@ export enum AccountSyncStatus {
   Unavailable = "Unavailable",
 }
 
+export enum AmountMode {
+  AMOUNT_RECEIVED = "AMOUNT_RECEIVED",
+  TOTAL_AMOUNT = "TOTAL_AMOUNT",
+}
+
 export enum BankAccountSubType {
   Business = "Business",
   Checking = "Checking",
@@ -146,6 +151,7 @@ export interface CreateDirectPaymentInput {
   paymentNote?: string | null;
   paymentStrategy?: string | null;
   deliveryMethod?: PaymentDeliveryMethod | null;
+  amountMode?: AmountMode | null;
 }
 
 export interface CreateOnrampPaymentInput {

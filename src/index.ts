@@ -17,6 +17,7 @@ export {
     PaymentStatus,
     VirtualCardType,
     PaymentDeliveryMethod,
+    AmountMode,
 } from './types/globalTypes'
 export * from './modules/types'
 export * from './graph/queries/__types__'
