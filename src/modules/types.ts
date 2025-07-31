@@ -1,4 +1,4 @@
-import { PaymentDeliveryMethod } from '../types/globalTypes'
+import { AmountMode, PaymentDeliveryMethod } from '../types/globalTypes'
 
 export enum PaymentNetwork {
     Ethereum = 'ethereum',
@@ -20,4 +20,6 @@ export interface CreatePaymentRequestInput {
     amount: number
     network: PaymentNetwork
     deliveryMethod?: PaymentDeliveryMethod | null
+    tokenAddress?: string | null
+    amountMode?: AmountMode | null
 }
