@@ -1,4 +1,6 @@
+import { GetKycLinkToken } from '../../graph/mutations/__types__/GetKycLinkToken'
 import { RetryFailedVerification } from '../../graph/mutations/__types__/RetryFailedVerification'
+import GetKycLinkTokenQuery from '../../graph/mutations/getKycLinkToken.graphql'
 import RetryFailedVerificationQuery from '../../graph/mutations/retryFailedVerification.graphql'
 import { CurrentUser } from '../../graph/queries/__types__'
 import CurrentUserQuery from '../../graph/queries/currentUser.graphql'
@@ -84,5 +86,12 @@ export class UserService {
             query: RetryFailedVerificationQuery,
         })
         return this.getCurrentUser()
+    }
+
+    public async getVerificationToken() {
+        const response = await this.client.query<GetKycLinkToken>({
+            query: GetKycLinkTokenQuery,
+        })
+        return response.getKycLinkToken
     }
 }

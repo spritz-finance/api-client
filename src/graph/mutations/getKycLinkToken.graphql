@@ -1,0 +1,3 @@
+mutation GetKycLinkToken {
+    getKycLinkToken(enhancedVerification: true)
+}

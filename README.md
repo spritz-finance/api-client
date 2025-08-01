@@ -229,7 +229,11 @@ All users must undergo basic identity verification before they can engage with t
 
 ### How to Present Verification Flow to the User
 
-Here are some options on how you can present the `verificationUrl` to the user:
+Spritz offers two methods for integrating KYC verification:
+
+#### Method 1: Verification URL (Simple Integration)
+
+Use the `verificationUrl` for a straightforward integration where Spritz handles the entire verification flow:
 
 - **Browser**: Open the URL in a new browser tab.
 - **In-App**: Embed the URL in an iframe within your application.
@@ -244,6 +248,29 @@ const verificationUrl = userData.verificationUrl
 const verifiedCountry = userData.verifiedCountry
 const canRetryVerification = userData.canRetryVerification
 ```
+
+#### Method 2: Verification Token (Advanced Integration)
+
+For more control over the verification experience, use the verification token approach with the Plaid Link SDK:
+
+```typescript
+// Get a verification token from Spritz
+const verificationToken = await client.user.getVerificationToken()
+
+// Use the token with Plaid Link SDK to create a custom verification flow
+// This allows you to:
+// - Customize the UI/UX of the verification process
+// - Handle callbacks and events directly
+// - Integrate verification seamlessly into your application flow
+```
+
+The verification token method is ideal when you want to:
+- Maintain full control over the user experience
+- Integrate verification directly into your app without redirects
+- Handle verification events and callbacks programmatically
+- Build a native mobile experience using Plaid's mobile SDKs
+
+See the [Plaid Link documentation](https://plaid.com/docs/link/) for detailed integration instructions with the verification token.
 
 ## Payment Flow
 
