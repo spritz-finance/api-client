@@ -9,6 +9,15 @@ import { PaymentStatus, PaymentDeliveryMethod } from './../../../types/globalTyp
 // GraphQL fragment: PaymentFragment
 // ====================================================
 
+export interface PaymentFragment_transaction {
+    __typename: 'BlockchainTransaction'
+    hash: string
+    from: string | null
+    asset: string | null
+    value: number | null
+    network: string
+}
+
 export interface PaymentFragment {
     __typename: 'Payment'
     id: string
@@ -23,4 +32,5 @@ export interface PaymentFragment {
     targetCurrency: string | null
     targetCurrencyAmount: number
     targetCurrencyRate: number | null
+    transaction: PaymentFragment_transaction | null
 }

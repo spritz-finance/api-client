@@ -9,6 +9,15 @@ import { PaymentStatus, PaymentDeliveryMethod } from './../../../types/globalTyp
 // GraphQL query operation: Payment
 // ====================================================
 
+export interface Payment_payment_transaction {
+    __typename: 'BlockchainTransaction'
+    hash: string
+    from: string | null
+    asset: string | null
+    value: number | null
+    network: string
+}
+
 export interface Payment_payment {
     __typename: 'Payment'
     id: string
@@ -23,6 +32,7 @@ export interface Payment_payment {
     targetCurrency: string | null
     targetCurrencyAmount: number
     targetCurrencyRate: number | null
+    transaction: Payment_payment_transaction | null
 }
 
 export interface Payment {

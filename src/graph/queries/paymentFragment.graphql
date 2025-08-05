@@ -11,4 +11,11 @@ fragment PaymentFragment on Payment {
     targetCurrency
     targetCurrencyAmount
     targetCurrencyRate
+    transaction {
+        hash
+        from
+        asset
+        value
+        network
+    }
 }

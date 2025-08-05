@@ -871,6 +871,45 @@ const fees = await client.paymentRequest.transactionPrice(101)
 
 Payments represent a fiat payment that has been issued to the account. Once the status of the Payment Request has moved to `Confirmed` then the Payment will be created.
 
+### Transaction Details
+
+Payments now include transaction details about the blockchain transaction that fulfilled the payment. When a payment is completed, the `transaction` field contains:
+
+- **hash**: The blockchain transaction hash
+- **from**: The wallet address that sent the payment
+- **asset**: The token contract address used for payment
+- **value**: The amount transferred (in the token's smallest unit)
+- **network**: The blockchain network used (e.g., 'ethereum', 'polygon', etc.)
+
+This allows you to track the on-chain transaction that corresponds to each fiat payment.
+
+### Retrieve a payment by ID
+
+You can fetch a payment directly by its ID:
+
+```typescript
+const payment = await client.payment.fetchById('6368e3a3ec516e9572bbd23b');
+
+// Example response
+
+{
+  id: '6368e3a3ec516e9572bbd23b',
+  userId: '63d12d3B577fab6c6382136e',
+  status: 'COMPLETED',
+  accountId: '6322445f10d3f4d19c4d72fe',
+  amount: 100,
+  feeAmount: null,
+  createdAt: '2022-11-07T10:53:23.998Z',
+  transaction: {
+    hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+    from: '0xYourWalletAddress',
+    asset: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    value: 100000000,
+    network: 'ethereum'
+  }
+}
+```
+
 ### Retrieve the payment for a payment request
 
 ```typescript
@@ -893,7 +932,8 @@ const payment = await client.payment.getForPaymentRequest(paymentRequest.id);
   accountId: '6322445f10d3f4d19c4d72fe',
   amount: 100,
   feeAmount: null,
-  createdAt: '2022-11-07T10:53:23.998Z'
+  createdAt: '2022-11-07T10:53:23.998Z',
+  transaction: null // Will be populated once the payment is fulfilled
 }
 
 ```
@@ -909,11 +949,19 @@ const payments = await client.payment.listForAccount(account.id)
     {
         id: '6368e3a3ec516e9572bbd23b',
         userId: '63d12d3B577fab6c6382136e',
-        status: 'PENDING',
+        status: 'COMPLETED',
         accountId: '6322445f10d3f4d19c4d72fe',
         amount: 100,
         feeAmount: null,
         createdAt: '2022-11-07T10:53:23.998Z',
+        transaction: {
+            __typename: 'BlockchainTransaction',
+            hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+            from: '0xYourWalletAddress',
+            asset: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+            value: 100000000,
+            network: 'ethereum'
+        }
     },
 ]
 ```
