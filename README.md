@@ -1090,6 +1090,26 @@ Upon receiving a webhook, your server will get a payload with the following stru
 }
 ```
 
+### Managing webhooks
+
+#### List all webhooks
+
+To retrieve all webhooks configured for your integration:
+
+```typescript
+const webhooks = await client.webhook.list()
+// Returns an array of webhook configurations
+```
+
+#### Delete a webhook
+
+To delete a specific webhook by its ID:
+
+```typescript
+const deletedWebhook = await client.webhook.delete('webhook-id-here')
+// Returns the deleted webhook object
+```
+
 ### Webhook security and signing
 
 Each webhook request is signed using an HMAC SHA256 signature, based on the exact JSON payload sent in the body. This signature is included in the Signature HTTP header of the request.

@@ -46,4 +46,18 @@ export class WebhookService {
             body: { secret },
         })
     }
+
+    public async list() {
+        return this.client.request<IntegratorWebhook[]>({
+            method: 'get',
+            path: '/users/integrators/webhooks',
+        })
+    }
+
+    public async delete(webhookId: string) {
+        return this.client.request<IntegratorWebhook>({
+            method: 'delete',
+            path: `/users/integrators/webhooks/${webhookId}`,
+        })
+    }
 }
