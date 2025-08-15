@@ -247,6 +247,9 @@ const verificationStatus = userData.verificationStatus
 const verificationUrl = userData.verificationUrl
 const verifiedCountry = userData.verifiedCountry
 const canRetryVerification = userData.canRetryVerification
+
+// Access verification metadata for failed verifications
+const verificationMetadata = userData.verificationMetadata
 ```
 
 #### Method 2: Verification Token (Advanced Integration)
@@ -271,6 +274,44 @@ The verification token method is ideal when you want to:
 - Build a native mobile experience using Plaid's mobile SDKs
 
 See the [Plaid Link documentation](https://plaid.com/docs/link/) for detailed integration instructions with the verification token.
+
+### Verification Metadata (Failed Verifications)
+
+When a user's verification fails, Spritz now provides additional metadata to help understand the failure reason and provide better user experience. This metadata is particularly useful for handling duplicate identity scenarios.
+
+#### Understanding Verification Metadata
+
+The verification metadata is available when a verification has failed and includes:
+
+- **`failureReason`**: The specific reason why the verification failed (e.g., `DuplicateIdentity`)
+- **`details.matchedEmail`**: For duplicate identity failures, shows the email of the matched user (only if created through the same integration)
+
+#### Duplicate Identity Handling
+
+When a verification fails due to `DuplicateIdentity`, the system detects that the user has already been verified under a different account. The `matchedEmail` field helps determine:
+
+- **If `matchedEmail` is populated**: The duplicate user was created through your integration
+- **If `matchedEmail` is `null`**: The duplicate user was created through a different integration (e.g., the main Spritz app)
+
+This allows you to provide appropriate guidance to your users:
+
+```typescript
+const userData = await client.user.getCurrentUser()
+
+if (userData.verificationMetadata?.failureReason === 'DuplicateIdentity') {
+  const matchedEmail = userData.verificationMetadata.details.matchedEmail
+  
+  if (matchedEmail) {
+    // User exists within your integration
+    console.log(`This identity is already verified with account: ${matchedEmail}`)
+    // Guide user to use their existing account
+  } else {
+    // User exists in Spritz but not in your integration
+    console.log('This identity is already verified with another Spritz account')
+    // Inform user they need to use their original Spritz account
+  }
+}
+```
 
 ## Payment Flow
 

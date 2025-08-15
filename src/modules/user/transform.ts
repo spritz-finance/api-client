@@ -1,11 +1,17 @@
 import { CurrentUser, CurrentUser_me } from '../../graph/queries/__types__/CurrentUser'
-import { ModuleStatus } from '../../types/globalTypes'
+import { ModuleStatus, VerificationFailureReason } from '../../types/globalTypes'
 
 type User = CurrentUser_me & {
     verificationStatus: VerificationStatus
     verificationUrl: string | null
     verifiedCountry: string | null
     canRetryVerification: boolean
+    verificationMetadata: {
+        failureReason: VerificationFailureReason.DuplicateIdentity
+        details: {
+            matchedEmail: string | null
+        }
+    } | null
 }
 
 export enum VerificationStatus {
@@ -35,11 +41,25 @@ export function transformUserResponse(response: CurrentUser): User | null {
     if (!user) return null
     const verification = response?.verification ?? null
 
+    const verificationMetadataResponse = verification?.identity?.verificationMetadata ?? null
+    const matchedEmail = verificationMetadataResponse?.details?.matchedEmail ?? null
+
+    const verificationMetadata = verificationMetadataResponse?.failureReason
+        ? {
+              failureReason:
+                  verificationMetadataResponse.failureReason as VerificationFailureReason.DuplicateIdentity,
+              details: {
+                  matchedEmail,
+              },
+          }
+        : null
+
     return {
         ...user,
         verificationStatus: transformModuleStatus(verification?.identity?.status),
         verificationUrl: verification?.identity?.verificationUrl ?? null,
         verifiedCountry: verification?.identity?.country ?? null,
         canRetryVerification: verification?.identity?.canRetry ?? false,
+        verificationMetadata,
     }
 }

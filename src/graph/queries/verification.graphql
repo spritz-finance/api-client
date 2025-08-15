@@ -11,6 +11,12 @@ query UserVerification {
                 email
                 completedAt
             }
+            verificationMetadata {
+                failureReason
+                details {
+                    matchedEmail
+                }
+            }
         }
     }
 }

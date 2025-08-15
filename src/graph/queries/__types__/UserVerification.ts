@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ModuleStatus } from './../../../types/globalTypes'
+import { ModuleStatus, VerificationFailureReason } from './../../../types/globalTypes'
 
 // ====================================================
 // GraphQL query operation: UserVerification
@@ -17,12 +17,24 @@ export interface UserVerification_verification_identity_user {
     completedAt: string | null
 }
 
+export interface UserVerification_verification_identity_verificationMetadata_details {
+    __typename: 'VerificationMetadataDetails'
+    matchedEmail: string | null
+}
+
+export interface UserVerification_verification_identity_verificationMetadata {
+    __typename: 'VerificationMetadata'
+    failureReason: VerificationFailureReason | null
+    details: UserVerification_verification_identity_verificationMetadata_details | null
+}
+
 export interface UserVerification_verification_identity {
     __typename: 'IdentityModule'
     status: ModuleStatus
     country: string | null
     verificationUrl: string | null
     user: UserVerification_verification_identity_user | null
+    verificationMetadata: UserVerification_verification_identity_verificationMetadata | null
 }
 
 export interface UserVerification_verification {

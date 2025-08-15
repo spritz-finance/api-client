@@ -3,11 +3,22 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ModuleStatus } from './../../../types/globalTypes'
+import { ModuleStatus, VerificationFailureReason } from './../../../types/globalTypes'
 
 // ====================================================
 // GraphQL fragment: VerificationFragment
 // ====================================================
+
+export interface VerificationFragment_identity_verificationMetadata_details {
+    __typename: 'VerificationMetadataDetails'
+    matchedEmail: string | null
+}
+
+export interface VerificationFragment_identity_verificationMetadata {
+    __typename: 'VerificationMetadata'
+    failureReason: VerificationFailureReason | null
+    details: VerificationFragment_identity_verificationMetadata_details | null
+}
 
 export interface VerificationFragment_identity {
     __typename: 'IdentityModule'
@@ -15,6 +26,7 @@ export interface VerificationFragment_identity {
     status: ModuleStatus
     country: string | null
     verificationUrl: string | null
+    verificationMetadata: VerificationFragment_identity_verificationMetadata | null
 }
 
 export interface VerificationFragment {

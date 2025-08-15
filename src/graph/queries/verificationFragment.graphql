@@ -5,5 +5,11 @@ fragment VerificationFragment on Verification {
         status
         country
         verificationUrl
+        verificationMetadata {
+            failureReason
+            details {
+                matchedEmail
+            }
+        }
     }
 }
