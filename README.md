@@ -283,12 +283,25 @@ When a user's verification fails, Spritz now provides additional metadata to hel
 
 The verification metadata is available when a verification has failed and includes:
 
-- **`failureReason`**: The specific reason why the verification failed (e.g., `DuplicateIdentity`)
+- **`failureReason`**: The specific reason why the verification failed
 - **`details.matchedEmail`**: For duplicate identity failures, shows the email of the matched user (only if created through the same integration)
+
+#### Verification Failure Reasons
+
+The following verification failure reasons may be returned:
+
+- **`verify_sms`**: SMS verification failed
+- **`documentary_verification`**: Document verification failed
+- **`risk_check`**: Risk assessment check failed
+- **`kyc_check`**: KYC (Know Your Customer) check failed
+- **`watchlist_screening`**: Watchlist screening check failed
+- **`selfie_check`**: Selfie verification check failed
+- **`address_invalid`**: Provided address is invalid
+- **`duplicate_identity`**: Identity already exists in the system
 
 #### Duplicate Identity Handling
 
-When a verification fails due to `DuplicateIdentity`, the system detects that the user has already been verified under a different account. The `matchedEmail` field helps determine:
+When a verification fails due to `duplicate_identity`, the system detects that the user has already been verified under a different account. The `matchedEmail` field helps determine:
 
 - **If `matchedEmail` is populated**: The duplicate user was created through your integration
 - **If `matchedEmail` is `null`**: The duplicate user was created through a different integration (e.g., the main Spritz app)
@@ -298,9 +311,9 @@ This allows you to provide appropriate guidance to your users:
 ```typescript
 const userData = await client.user.getCurrentUser()
 
-if (userData.verificationMetadata?.failureReason === 'DuplicateIdentity') {
+if (userData.verificationMetadata?.failureReason === 'duplicate_identity') {
   const matchedEmail = userData.verificationMetadata.details.matchedEmail
-  
+
   if (matchedEmail) {
     // User exists within your integration
     console.log(`This identity is already verified with account: ${matchedEmail}`)

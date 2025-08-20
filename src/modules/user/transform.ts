@@ -1,5 +1,16 @@
 import { CurrentUser, CurrentUser_me } from '../../graph/queries/__types__/CurrentUser'
-import { ModuleStatus, VerificationFailureReason } from '../../types/globalTypes'
+import { ModuleStatus } from '../../types/globalTypes'
+
+export enum VerificationFailureReason {
+    VerifySms = 'verify_sms',
+    DocumentVerification = 'documentary_verification',
+    RiskCheck = 'risk_check',
+    KycCheck = 'kyc_check',
+    WatchlistScreening = 'watchlist_screening',
+    SelfieCheck = 'selfie_check',
+    AddressInvalid = 'address_invalid',
+    DuplicateIdentity = 'duplicate_identity',
+}
 
 type User = CurrentUser_me & {
     verificationStatus: VerificationStatus
@@ -7,7 +18,7 @@ type User = CurrentUser_me & {
     verifiedCountry: string | null
     canRetryVerification: boolean
     verificationMetadata: {
-        failureReason: VerificationFailureReason.DuplicateIdentity
+        failureReason: VerificationFailureReason
         details: {
             matchedEmail: string | null
         }
@@ -47,7 +58,7 @@ export function transformUserResponse(response: CurrentUser): User | null {
     const verificationMetadata = verificationMetadataResponse?.failureReason
         ? {
               failureReason:
-                  verificationMetadataResponse.failureReason as VerificationFailureReason.DuplicateIdentity,
+                  verificationMetadataResponse.failureReason as unknown as VerificationFailureReason,
               details: {
                   matchedEmail,
               },
