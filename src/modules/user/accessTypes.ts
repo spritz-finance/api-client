@@ -15,30 +15,24 @@ export interface KycStatus {
 
 export interface CategoryAccess {
     available: boolean
-    reason?: string
-    features: FeatureAccess[]
-}
-
-export interface FeatureAccess {
-    type: string
-    available: boolean
-    status: FeatureStatus
-    requirement?: Requirement
+    nextRequirement?: RequirementType
+    features: string[]
+    requirements: Requirement[]
 }
 
 export interface Requirement {
     type: RequirementType
-    description: string
-    actionUrl?: string
-    userActionable: boolean
+    description?: string
+    actionUrl?: string | null
+    retryable?: boolean
+    status: RequirementStatus
 }
 
-export enum FeatureStatus {
-    Active = 'active',
-    ActionRequired = 'action_required',
+export enum RequirementStatus {
+    NotStarted = 'not_started',
     Pending = 'pending',
-    Blocked = 'blocked',
-    NotAvailable = 'not_available',
+    Completed = 'completed',
+    Failed = 'failed',
 }
 
 export enum RequirementType {

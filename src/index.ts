@@ -25,11 +25,9 @@ export type {
     UserAccessCapabilities,
     KycStatus,
     CategoryAccess,
-    FeatureAccess,
     Requirement,
 } from './modules/user/accessTypes'
 export {
-    FeatureStatus,
     RequirementType,
     OnrampFeatureType,
     OfframpFeatureType,
