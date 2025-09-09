@@ -1,0 +1,7 @@
+#import "../queries/bridgeUserFragment.graphql"
+
+mutation AcceptTermsOfService($agreementId: String!) {
+    setBridgeUserAgreementId(agreementId: $agreementId) {
+        ...FullBridgeUser
+    }
+}

@@ -1,0 +1,7 @@
+#import "./virtualAccountFragment.graphql"
+
+query VirtualAccounts {
+    virtualAccounts {
+        ...VirtualAccountFragment
+    }
+}

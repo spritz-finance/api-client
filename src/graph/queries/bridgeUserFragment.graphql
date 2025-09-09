@@ -1,0 +1,10 @@
+fragment FullBridgeUser on BridgeUser {
+    id
+    kycStatus
+    tosLink
+    tosStatus
+    status
+    signedAgreementId
+    error
+    hasAcceptedTos
+}

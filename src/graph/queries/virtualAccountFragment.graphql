@@ -1,0 +1,17 @@
+fragment VirtualAccountFragment on BridgeVirtualAccount {
+    id
+    network
+    address
+    currency
+    token
+    deposited
+    microdeposits
+    depositInstructions {
+        bankAccountNumber
+        bankAddress
+        bankName
+        bankRoutingNumber
+        currency
+        paymentMethod
+    }
+}
