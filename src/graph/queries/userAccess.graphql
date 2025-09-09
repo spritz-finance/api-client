@@ -1,0 +1,21 @@
+#import "./userFragment.graphql"
+#import "./verificationFragment.graphql"
+
+query UserAccess {
+    me {
+        ...UserFragment
+    }
+    verification {
+        ...VerificationFragment
+    }
+    bridgeUser {
+        id
+        kycStatus
+        tosLink
+        tosStatus
+        status
+        signedAgreementId
+        error
+        hasAcceptedTos
+    }
+}

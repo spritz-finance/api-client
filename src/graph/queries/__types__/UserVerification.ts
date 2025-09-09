@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ModuleStatus, VerificationFailureReason } from './../../../types/globalTypes'
+import { ModuleStatus } from './../../../types/globalTypes'
 
 // ====================================================
 // GraphQL query operation: UserVerification
@@ -24,7 +24,7 @@ export interface UserVerification_verification_identity_verificationMetadata_det
 
 export interface UserVerification_verification_identity_verificationMetadata {
     __typename: 'VerificationMetadata'
-    failureReason: VerificationFailureReason | null
+    failureReason: string | null
     details: UserVerification_verification_identity_verificationMetadata_details | null
 }
 

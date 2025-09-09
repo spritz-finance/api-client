@@ -115,20 +115,6 @@ export enum PaymentStatus {
   SENT = "SENT",
 }
 
-/**
- * The reason for a verification failure
- */
-export enum VerificationFailureReason {
-  AddressInvalid = "AddressInvalid",
-  DocumentVerification = "DocumentVerification",
-  DuplicateIdentity = "DuplicateIdentity",
-  KycCheck = "KycCheck",
-  RiskCheck = "RiskCheck",
-  SelfieCheck = "SelfieCheck",
-  VerifySms = "VerifySms",
-  WatchlistScreening = "WatchlistScreening",
-}
-
 export enum VirtualCardType {
   USPhysicalDebitCard = "USPhysicalDebitCard",
   USVirtualDebitCard = "USVirtualDebitCard",

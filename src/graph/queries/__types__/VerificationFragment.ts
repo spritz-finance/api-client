@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ModuleStatus, VerificationFailureReason } from './../../../types/globalTypes'
+import { ModuleStatus } from './../../../types/globalTypes'
 
 // ====================================================
 // GraphQL fragment: VerificationFragment
@@ -16,7 +16,7 @@ export interface VerificationFragment_identity_verificationMetadata_details {
 
 export interface VerificationFragment_identity_verificationMetadata {
     __typename: 'VerificationMetadata'
-    failureReason: VerificationFailureReason | null
+    failureReason: string | null
     details: VerificationFragment_identity_verificationMetadata_details | null
 }
 

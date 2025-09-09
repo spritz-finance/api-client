@@ -2,10 +2,13 @@ import { GetKycLinkToken } from '../../graph/mutations/__types__/GetKycLinkToken
 import { RetryFailedVerification } from '../../graph/mutations/__types__/RetryFailedVerification'
 import GetKycLinkTokenQuery from '../../graph/mutations/getKycLinkToken.graphql'
 import RetryFailedVerificationQuery from '../../graph/mutations/retryFailedVerification.graphql'
-import { CurrentUser } from '../../graph/queries/__types__'
+import { CurrentUser, UserAccess } from '../../graph/queries/__types__'
 import CurrentUserQuery from '../../graph/queries/currentUser.graphql'
+import UserAccessQuery from '../../graph/queries/userAccess.graphql'
 import { SpritzClient } from '../../lib/client'
-import { transformUserResponse } from './transform'
+import { transformToUserAccess } from './accessTransform'
+import { UserAccessCapabilities } from './accessTypes'
+import { transformUserResponse, VerificationStatus } from './transform'
 
 interface CreateUserResponse {
     userId: string
@@ -93,5 +96,17 @@ export class UserService {
             query: GetKycLinkTokenQuery,
         })
         return response.getKycLinkToken
+    }
+
+    public async getUserAccess(): Promise<UserAccessCapabilities> {
+        const response = await this.client.query<UserAccess>({
+            query: UserAccessQuery,
+        })
+        const user = transformUserResponse(response)
+
+        const verificationStatus = user?.verificationStatus ?? VerificationStatus.NotStarted
+        const verifiedCountry = user?.verifiedCountry ?? null
+
+        return transformToUserAccess(response, verificationStatus, verifiedCountry)
     }
 }

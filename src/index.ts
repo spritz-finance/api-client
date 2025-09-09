@@ -21,3 +21,17 @@ export {
 } from './types/globalTypes'
 export * from './modules/types'
 export * from './graph/queries/__types__'
+export type {
+    UserAccessCapabilities,
+    KycStatus,
+    CategoryAccess,
+    FeatureAccess,
+    Requirement,
+} from './modules/user/accessTypes'
+export {
+    FeatureStatus,
+    RequirementType,
+    OnrampFeatureType,
+    OfframpFeatureType,
+    CardFeatureType,
+} from './modules/user/accessTypes'
