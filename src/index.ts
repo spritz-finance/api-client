@@ -33,3 +33,5 @@ export {
     OfframpFeatureType,
     CardFeatureType,
 } from './modules/user/accessTypes'
+export { supportedTokenMatrix } from './modules/virtualAccounts/types'
+export type { CreateVirtualAccountInput } from './modules/virtualAccounts/types'

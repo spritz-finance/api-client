@@ -118,6 +118,14 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
 - [Webhooks](#webhooks)
   - [Supported webhook events](#supported-webhook-events)
   - [Setting up webhooks](#setting-up-webhooks)
+- [On-ramp Setup Guide](#on-ramp-setup-guide)
+  - [Prerequisites](#prerequisites)
+  - [Checking User Access Capabilities](#checking-user-access-capabilities)
+  - [Step-by-Step On-ramp Activation](#step-by-step-on-ramp-activation)
+  - [Creating Virtual Accounts](#creating-virtual-accounts)
+  - [Listing Virtual Accounts](#listing-virtual-accounts)
+  - [Supported Token Matrix](#supported-token-matrix)
+  - [Complete Example](#complete-example)
 
 ## API Overview
 
@@ -1194,3 +1202,251 @@ const result = await client.webhook.updateWebhookSecret('your-webhook-secret-her
 ```
 
 This secret will be used to sign all subsequent webhook requests sent to your endpoint. Always store your webhook secret securely and never expose it in client-side code.
+
+## On-ramp Setup Guide
+
+The on-ramp feature allows users to purchase cryptocurrency using traditional payment methods (ACH, Wire transfers). Before users can on-ramp, they must complete identity verification and accept terms of service.
+
+### Prerequisites
+
+Before a user can on-ramp, they must:
+1. Complete platform-level KYC (identity verification)
+2. Accept the third-party on-ramp provider's Terms of Service
+3. Wait for the provider's KYC to process (happens automatically after accepting ToS)
+
+### Checking User Access Capabilities
+
+Use the `getUserAccess()` method to check what features are available to a user and what requirements they need to complete:
+
+```typescript
+const accessCapabilities = await client.user.getUserAccess()
+
+// Check if on-ramp is active
+if (accessCapabilities.capabilities.onramp.active) {
+  console.log('User can on-ramp!')
+  console.log('Available features:', accessCapabilities.capabilities.onramp.features)
+  // Features may include: 'ach_purchase', 'wire_purchase'
+} else {
+  console.log('User needs to complete requirements:')
+  accessCapabilities.capabilities.onramp.requirements.forEach(req => {
+    console.log(`- ${req.type}: ${req.description}`)
+    if (req.actionUrl) {
+      console.log(`  Action URL: ${req.actionUrl}`)
+    }
+  })
+}
+```
+
+### Step-by-Step On-ramp Activation
+
+#### 1. Check Initial Requirements
+
+```typescript
+const access = await client.user.getUserAccess()
+
+// Check platform-level KYC first
+if (!access.kycStatus.verified) {
+  // User needs to complete platform KYC
+  if (access.kycRequirement) {
+    if (access.kycRequirement.actionUrl) {
+      // Direct user to complete KYC
+      console.log('Complete KYC at:', access.kycRequirement.actionUrl)
+    }
+    if (access.kycRequirement.status === 'failed' && access.kycRequirement.retryable) {
+      // User can retry failed verification
+      await client.user.retryFailedVerification()
+    }
+  }
+}
+```
+
+#### 2. Accept Terms of Service
+
+Once platform KYC is complete, the user needs to accept the third-party on-ramp provider's Terms of Service:
+
+```typescript
+const access = await client.user.getUserAccess()
+
+// Find the Terms of Service requirement
+const tosRequirement = access.capabilities.onramp.requirements.find(
+  req => req.type === 'terms_acceptance'
+)
+
+if (tosRequirement && tosRequirement.actionUrl) {
+  // Use this URL to guide the customer towards Terms of Service acceptance
+  // You can embed this URL in an iFrame or display in a new browser window
+
+  // For iFrame and WebView implementations:
+  // Listen to the postMessage event for the signedAgreementId
+  window.addEventListener('message', (event) => {
+    if (event.data.signedAgreementId) {
+      // Use the agreement ID to complete acceptance
+      await client.onramp.acceptTermsOfService(event.data.signedAgreementId)
+    }
+  })
+
+  // Direct user to review the terms at tosRequirement.actionUrl
+  console.log('Terms of Service URL:', tosRequirement.actionUrl)
+}
+```
+
+#### 3. Provider KYC Processing (Automatic)
+
+After accepting the Terms of Service, the third-party provider's KYC process happens automatically in the background. When you accept the ToS, the platform automatically submits the user's existing KYC data to the provider. The integrator doesn't need to take any action - just monitor the status:
+
+```typescript
+// After accepting ToS, provider KYC is processed automatically
+// You can monitor the status but no action is required
+const access = await client.user.getUserAccess()
+
+// Check provider KYC status (for monitoring only)
+const kycRequirement = access.capabilities.onramp.requirements.find(
+  req => req.type === 'identity_verification'
+)
+
+if (kycRequirement) {
+  switch (kycRequirement.status) {
+    case 'pending':
+      console.log('Provider KYC is being processed automatically')
+      break
+    case 'failed':
+      console.log('Provider KYC failed - user may need to retry')
+      break
+    default:
+      // KYC completed successfully if no requirement exists
+      console.log('Provider KYC complete!')
+  }
+}
+```
+
+#### 4. Monitor Capability Updates
+
+Use webhooks to be notified when user capabilities change:
+
+```typescript
+// Set up a webhook to monitor capability updates
+const webhook = await client.webhook.create({
+  url: 'https://your-server.com/webhook',
+  events: ['capabilities.updated']
+})
+
+// In your webhook handler:
+// When you receive a 'capabilities.updated' event, check the user's access again
+const updatedAccess = await client.user.getUserAccess()
+if (updatedAccess.capabilities.onramp.active) {
+  console.log('User can now on-ramp!')
+}
+```
+
+### Creating Virtual Accounts
+
+Once on-ramp is active, users can create virtual accounts to receive funds:
+
+```typescript
+import { PaymentNetwork, onrampSupportedTokens } from '@spritz-finance/api-client'
+
+// Check supported tokens for a network
+const supportedTokens = onrampSupportedTokens[PaymentNetwork.Ethereum]
+console.log('Supported tokens on Ethereum:', supportedTokens)
+// Output: ['USDC', 'USDT', 'DAI', 'USDP', 'PYUSD']
+
+// Create a virtual account
+const virtualAccount = await client.virtualAccounts.create({
+  network: PaymentNetwork.Ethereum,
+  address: '0xYourEthereumAddress',
+  token: 'USDC'
+})
+
+// The virtual account includes deposit instructions
+if (virtualAccount.depositInstructions) {
+  const instructions = virtualAccount.depositInstructions
+  console.log('Bank Name:', instructions.bankName)
+  console.log('Account Number:', instructions.bankAccountNumber)
+  console.log('Routing Number:', instructions.bankRoutingNumber)
+  console.log('Bank Address:', instructions.bankAddress)
+  // User sends wire/ACH to these details to fund their account
+}
+```
+
+### Listing Virtual Accounts
+
+```typescript
+// Get all virtual accounts for the user
+const accounts = await client.virtualAccounts.list()
+
+accounts.forEach(account => {
+  console.log(`Network: ${account.network}`)
+  console.log(`Address: ${account.address}`)
+  console.log(`Token: ${account.token}`)
+  console.log(`Deposited: ${account.deposited}`)
+
+  if (account.microdeposits) {
+    console.log('Microdeposits:', account.microdeposits)
+  }
+})
+```
+
+### Supported Token Matrix
+
+The following tokens are supported on each network for virtual accounts:
+
+- **Ethereum**: USDC, USDT, DAI, USDP, PYUSD
+- **Polygon**: USDC
+- **Base**: USDC
+- **Arbitrum**: USDC
+- **Avalanche**: USDC
+- **Optimism**: USDC
+- **Solana**: USDC, PYUSD
+- **Tron**: USDT
+
+### Complete Example
+
+```typescript
+import { SpritzApiClient, Environment, PaymentNetwork } from '@spritz-finance/api-client'
+
+const client = SpritzApiClient.initialize({
+  environment: Environment.Production,
+  integrationKey: 'YOUR_INTEGRATION_KEY'
+})
+
+// Set user API key
+client.setApiKey(userApiKey)
+
+async function setupOnramp() {
+  // 1. Check current access
+  const access = await client.user.getUserAccess()
+
+  if (!access.capabilities.onramp.active) {
+    console.log('On-ramp not active. Requirements:')
+
+    for (const req of access.capabilities.onramp.requirements) {
+      if (req.type === 'terms_acceptance' && req.actionUrl) {
+        // Direct user to accept terms
+        console.log('Accept terms at:', req.actionUrl)
+        // After acceptance, call:
+        // await client.onramp.acceptTermsOfService(agreementId)
+      }
+    }
+
+    return false
+  }
+
+  // 2. Create virtual account
+  const virtualAccount = await client.virtualAccounts.create({
+    network: PaymentNetwork.Ethereum,
+    address: '0xUserWalletAddress',
+    token: 'USDC'
+  })
+
+  console.log('Virtual account created!')
+  console.log('Send funds to:', virtualAccount.depositInstructions)
+
+  return true
+}
+
+setupOnramp().then(success => {
+  if (success) {
+    console.log('On-ramp setup complete!')
+  }
+})
+```

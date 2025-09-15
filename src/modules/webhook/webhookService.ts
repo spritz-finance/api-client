@@ -9,6 +9,7 @@ export type WebhookEvent =
     | 'payment.completed'
     | 'payment.refunded'
     | 'verification.status.updated'
+    | 'capabilities.updated'
 
 export type IntegratorWebhook = {
     id: string

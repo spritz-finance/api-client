@@ -14,7 +14,7 @@ export interface KycStatus {
 }
 
 export interface CategoryAccess {
-    available: boolean
+    active: boolean
     nextRequirement?: RequirementType
     features: string[]
     requirements: Requirement[]

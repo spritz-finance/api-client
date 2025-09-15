@@ -1,0 +1,9 @@
+#import "../queries/virtualAccountFragment.graphql"
+
+mutation CreateVirtualAccount($network: String!, $address: String!, $token: String!) {
+    createVirtualAccount(
+        createBridgeVirtualAccountInput: { address: $address, network: $network, token: $token }
+    ) {
+        ...VirtualAccountFragment
+    }
+}

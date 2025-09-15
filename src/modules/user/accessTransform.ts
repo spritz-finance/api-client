@@ -146,7 +146,7 @@ function getOnrampAccess(kycStatus: KycStatus, bridgeUser?: UserAccess_bridgeUse
     // Platform-level KYC blocks everything - this is a hard requirement
     if (!kycStatus.verified) {
         return {
-            available: false,
+            active: false,
             features: [], // No features until platform KYC is complete
             requirements: [], // Platform KYC is handled at the top level
         }
@@ -168,7 +168,7 @@ function getOnrampAccess(kycStatus: KycStatus, bridgeUser?: UserAccess_bridgeUse
     // If no features available in region
     if (availableFeatures.length === 0) {
         return {
-            available: false,
+            active: false,
             features: [],
             requirements,
         }
@@ -176,7 +176,7 @@ function getOnrampAccess(kycStatus: KycStatus, bridgeUser?: UserAccess_bridgeUse
 
     // Simple logic: if requirements are met, you get the features
     const result: CategoryAccess = {
-        available: requirements.length === 0,
+        active: requirements.length === 0,
         features: requirements.length === 0 ? availableFeatures : [],
         requirements,
     }
