@@ -1,6 +1,6 @@
 import { PaymentNetwork } from '../types'
 
-export const supportedTokenMatrix: Partial<Record<PaymentNetwork, string[]>> = {
+export const onrampSupportedTokens: Partial<Record<PaymentNetwork, string[]>> = {
     [PaymentNetwork.Ethereum]: ['USDC', 'USDT', 'DAI', 'USDP', 'PYUSD'],
     [PaymentNetwork.Polygon]: ['USDC'],
     [PaymentNetwork.Base]: ['USDC'],
@@ -19,7 +19,7 @@ export interface CreateVirtualAccountInput {
 
 export function validateCreateVirtualAccountInput(input: CreateVirtualAccountInput): void {
     const { network, token } = input
-    const supportedTokens = supportedTokenMatrix[network]
+    const supportedTokens = onrampSupportedTokens[network]
 
     if (!supportedTokens || !supportedTokens.includes(token)) {
         throw new Error(
