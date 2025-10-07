@@ -32,5 +32,6 @@ export interface PaymentFragment {
     targetCurrency: string | null
     targetCurrencyAmount: number
     targetCurrencyRate: number | null
+    failureReason: string | null
     transaction: PaymentFragment_transaction | null
 }

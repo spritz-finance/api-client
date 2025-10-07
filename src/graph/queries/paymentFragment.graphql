@@ -11,6 +11,7 @@ fragment PaymentFragment on Payment {
     targetCurrency
     targetCurrencyAmount
     targetCurrencyRate
+    failureReason: error
     transaction {
         hash
         from

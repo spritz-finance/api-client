@@ -32,6 +32,7 @@ export interface AccountPayments_paymentsForAccount {
     targetCurrency: string | null
     targetCurrencyAmount: number
     targetCurrencyRate: number | null
+    failureReason: string | null
     transaction: AccountPayments_paymentsForAccount_transaction | null
 }
 

@@ -32,6 +32,7 @@ export interface PaymentRequestPayment_paymentForPaymentRequest {
     targetCurrency: string | null
     targetCurrencyAmount: number
     targetCurrencyRate: number | null
+    failureReason: string | null
     transaction: PaymentRequestPayment_paymentForPaymentRequest_transaction | null
 }
 

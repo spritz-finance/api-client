@@ -60,5 +60,5 @@ export interface UserAccess_bridgeUser {
 export interface UserAccess {
     me: UserAccess_me
     verification: UserAccess_verification | null
-    bridgeUser: UserAccess_bridgeUser
+    bridgeUser: UserAccess_bridgeUser | null
 }
