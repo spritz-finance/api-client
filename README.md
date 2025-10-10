@@ -237,51 +237,68 @@ All users must undergo basic identity verification before they can engage with t
 
 ### How to Present Verification Flow to the User
 
-Spritz offers two methods for integrating KYC verification:
+Spritz offers two methods for integrating KYC verification, both using the `getVerificationParams()` method:
+
+```typescript
+// Get verification parameters from Spritz
+const verificationParams = await client.user.getVerificationParams()
+
+// The response includes:
+// - inquiryId: Unique identifier for this verification inquiry
+// - verificationUrl: URL for hosted verification
+// - sessionToken: Token for use with Plaid Link SDK
+// - verificationUrlExpiresAt: Expiration timestamp for the verification URL
+```
 
 #### Method 1: Verification URL (Simple Integration)
 
-Use the `verificationUrl` for a straightforward integration where Spritz handles the entire verification flow:
-
-- **Browser**: Open the URL in a new browser tab.
-- **In-App**: Embed the URL in an iframe within your application.
-- **Mobile**: If your platform is mobile-based, open the URL in a native mobile web view.
-- **Email**: Send users an email containing the link, prompting them to complete the identity verification.
+Use the `verificationUrl` from `getVerificationParams()` for a straightforward integration where Spritz handles the entire verification flow:
 
 ```typescript
-const userData = await client.user.getCurrentUser()
-// Access verification data directly from user object
-const verificationStatus = userData.verificationStatus
-const verificationUrl = userData.verificationUrl
-const verifiedCountry = userData.verifiedCountry
-const canRetryVerification = userData.canRetryVerification
+const verificationParams = await client.user.getVerificationParams()
+const verificationUrl = verificationParams.verificationUrl
+const expiresAt = verificationParams.verificationUrlExpiresAt
 
-// Access verification metadata for failed verifications
-const verificationMetadata = userData.verificationMetadata
+// Important: The verification URL is short-lived and single-use
+// - Check the expiration with verificationUrlExpiresAt before using
+// - Once accessed, the URL becomes invalid
+// - If verification is not completed, call getVerificationParams() again for a new URL
+
+// Use the verification URL in your application:
+// - Browser: Open the URL in a new browser tab
+// - In-App: Embed the URL in an iframe within your application
+// - Mobile: Open the URL in a native mobile web view
+// - Email: Send users an email containing the link
 ```
 
-#### Method 2: Verification Token (Advanced Integration)
+**Note**: The verification URL can only be used once. If the user doesn't complete verification after accessing the URL, you'll need to call `getVerificationParams()` again to generate a fresh URL and session.
 
-For more control over the verification experience, use the verification token approach with the Plaid Link SDK:
+#### Method 2: Embedded Flow (Advanced Integration)
+
+For more control over the verification experience, use the `inquiryId` and `sessionToken` (if present) from `getVerificationParams()` with the Persona Embedded Flow:
 
 ```typescript
-// Get a verification token from Spritz
-const verificationToken = await client.user.getVerificationToken()
+const verificationParams = await client.user.getVerificationParams()
+const inquiryId = verificationParams.inquiryId
+const sessionToken = verificationParams.sessionToken // May be null for some flows
 
-// Use the token with Plaid Link SDK to create a custom verification flow
+// Use the inquiryId (and sessionToken if present) with Persona's Embedded Flow
+// to create a custom verification experience
 // This allows you to:
 // - Customize the UI/UX of the verification process
 // - Handle callbacks and events directly
 // - Integrate verification seamlessly into your application flow
+// - Build a native mobile experience using Persona's mobile SDKs
 ```
 
-The verification token method is ideal when you want to:
+The embedded flow method is ideal when you want to:
+
 - Maintain full control over the user experience
 - Integrate verification directly into your app without redirects
 - Handle verification events and callbacks programmatically
-- Build a native mobile experience using Plaid's mobile SDKs
+- Track and resume verification sessions with the inquiryId
 
-See the [Plaid Link documentation](https://plaid.com/docs/link/) for detailed integration instructions with the verification token.
+See the [Persona Embedded Flow documentation](https://docs.withpersona.com/quickstart-embedded-flow) for detailed integration instructions with the inquiryId and sessionToken.
 
 ### Verification Metadata (Failed Verifications)
 
@@ -1210,6 +1227,7 @@ The on-ramp feature allows users to purchase cryptocurrency using traditional pa
 ### Prerequisites
 
 Before a user can on-ramp, they must:
+
 1. Complete platform-level KYC (identity verification)
 2. Accept the third-party on-ramp provider's Terms of Service
 3. Wait for the provider's KYC to process (happens automatically after accepting ToS)
@@ -1228,7 +1246,7 @@ if (accessCapabilities.capabilities.onramp.active) {
   // Features may include: 'ach_purchase', 'wire_purchase'
 } else {
   console.log('User needs to complete requirements:')
-  accessCapabilities.capabilities.onramp.requirements.forEach(req => {
+  accessCapabilities.capabilities.onramp.requirements.forEach((req) => {
     console.log(`- ${req.type}: ${req.description}`)
     if (req.actionUrl) {
       console.log(`  Action URL: ${req.actionUrl}`)
@@ -1269,7 +1287,7 @@ const access = await client.user.getUserAccess()
 
 // Find the Terms of Service requirement
 const tosRequirement = access.capabilities.onramp.requirements.find(
-  req => req.type === 'terms_acceptance'
+  (req) => req.type === 'terms_acceptance'
 )
 
 if (tosRequirement && tosRequirement.actionUrl) {
@@ -1301,7 +1319,7 @@ const access = await client.user.getUserAccess()
 
 // Check provider KYC status (for monitoring only)
 const kycRequirement = access.capabilities.onramp.requirements.find(
-  req => req.type === 'identity_verification'
+  (req) => req.type === 'identity_verification'
 )
 
 if (kycRequirement) {
@@ -1327,7 +1345,7 @@ Use webhooks to be notified when user capabilities change:
 // Set up a webhook to monitor capability updates
 const webhook = await client.webhook.create({
   url: 'https://your-server.com/webhook',
-  events: ['capabilities.updated']
+  events: ['capabilities.updated'],
 })
 
 // In your webhook handler:
@@ -1354,7 +1372,7 @@ console.log('Supported tokens on Ethereum:', supportedTokens)
 const virtualAccount = await client.virtualAccounts.create({
   network: PaymentNetwork.Ethereum,
   address: '0xYourEthereumAddress',
-  token: 'USDC'
+  token: 'USDC',
 })
 
 // The virtual account includes deposit instructions
@@ -1374,7 +1392,7 @@ if (virtualAccount.depositInstructions) {
 // Get all virtual accounts for the user
 const accounts = await client.virtualAccounts.list()
 
-accounts.forEach(account => {
+accounts.forEach((account) => {
   console.log(`Network: ${account.network}`)
   console.log(`Address: ${account.address}`)
   console.log(`Token: ${account.token}`)
@@ -1406,7 +1424,7 @@ import { SpritzApiClient, Environment, PaymentNetwork } from '@spritz-finance/ap
 
 const client = SpritzApiClient.initialize({
   environment: Environment.Production,
-  integrationKey: 'YOUR_INTEGRATION_KEY'
+  integrationKey: 'YOUR_INTEGRATION_KEY',
 })
 
 // Set user API key
@@ -1435,7 +1453,7 @@ async function setupOnramp() {
   const virtualAccount = await client.virtualAccounts.create({
     network: PaymentNetwork.Ethereum,
     address: '0xUserWalletAddress',
-    token: 'USDC'
+    token: 'USDC',
   })
 
   console.log('Virtual account created!')
@@ -1444,7 +1462,7 @@ async function setupOnramp() {
   return true
 }
 
-setupOnramp().then(success => {
+setupOnramp().then((success) => {
   if (success) {
     console.log('On-ramp setup complete!')
   }

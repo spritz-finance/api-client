@@ -1,7 +1,7 @@
-import { GetKycLinkToken } from '../../graph/mutations/__types__/GetKycLinkToken'
+import { GetVerificationParams } from '../../graph/mutations/__types__/GetVerificationParams'
 import { RetryFailedVerification } from '../../graph/mutations/__types__/RetryFailedVerification'
-import GetKycLinkTokenQuery from '../../graph/mutations/getKycLinkToken.graphql'
 import RetryFailedVerificationQuery from '../../graph/mutations/retryFailedVerification.graphql'
+import GetVerificationParamsQuery from '../../graph/mutations/verificationParams.graphql'
 import { CurrentUser, UserAccess } from '../../graph/queries/__types__'
 import CurrentUserQuery from '../../graph/queries/currentUser.graphql'
 import UserAccessQuery from '../../graph/queries/userAccess.graphql'
@@ -91,11 +91,11 @@ export class UserService {
         return this.getCurrentUser()
     }
 
-    public async getVerificationToken() {
-        const response = await this.client.query<GetKycLinkToken>({
-            query: GetKycLinkTokenQuery,
+    public async getVerificationParams() {
+        const response = await this.client.query<GetVerificationParams>({
+            query: GetVerificationParamsQuery,
         })
-        return response.getKycLinkToken
+        return response.getVerificationParams
     }
 
     public async getUserAccess(): Promise<UserAccessCapabilities> {

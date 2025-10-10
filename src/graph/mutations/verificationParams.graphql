@@ -1,0 +1,8 @@
+mutation GetVerificationParams {
+    getVerificationParams {
+        inquiryId
+        verificationUrl
+        sessionToken
+        verificationUrlExpiresAt
+    }
+}
