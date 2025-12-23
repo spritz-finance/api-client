@@ -31,7 +31,7 @@ export interface PayableAccountFragment_DebitCard_institution {
 }
 
 export interface PayableAccountFragment_DebitCard {
-    __typename: 'DebitCard' | 'DigitalAccount'
+    __typename: 'DebitCard' | 'DigitalAccount' | 'OneTimePayment'
     id: string
     name: string | null
     userId: string

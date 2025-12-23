@@ -12,4 +12,5 @@ fragment PaymentRequestFragment on DirectPayment {
     targetCurrency
     targetCurrencyAmount
     targetCurrencyRate
+    feeSubsidyAmount
 }

@@ -31,7 +31,7 @@ export interface RenamePayableAccount_renamePayableAccount_DebitCard_institution
 }
 
 export interface RenamePayableAccount_renamePayableAccount_DebitCard {
-    __typename: 'DebitCard' | 'DigitalAccount'
+    __typename: 'DebitCard' | 'DigitalAccount' | 'OneTimePayment'
     id: string
     name: string | null
     userId: string

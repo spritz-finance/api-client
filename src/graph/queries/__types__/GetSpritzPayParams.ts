@@ -14,7 +14,6 @@ export interface GetSpritzPayParams_spritzPayParams {
     calldata: string
     value: string | null
     requiredTokenInput: string
-    suggestedGasLimit: string | null
 }
 
 export interface GetSpritzPayParams {

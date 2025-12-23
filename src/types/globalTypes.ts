@@ -69,6 +69,7 @@ export enum ModuleStatus {
   LOADING = "LOADING",
   RETRY = "RETRY",
   UNAVAILABLE = "UNAVAILABLE",
+  UNDER_REVIEW = "UNDER_REVIEW",
   UNINITIALIZED = "UNINITIALIZED",
 }
 
@@ -93,6 +94,7 @@ export enum PayableAccountType {
   Bill = "Bill",
   DebitCard = "DebitCard",
   DigitalAccount = "DigitalAccount",
+  OneTimePayment = "OneTimePayment",
   VirtualCard = "VirtualCard",
 }
 
@@ -150,9 +152,12 @@ export interface CreateDirectPaymentInput {
   network: string;
   pointsRedemptionId?: string | null;
   paymentNote?: string | null;
+  feeSubsidyPercentage?: string | null;
+  maxFeeSubsidyAmount?: string | null;
   paymentStrategy?: string | null;
   deliveryMethod?: PaymentDeliveryMethod | null;
   amountMode?: AmountMode | null;
+  integratorId?: string | null;
 }
 
 export interface CreateOnrampPaymentInput {

@@ -846,6 +846,40 @@ When creating a payment request, you can specify how the amount should be calcul
 
 This allows you to control whether fees are included in or added to the specified amount.
 
+#### Fee Subsidies (Integrator Feature)
+
+Integrators can subsidize transaction fees on behalf of their users. When enabled, you can cover part or all of the transaction fees, which Spritz will invoice to you separately.
+
+> **Note**: Fee subsidies are a gated feature and must be enabled by the Spritz team before use. Contact Spritz to request access.
+
+**Parameters:**
+
+- **`feeSubsidyPercentage`** (string): The percentage of the transaction fee you want to subsidize for the user. For example, `"100"` covers the entire fee, `"50"` covers half.
+- **`maxFeeSubsidyAmount`** (string, optional): The maximum dollar amount you're willing to subsidize per transaction. If the fee exceeds this cap, the user pays the difference.
+
+**How it works:**
+
+1. Set `feeSubsidyPercentage` to define what portion of fees you'll cover
+2. Optionally set `maxFeeSubsidyAmount` to cap your exposure
+3. Spritz invoices you separately for the subsidized amounts
+4. Users see reduced or zero fees on their transactions
+
+**Example:**
+
+```typescript
+// Cover 100% of fees up to $5 per transaction
+const paymentRequest = await client.paymentRequest.create({
+  amount: 100,
+  accountId: account.id,
+  network: PaymentNetwork.Ethereum,
+  feeSubsidyPercentage: '100',
+  maxFeeSubsidyAmount: '5',
+})
+
+// If transaction fee is $3: integrator pays $3, user pays $0
+// If transaction fee is $8: integrator pays $5, user pays $3
+```
+
 ```typescript
 import {PaymentNetwork, AmountMode} from '@spritz-finance/api-client';
 
@@ -900,7 +934,6 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
   calldata: '0xd71d9632000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000000000000000000000000000000000000005f5e100000000000000000000000000000000000000000064539a31c1ac408007b12277',
   value: null,
   requiredTokenInput: '100000000',
-  suggestedGasLimit: '110000'
 }
 ```
 

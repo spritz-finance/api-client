@@ -24,4 +24,5 @@ export interface PaymentRequestFragment {
     targetCurrency: string | null
     targetCurrencyAmount: number
     targetCurrencyRate: number
+    feeSubsidyAmount: number | null
 }

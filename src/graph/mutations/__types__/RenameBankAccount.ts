@@ -15,7 +15,7 @@ import {
 // ====================================================
 
 export interface RenameBankAccount_renamePayableAccount_Bill {
-    __typename: 'Bill' | 'DebitCard' | 'DigitalAccount' | 'VirtualCard'
+    __typename: 'Bill' | 'DebitCard' | 'DigitalAccount' | 'OneTimePayment' | 'VirtualCard'
 }
 
 export interface RenameBankAccount_renamePayableAccount_BankAccount_bankAccountDetails_CanadianBankAccountDetails {

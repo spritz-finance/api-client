@@ -10,7 +10,7 @@ import { PayableAccountType, DebitCardNetwork } from './../../../types/globalTyp
 // ====================================================
 
 export interface RenameDebitCard_renamePayableAccount_BankAccount {
-    __typename: 'BankAccount' | 'Bill' | 'DigitalAccount' | 'VirtualCard'
+    __typename: 'BankAccount' | 'Bill' | 'DigitalAccount' | 'OneTimePayment' | 'VirtualCard'
 }
 
 export interface RenameDebitCard_renamePayableAccount_DebitCard {

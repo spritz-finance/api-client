@@ -31,7 +31,7 @@ export interface DeletePayableAccount_deletePayableAccount_DebitCard_institution
 }
 
 export interface DeletePayableAccount_deletePayableAccount_DebitCard {
-    __typename: 'DebitCard' | 'DigitalAccount'
+    __typename: 'DebitCard' | 'DigitalAccount' | 'OneTimePayment'
     id: string
     name: string | null
     userId: string

@@ -14,9 +14,9 @@ export const graphqlHandlers = [
                     picture: null,
                     phone: null,
                     createdAt: '2023-01-01T00:00:00Z',
-                    timezone: 'UTC'
-                }
-            }
+                    timezone: 'UTC',
+                },
+            },
         })
     }),
 
@@ -29,10 +29,10 @@ export const graphqlHandlers = [
                         id: 'bank-account-123',
                         name: 'Test Bank Account',
                         userId: 'user-123',
-                        type: 'BankAccount'
-                    }
-                ]
-            }
+                        type: 'BankAccount',
+                    },
+                ],
+            },
         })
     }),
 
@@ -47,9 +47,9 @@ export const graphqlHandlers = [
                     status: 'CREATED',
                     amount: 100,
                     feeAmount: 1,
-                    network: 'ethereum'
-                }
-            }
+                    network: 'ethereum',
+                },
+            },
         })
     }),
 
@@ -69,9 +69,9 @@ export const graphqlHandlers = [
                     paymentRequestId: 'payment-request-123',
                     targetCurrency: 'USD',
                     targetCurrencyAmount: 100,
-                    targetCurrencyRate: 1
-                }
-            }
+                    targetCurrencyRate: 1,
+                },
+            },
         })
     }),
 
@@ -82,12 +82,12 @@ export const graphqlHandlers = [
                 spritzPayParams: {
                     contractAddress: '0xbF7Abc15f00a8C2d6b13A952c58d12b7c194A8D0',
                     method: 'payWithToken',
-                    calldata: '0xd71d9632000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000000000000000000000000000000000000005f5e100',
+                    calldata:
+                        '0xd71d9632000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000000000000000000000000000000000000005f5e100',
                     value: null,
                     requiredTokenInput: '100000000',
-                    suggestedGasLimit: '110000'
-                }
-            }
+                },
+            },
         })
     }),
 
@@ -110,7 +110,7 @@ export const graphqlHandlers = [
                         mask: '1111',
                         createdAt: '2023-01-01T00:00:00Z',
                         paymentCount: 5,
-                        externalId: 'ext-123'
+                        externalId: 'ext-123',
                     },
                     {
                         id: 'debit-card-456',
@@ -126,10 +126,10 @@ export const graphqlHandlers = [
                         mask: '4444',
                         createdAt: '2023-01-02T00:00:00Z',
                         paymentCount: 3,
-                        externalId: 'ext-456'
-                    }
-                ]
-            }
+                        externalId: 'ext-456',
+                    },
+                ],
+            },
         })
     }),
 
@@ -151,9 +151,9 @@ export const graphqlHandlers = [
                     mask: '1111',
                     createdAt: '2023-01-03T00:00:00Z',
                     paymentCount: 0,
-                    externalId: 'ext-789'
-                }
-            }
+                    externalId: 'ext-789',
+                },
+            },
         })
     }),
 
@@ -176,9 +176,9 @@ export const graphqlHandlers = [
                     mask: '1111',
                     createdAt: '2023-01-01T00:00:00Z',
                     paymentCount: 5,
-                    externalId: 'ext-123'
-                }
-            }
+                    externalId: 'ext-123',
+                },
+            },
         })
     }),
 
@@ -202,13 +202,13 @@ export const graphqlHandlers = [
                         mask: '1111',
                         createdAt: '2023-01-01T00:00:00Z',
                         paymentCount: 5,
-                        externalId: 'ext-123'
-                    }
-                }
+                        externalId: 'ext-123',
+                    },
+                },
             })
         }
         return HttpResponse.json({
-            data: { deletePayableAccount: null }
+            data: { deletePayableAccount: null },
         })
     }),
 
@@ -217,9 +217,9 @@ export const graphqlHandlers = [
         return HttpResponse.json({
             errors: [
                 {
-                    message: 'Unhandled GraphQL operation in test mock'
-                }
-            ]
+                    message: 'Unhandled GraphQL operation in test mock',
+                },
+            ],
         })
-    })
+    }),
 ]

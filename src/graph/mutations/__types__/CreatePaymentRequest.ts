@@ -28,6 +28,7 @@ export interface CreatePaymentRequest_createDirectPayment {
     targetCurrency: string | null
     targetCurrencyAmount: number
     targetCurrencyRate: number
+    feeSubsidyAmount: number | null
 }
 
 export interface CreatePaymentRequest {

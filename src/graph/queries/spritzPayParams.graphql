@@ -15,6 +15,5 @@ query GetSpritzPayParams(
         calldata
         value
         requiredTokenInput
-        suggestedGasLimit
     }
 }
