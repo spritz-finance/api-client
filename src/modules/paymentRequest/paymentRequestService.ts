@@ -43,7 +43,7 @@ export class PaymentRequestService {
             variables: {
                 createDirectPaymentInput: {
                     ...input,
-                    amount: roundCurrency(input.amount),
+                    amount: input.amount,
                 },
             },
         })
