@@ -2,11 +2,14 @@ import {
     AccountPayments,
     AccountPaymentsVariables,
     Payment,
+    PaymentLimits,
+    PaymentLimitsVariables,
     PaymentRequestPayment,
     PaymentRequestPaymentVariables,
     PaymentVariables,
 } from '../../graph/queries/__types__'
 import PaymentRequestPaymentQuery from '../../graph/queries/paymentForPaymentRequest.graphql'
+import PaymentLimitsQuery from '../../graph/queries/paymentLimits.graphql'
 import AccountPaymentsQuery from '../../graph/queries/paymentsForAccount.graphql'
 import PaymentQuery from '../../graph/queries/payment.graphql'
 import { SpritzClient } from '../../lib/client'
@@ -52,5 +55,16 @@ export class PaymentService {
         })
 
         return response?.paymentForPaymentRequest ?? null
+    }
+
+    public async getPaymentLimits(accountId: string) {
+        const response = await this.client.query<PaymentLimits, PaymentLimitsVariables>({
+            query: PaymentLimitsQuery,
+            variables: {
+                paymentLimitsInput: { accountId },
+            },
+        })
+
+        return response?.paymentLimits ?? null
     }
 }
