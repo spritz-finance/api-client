@@ -174,6 +174,11 @@ export interface DebitCardInput {
   expirationDate: string;
 }
 
+export interface PaymentLimitsInput {
+  accountId: string;
+  type?: string | null;
+}
+
 //==============================================================
 // END Enums and Input Objects
 //==============================================================

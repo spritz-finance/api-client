@@ -1,0 +1,6 @@
+query PaymentLimits($paymentLimitsInput: PaymentLimitsInput!) {
+    paymentLimits(paymentLimitsInput: $paymentLimitsInput) {
+        perTransaction
+        dailyRemainingVolume
+    }
+}
