@@ -112,6 +112,7 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
 - [Payments](#payments)
   - [Retrieve the payment for a payment request](#retrieve-the-payment-for-a-payment-request)
   - [Retrieve all payments for an account](#retrieve-all-payments-for-an-account)
+  - [Get payment limits for an account](#get-payment-limits-for-an-account)
 - [Onramp Payments](#onramp-payments)
   - [Create an onramp payment](#create-onramp-payment)
   - [Retrieve all onramp payments for an account](#retrieve-all-onramp-payments-for-an-account)
@@ -1076,6 +1077,20 @@ const payments = await client.payment.listForAccount(account.id)
         }
     },
 ]
+```
+
+### Get payment limits for an account
+
+Retrieve the payment limits for a specific account, including the per-transaction limit and the remaining daily volume.
+
+```typescript
+const limits = await client.payment.getPaymentLimits(account.id)
+
+// Example response
+{
+    perTransaction: 20000,
+    dailyRemainingVolume: 150000,
+}
 ```
 
 ## Onramp Payments
