@@ -22,4 +22,6 @@ export interface CreatePaymentRequestInput {
     deliveryMethod?: PaymentDeliveryMethod | null
     tokenAddress?: string | null
     amountMode?: AmountMode | null
+    feeSubsidyPercentage?: string | null
+    maxFeeSubsidyAmount?: string | null
 }

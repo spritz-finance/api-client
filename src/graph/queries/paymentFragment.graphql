@@ -5,6 +5,7 @@ fragment PaymentFragment on Payment {
     accountId
     amount
     feeAmount
+    feeSubsidyAmount
     createdAt
     deliveryMethod
     paymentRequestId

@@ -26,6 +26,7 @@ export interface Payment_payment {
     accountId: any
     amount: number | null
     feeAmount: number | null
+    feeSubsidyAmount: number | null
     createdAt: any
     deliveryMethod: PaymentDeliveryMethod | null
     paymentRequestId: string | null
