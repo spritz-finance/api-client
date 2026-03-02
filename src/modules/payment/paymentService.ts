@@ -2,17 +2,26 @@ import {
     AccountPayments,
     AccountPaymentsVariables,
     Payment,
-    PaymentLimits,
-    PaymentLimitsVariables,
     PaymentRequestPayment,
     PaymentRequestPaymentVariables,
     PaymentVariables,
 } from '../../graph/queries/__types__'
 import PaymentRequestPaymentQuery from '../../graph/queries/paymentForPaymentRequest.graphql'
-import PaymentLimitsQuery from '../../graph/queries/paymentLimits.graphql'
 import AccountPaymentsQuery from '../../graph/queries/paymentsForAccount.graphql'
 import PaymentQuery from '../../graph/queries/payment.graphql'
 import { SpritzClient } from '../../lib/client'
+import type { PathResponse } from '../../rest/types'
+
+type PaymentLimitsRaw = PathResponse<
+    '/v1/bank-accounts/{accountId}/payment-limits',
+    'get'
+>
+
+export interface PaymentLimitsResponse {
+    perTransaction: number
+    dailyLimit: number
+    dailyRemainingVolume: number
+}
 
 export class PaymentService {
     private client: SpritzClient
@@ -57,14 +66,20 @@ export class PaymentService {
         return response?.paymentForPaymentRequest ?? null
     }
 
-    public async getPaymentLimits(accountId: string) {
-        const response = await this.client.query<PaymentLimits, PaymentLimitsVariables>({
-            query: PaymentLimitsQuery,
-            variables: {
-                paymentLimitsInput: { accountId },
-            },
-        })
+    public async getPaymentLimits(accountId: string): Promise<PaymentLimitsResponse | null> {
+        try {
+            const raw = await this.client.restApi<PaymentLimitsRaw>({
+                method: 'get',
+                path: `/v1/bank-accounts/${encodeURIComponent(accountId)}/payment-limits`,
+            })
 
-        return response?.paymentLimits ?? null
+            return {
+                perTransaction: Number(raw.transactionLimit),
+                dailyLimit: Number(raw.dailyLimit),
+                dailyRemainingVolume: Number(raw.dailyRemaining),
+            }
+        } catch {
+            return null
+        }
     }
 }

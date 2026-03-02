@@ -362,6 +362,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/bank-accounts/{accountId}/payment-limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get payment limits
+         * @description Returns payment limits for a specific bank account, including per-transaction and daily volume limits.
+         */
+        get: operations["getV1Bank-accountsByAccountIdPayment-limits"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/billers/": {
         parameters: {
             query?: never;
@@ -1715,7 +1735,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 69a52ba0e5cd3a0674020ebf
+                     * @example 69a546e71b2e721f28577f68
                      */
                     accountId: string;
                     /**
@@ -1743,7 +1763,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 69a52ba0e5cd3a0674020ebf
+                     * @example 69a546e71b2e721f28577f68
                      */
                     accountId: string;
                     /**
@@ -1771,7 +1791,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 69a52ba0e5cd3a0674020ebf
+                     * @example 69a546e71b2e721f28577f68
                      */
                     accountId: string;
                     /**
@@ -1818,7 +1838,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-03-02T06:18:08.570Z
+                         * @example 2026-03-02T08:14:31.158Z
                          */
                         createdAt: string;
                         /** @description What the user pays — total USD cost and token used. */
@@ -1857,7 +1877,7 @@ export interface operations {
                             rail: "ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay";
                             /**
                              * @description Destination account ID
-                             * @example 69a52ba0e5cd3a0674020ec0
+                             * @example 69a546e71b2e721f28577f69
                              */
                             accountId: string;
                         };
@@ -2066,7 +2086,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-03-02T06:18:08.570Z
+                         * @example 2026-03-02T08:14:31.158Z
                          */
                         createdAt: string;
                         /** @description What the user pays — total USD cost and token used. */
@@ -2105,7 +2125,7 @@ export interface operations {
                             rail: "ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay";
                             /**
                              * @description Destination account ID
-                             * @example 69a52ba0e5cd3a0674020ec0
+                             * @example 69a546e71b2e721f28577f69
                              */
                             accountId: string;
                         };
@@ -2586,7 +2606,7 @@ export interface operations {
                             };
                             /**
                              * @description Destination account ID
-                             * @example 69a52ba0e5cd3a0674020ec1
+                             * @example 69a546e71b2e721f28577f6a
                              */
                             accountId: string;
                             /** @enum {string} */
@@ -2798,7 +2818,7 @@ export interface operations {
                         };
                         /**
                          * @description Destination account ID
-                         * @example 69a52ba0e5cd3a0674020ec1
+                         * @example 69a546e71b2e721f28577f6a
                          */
                         accountId: string;
                         /** @enum {string} */
@@ -5742,6 +5762,121 @@ export interface operations {
             };
         };
     };
+    "getV1Bank-accountsByAccountIdPayment-limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payment limits for a bank account */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Maximum amount per transaction */
+                        transactionLimit: string;
+                        /** @description Maximum total daily payment volume */
+                        dailyLimit: string;
+                        /** @description Remaining daily payment volume */
+                        dailyRemaining: string;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:auth:token-expired
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Token Expired
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         * @example 403
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         * @example Invalid token
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         * @example write:orders
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:system:internal-error
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Internal Server Error
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         * @example 401
+                         * @example 404
+                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
     getV1Billers: {
         parameters: {
             query: {
@@ -8045,7 +8180,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 69a52ba0e5cd3a0674020ec7
+                         * @example 69a546e71b2e721f28577f70
                          */
                         userId: string;
                         /**
@@ -8061,7 +8196,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-03-02T07:18:08.653Z
+                         * @example 2026-03-02T09:14:31.179Z
                          */
                         expiresAt: string;
                     };
@@ -8218,7 +8353,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 69a52ba0e5cd3a0674020ec8
+                         * @example 69a546e71b2e721f28577f71
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -8425,7 +8560,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 69a52ba0e5cd3a0674020ec8
+                         * @example 69a546e71b2e721f28577f71
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -8937,7 +9072,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-03-02T06:23:08.653Z
+                         * @example 2026-03-02T08:19:31.179Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -9084,7 +9219,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 69a52ba0e5cd3a0674020eca
+                         * @example 69a546e71b2e721f28577f73
                          */
                         id: string;
                         email: (string | null) | null;
@@ -9092,7 +9227,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-03-02T06:18:08.662Z
+                         * @example 2026-03-02T08:14:31.244Z
                          */
                         signedUpAt: string;
                         timezone: (string | null) | null;
@@ -9422,7 +9557,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 69a52ba0e5cd3a0674020eca
+                         * @example 69a546e71b2e721f28577f73
                          */
                         id: string;
                         email: (string | null) | null;
@@ -9430,7 +9565,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-03-02T06:18:08.662Z
+                         * @example 2026-03-02T08:14:31.244Z
                          */
                         signedUpAt: string;
                         timezone: (string | null) | null;

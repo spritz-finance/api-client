@@ -35,5 +35,6 @@ export {
 } from './modules/user/accessTypes'
 export { onrampSupportedTokens } from './modules/virtualAccounts/types'
 export type { CreateVirtualAccountInput } from './modules/virtualAccounts/types'
+export type { PaymentLimitsResponse } from './modules/payment/paymentService'
 export type { paths as RestApiPaths, operations as RestApiOperations } from './rest/__generated__/api'
 export type { PathResponse, PathRequestBody, PathQuery, PathParams } from './rest/types'
