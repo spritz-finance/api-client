@@ -43,6 +43,7 @@ async function parseAPIResponse<Response>(
 export class SpritzClient {
     private baseGraphURL: string
     private baseRestURL: string
+    private baseRestApiURL: string
     private timeout: number
     private apiKey: string | undefined
     private integrationKey: string | undefined
@@ -62,6 +63,7 @@ export class SpritzClient {
         this.integrationKey = integrationKey
         this.baseGraphURL = config[environment].graphEndpoint
         this.baseRestURL = config[environment].baseEndpoint
+        this.baseRestApiURL = config[environment].restEndpoint
         this.timeout = validatePositiveInteger('timeout', timeout)
     }
 
@@ -107,6 +109,24 @@ export class SpritzClient {
             .then(({ response }) => response)
     }
 
+    public async restApi<Response, Request extends Record<string, any> = Record<string, any>>({
+        method,
+        path,
+        body = undefined,
+    }: {
+        method: HTTPMethod
+        path: string
+        body?: Request | undefined
+    }) {
+        return this.sendRestApiRequest({
+            method,
+            path,
+            body,
+        })
+            .then((res) => parseAPIResponse<Response>(res))
+            .then(({ response }) => response)
+    }
+
     public async sendQuery<V = any>({
         query: documentNodeQuery,
         variables: inputVariables,
@@ -128,6 +148,19 @@ export class SpritzClient {
         body: Record<string, any> | undefined
     }) {
         const { url, req, timeout } = this.buildRestRequest(method, path, body)
+        return this.sendHTTPRequest({ url, req, timeout })
+    }
+
+    public async sendRestApiRequest({
+        method,
+        path,
+        body,
+    }: {
+        method: HTTPMethod
+        path: string
+        body: Record<string, any> | undefined
+    }) {
+        const { url, req, timeout } = this.buildRestRequest(method, path, body, this.baseRestApiURL)
         return this.sendHTTPRequest({ url, req, timeout })
     }
 
@@ -229,7 +262,8 @@ export class SpritzClient {
     private buildRestRequest(
         method: HTTPMethod,
         path: string,
-        reqBody?: Record<string, any> | null
+        reqBody?: Record<string, any> | null,
+        baseURL?: string
     ) {
         const body = reqBody ? JSON.stringify(reqBody, null, 2) : null
         const contentLength = this.calculateContentLength(body)
@@ -251,8 +285,10 @@ export class SpritzClient {
             headers: reqHeaders,
         }
 
+        const base = baseURL ?? this.baseRestURL
+
         return {
-            url: `${this.baseRestURL}${path.startsWith('/') ? path : '/' + path}`,
+            url: `${base}${path.startsWith('/') ? path : '/' + path}`,
             req,
             timeout,
         }
