@@ -1,26 +1,18 @@
 # @spritz-finance/api-client
 
-A Typescript library for interacting with the Spritz Finance API
+TypeScript client for the Spritz Finance API — convert crypto to fiat payments.
 
 [![NPM](https://img.shields.io/npm/v/@spritz-finance/api-client.svg)](https://www.npmjs.com/package/@spritz-finance/api-client)
 
 ## Installation
 
-### Using npm
-
 ```bash
- npm install --save @spritz-finance/api-client
-```
-
-### Using yarn
-
-```bash
- yarn add @spritz-finance/api-client
+npm install @spritz-finance/api-client
+# or
+yarn add @spritz-finance/api-client
 ```
 
 ## Quick Start
-
-Get started with Spritz in minutes:
 
 ```typescript
 import {
@@ -29,22 +21,16 @@ import {
   PaymentNetwork,
   BankAccountType,
   BankAccountSubType,
-  DebitCardNetwork,
-  AmountMode,
 } from '@spritz-finance/api-client'
 
-// Initialize the client with your integration key
+// Initialize with your integration key
 const client = SpritzApiClient.initialize({
   environment: Environment.Sandbox,
   integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
 })
 
-// Create a user
-const user = await client.user.create({
-  email: 'user@example.com',
-})
-
-// Set the user's API key
+// Create a user and set their API key
+const user = await client.user.create({ email: 'user@example.com' })
 client.setApiKey(user.apiKey)
 
 // Add a bank account
@@ -63,116 +49,77 @@ const paymentRequest = await client.paymentRequest.create({
   network: PaymentNetwork.Ethereum,
 })
 
-// Get transaction data for blockchain payment
+// Get transaction data for the blockchain payment
 const transactionData = await client.paymentRequest.getWeb3PaymentParams({
   paymentRequest,
-  paymentTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC on mainnet
+  paymentTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
 })
 
-// Use transactionData to execute blockchain transaction in your app
+// Execute the blockchain transaction from the user's wallet
 ```
 
-## Table of contents
+## Table of Contents
 
-- [Quick Start](#quick-start)
-- [Installation](#installation)
-- [API Overview](#api-overview)
-  - [Creating a user](#creating-a-user)
-  - [Capabilities of the API Key](#capabilities-of-the-api-key)
-- [Usage](#usage)
-- [User Management](#user-management)
-  - [Creating a user](#creating-a-user-1)
-  - [Setting the User API Key](#setting-the-user-api-key)
-  - [Reauthorizing a user](#reauthorizing-a-user)
-  - [Basic User Data](#basic-user-data)
-  - [User Verification](#user-verification)
-- [Payment Flow](#payment-flow)
-  - [Basic payment flow](#basic-payment-flow)
-  - [Note on Issuing the Blockchain Transaction](#note-on-issuing-the-blockchain-transaction)
-  - [Example](#example)
+- [Authentication](#authentication)
+- [Users](#users)
+  - [Creating a User](#creating-a-user)
+  - [Reauthorization](#reauthorization)
+  - [User Data](#user-data)
+  - [Identity Verification](#identity-verification)
 - [Accounts](#accounts)
-  - [Account Types](#account-types)
-  - [Commonalities & Differences](#commonalities---differences)
   - [Bank Accounts](#bank-accounts)
   - [Debit Cards](#debit-cards)
   - [Bills](#bills)
-  - [Virtual Card](#virtual-card)
+  - [Virtual Cards](#virtual-cards)
   - [Address Book](#address-book)
-- [Account Management](#account-management)
-  - [Renaming accounts](#renaming-accounts)
-  - [Deleting accounts](#deleting-accounts)
-- [Bill Institutions](#bill-institutions)
-  - [Fetching popular bill institutions](#fetching-popular-bill-institutions)
-  - [Searching for bill institutions by name](#searching-for-bill-institutions-by-name)
-- [Payment Requests](#payment-requests)
-  - [Create a payment request](#create-a-payment-request)
-  - [Fulfil a payment request (EVM transactions)](#fulfil-a-payment-request--evm-transactions-)
-  - [Fulfil a payment request (Solana transactions)](#fulfil-a-payment-request--solana-transactions-)
-  - [Transaction fees](#transaction-fees)
-- [Payments](#payments)
-  - [Retrieve the payment for a payment request](#retrieve-the-payment-for-a-payment-request)
-  - [Retrieve all payments for an account](#retrieve-all-payments-for-an-account)
-  - [Get payment limits for an account](#get-payment-limits-for-an-account)
-- [Onramp Payments](#onramp-payments)
-  - [Create an onramp payment](#create-onramp-payment)
-  - [Retrieve all onramp payments for an account](#retrieve-all-onramp-payments-for-an-account)
-- [Webhooks](#webhooks)
-  - [Supported webhook events](#supported-webhook-events)
-  - [Setting up webhooks](#setting-up-webhooks)
-- [On-ramp Setup Guide](#on-ramp-setup-guide)
+  - [Renaming Accounts](#renaming-accounts)
+  - [Deleting Accounts](#deleting-accounts)
+- [Payments (Off-ramp)](#payments-off-ramp)
+  - [Payment Flow](#payment-flow)
+  - [Creating a Payment Request](#creating-a-payment-request)
+  - [Fulfilling a Payment — EVM](#fulfilling-a-payment--evm)
+  - [Fulfilling a Payment — Solana](#fulfilling-a-payment--solana)
+  - [Transaction Fees](#transaction-fees)
+  - [Retrieving Payments](#retrieving-payments)
+  - [Payment Limits](#payment-limits)
+- [On-ramp](#on-ramp)
   - [Prerequisites](#prerequisites)
-  - [Checking User Access Capabilities](#checking-user-access-capabilities)
-  - [Step-by-Step On-ramp Activation](#step-by-step-on-ramp-activation)
-  - [Creating Virtual Accounts](#creating-virtual-accounts)
-  - [Listing Virtual Accounts](#listing-virtual-accounts)
-  - [Supported Token Matrix](#supported-token-matrix)
-  - [Complete Example](#complete-example)
+  - [Checking User Access](#checking-user-access)
+  - [Activation Steps](#activation-steps)
+  - [Virtual Accounts](#virtual-accounts)
+  - [Supported Tokens](#supported-tokens)
+- [Webhooks](#webhooks)
+  - [Events](#events)
+  - [Setup](#setup)
+  - [Management](#management)
+  - [Security and Signing](#security-and-signing)
 
-## API Overview
+## Authentication
 
-**Purpose**: As an integrator, this guide will assist you in creating users and performing user-specific operations on the Spritz platform using the provided API key.
+Spritz uses two levels of authentication:
 
-### Creating a user
-
-When you create a user using your integration key:
-
-- You will receive an `API key` specific to that user.
-- This enables you to interact with the Spritz platform on the user's behalf.
-
-### Capabilities of the API Key
-
-Using the user-specific API key, you can:
-
-1. **Identity Verification**: Guide a user through the identity verification process.
-2. **Account Addition**:
-   - Add Bills for the user.
-   - Register Bank accounts.
-   - Issue Virtual cards.
-3. **Payment Requests**: Initiate payment requests to the aforementioned accounts.
-4. **Blockchain Transactions**: Issue blockchain-based transactions to fulfill the payment requests.
-5. **Payment Status**: Query the status of payments directed to the user's accounts.
-
-## Usage
-
-Your integration key is provided by Spritz and must always be provided.
-The api key is specific to each user,
-and is returned once the user is created. Leave the api key blank if you haven't created the user yet.
+- **Integration key** — identifies your application. Provided by Spritz.
+- **User API key** — scoped to a single user. Returned when you create a user.
 
 ```typescript
 import { SpritzApiClient, Environment } from '@spritz-finance/api-client'
 
 const client = SpritzApiClient.initialize({
   environment: Environment.Sandbox,
-  apiKey: 'YOUR_USER_API_KEY_HERE',
   integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
+  apiKey: 'YOUR_USER_API_KEY_HERE', // omit if no user exists yet
 })
 ```
 
-## User Management
+After creating a user, set their API key on the client:
 
-### Creating a user
+```typescript
+client.setApiKey(user.apiKey)
+```
 
-To create a new Spritz user, all you need is the user's email address. Note that trying to create a user with an email that already exists in the Spritz platform will throw an error.
+## Users
+
+### Creating a User
 
 ```typescript
 const user = await client.user.create({
@@ -180,159 +127,93 @@ const user = await client.user.create({
 })
 
 // Response
-user = {
-  email: "bilbo@shiremail.net"
-  userId: "62d17d3b377dab6c1342136e",
-  apiKey: "ak_ZTBGDcjfdTg3NmYtZDJlZC00ZjYyLThlMDMtZmYwNDJiZDRlMWZm"
+{
+  email: 'bilbo@shiremail.net',
+  userId: '62d17d3b377dab6c1342136e',
+  apiKey: 'ak_ZTBGDcjfdTg3NmYtZDJlZC00ZjYyLThlMDMtZmYwNDJiZDRlMWZm',
 }
 ```
 
-### Setting the User API Key
+Creating a user with an email that already exists will throw an error.
 
-After creating a user, you can easily set the user's API key onto your initialized client using the provided method:
+### Reauthorization
 
-```typescript
-client.setApiKey(user.apiKey)
-```
-
-Now you're ready to issue requests on behalf of the user.
-
-### Reauthorizing a user
-
-There is a scenrio where you may need to get access to a users API key again. This can happen if you are trying to sign in a user that already has a Spritz account, or if you have lost access to their API key. In this case, you can reauthorize the user by providing their email. The process is that we will send the user an OTP code to their email, and then the user must pass that code on to you to confirm that they are allowing you to interact with their account on their behalf.
+If you need to recover a user's API key (e.g., the user already has a Spritz account, or you've lost access), use the OTP reauthorization flow:
 
 ```typescript
+// Request an OTP code sent to the user's email
 const { success } = await client.user.requestApiKey('bilbo@shiremail.net')
 
+// Confirm with the OTP code the user provides
 const { apiKey, userId, email } = await client.user.authorizeApiKeyWithOTP({
   email: 'bilbo@shiremail.net',
   otp: '123456',
 })
 ```
 
-### Basic User Data
-
-Use this to fetch the user's basic data
+### User Data
 
 ```typescript
 const userData = await client.user.getCurrentUser()
 ```
 
-### User Verification
+### Identity Verification
 
-**Purpose**: To ensure users are properly identified before interacting with the Spritz platform.
+All users must complete identity verification before using the platform. New users start with a verification status of `NotStarted`.
 
-### Overview
+The user's verification data is included in the `getCurrentUser` response, including verification status, verification URL, verified country, and retry capability.
 
-All users must undergo basic identity verification before they can engage with the Spritz platform's features.
-
-### Process
-
-1. **User Creation**: Upon the creation of a new user, their default verification status will be set to `NotStarted`.
-
-2. **Checking Verification Status**: The user's verification data is included in the `getCurrentUser` response, including verification status, verification URL, verified country, and retry capability.
-
-3. **Verification Transition**: Once a user completes the identity verification process, their status will change from `NotStarted` to `Verified`. Only then can the user fully interact with the platform.
-
-4. **Getting Verification URL**: The verification URL is included in the user data response and is essential for the user to proceed with their identity verification.
-
-### How to Present Verification Flow to the User
-
-Spritz offers two methods for integrating KYC verification, both using the `getVerificationParams()` method:
+#### Getting Verification Parameters
 
 ```typescript
-// Get verification parameters from Spritz
 const verificationParams = await client.user.getVerificationParams()
 
-// The response includes:
+// Returns:
 // - inquiryId: Unique identifier for this verification inquiry
 // - verificationUrl: URL for hosted verification
-// - sessionToken: Token for use with Plaid Link SDK
+// - sessionToken: Token for use with Persona's Embedded Flow
 // - verificationUrlExpiresAt: Expiration timestamp for the verification URL
 ```
 
-#### Method 1: Verification URL (Simple Integration)
+#### Option 1: Verification URL
 
-Use the `verificationUrl` from `getVerificationParams()` for a straightforward integration where Spritz handles the entire verification flow:
-
-```typescript
-const verificationParams = await client.user.getVerificationParams()
-const verificationUrl = verificationParams.verificationUrl
-const expiresAt = verificationParams.verificationUrlExpiresAt
-
-// Important: The verification URL is short-lived and single-use
-// - Check the expiration with verificationUrlExpiresAt before using
-// - Once accessed, the URL becomes invalid
-// - If verification is not completed, call getVerificationParams() again for a new URL
-
-// Use the verification URL in your application:
-// - Browser: Open the URL in a new browser tab
-// - In-App: Embed the URL in an iframe within your application
-// - Mobile: Open the URL in a native mobile web view
-// - Email: Send users an email containing the link
-```
-
-**Note**: The verification URL can only be used once. If the user doesn't complete verification after accessing the URL, you'll need to call `getVerificationParams()` again to generate a fresh URL and session.
-
-#### Method 2: Embedded Flow (Advanced Integration)
-
-For more control over the verification experience, use the `inquiryId` and `sessionToken` (if present) from `getVerificationParams()` with the Persona Embedded Flow:
+The simplest integration — redirect the user to the hosted verification flow:
 
 ```typescript
-const verificationParams = await client.user.getVerificationParams()
-const inquiryId = verificationParams.inquiryId
-const sessionToken = verificationParams.sessionToken // May be null for some flows
+const { verificationUrl, verificationUrlExpiresAt } = await client.user.getVerificationParams()
 
-// Use the inquiryId (and sessionToken if present) with Persona's Embedded Flow
-// to create a custom verification experience
-// This allows you to:
-// - Customize the UI/UX of the verification process
-// - Handle callbacks and events directly
-// - Integrate verification seamlessly into your application flow
-// - Build a native mobile experience using Persona's mobile SDKs
+// Open in a browser tab, iframe, or mobile web view.
+// The URL is single-use and short-lived. If it expires or the user
+// doesn't complete verification, call getVerificationParams() again.
 ```
 
-The embedded flow method is ideal when you want to:
+#### Option 2: Embedded Flow
 
-- Maintain full control over the user experience
-- Integrate verification directly into your app without redirects
-- Handle verification events and callbacks programmatically
-- Track and resume verification sessions with the inquiryId
+For full control over the UX, use the `inquiryId` and `sessionToken` with [Persona's Embedded Flow](https://docs.withpersona.com/quickstart-embedded-flow):
 
-See the [Persona Embedded Flow documentation](https://docs.withpersona.com/quickstart-embedded-flow) for detailed integration instructions with the inquiryId and sessionToken.
+```typescript
+const { inquiryId, sessionToken } = await client.user.getVerificationParams()
 
-### Verification Metadata (Failed Verifications)
+// Use inquiryId (and sessionToken if present) with Persona's SDK
+// to embed the verification flow directly in your app.
+```
 
-When a user's verification fails, Spritz now provides additional metadata to help understand the failure reason and provide better user experience. This metadata is particularly useful for handling duplicate identity scenarios.
+#### Handling Verification Failures
 
-#### Understanding Verification Metadata
+When verification fails, the `verificationMetadata` field on the user object provides the failure reason:
 
-The verification metadata is available when a verification has failed and includes:
+| Failure Reason | Description |
+|---|---|
+| `verify_sms` | SMS verification failed |
+| `documentary_verification` | Document verification failed |
+| `risk_check` | Risk assessment failed |
+| `kyc_check` | KYC check failed |
+| `watchlist_screening` | Watchlist screening failed |
+| `selfie_check` | Selfie verification failed |
+| `address_invalid` | Invalid address |
+| `duplicate_identity` | Identity already exists |
 
-- **`failureReason`**: The specific reason why the verification failed
-- **`details.matchedEmail`**: For duplicate identity failures, shows the email of the matched user (only if created through the same integration)
-
-#### Verification Failure Reasons
-
-The following verification failure reasons may be returned:
-
-- **`verify_sms`**: SMS verification failed
-- **`documentary_verification`**: Document verification failed
-- **`risk_check`**: Risk assessment check failed
-- **`kyc_check`**: KYC (Know Your Customer) check failed
-- **`watchlist_screening`**: Watchlist screening check failed
-- **`selfie_check`**: Selfie verification check failed
-- **`address_invalid`**: Provided address is invalid
-- **`duplicate_identity`**: Identity already exists in the system
-
-#### Duplicate Identity Handling
-
-When a verification fails due to `duplicate_identity`, the system detects that the user has already been verified under a different account. The `matchedEmail` field helps determine:
-
-- **If `matchedEmail` is populated**: The duplicate user was created through your integration
-- **If `matchedEmail` is `null`**: The duplicate user was created through a different integration (e.g., the main Spritz app)
-
-This allows you to provide appropriate guidance to your users:
+For `duplicate_identity` failures, `matchedEmail` indicates whether the duplicate was created through your integration:
 
 ```typescript
 const userData = await client.user.getCurrentUser()
@@ -341,157 +222,60 @@ if (userData.verificationMetadata?.failureReason === 'duplicate_identity') {
   const matchedEmail = userData.verificationMetadata.details.matchedEmail
 
   if (matchedEmail) {
-    // User exists within your integration
-    console.log(`This identity is already verified with account: ${matchedEmail}`)
-    // Guide user to use their existing account
+    // Duplicate exists within your integration — guide user to their existing account
+    console.log(`Already verified as: ${matchedEmail}`)
   } else {
-    // User exists in Spritz but not in your integration
-    console.log('This identity is already verified with another Spritz account')
-    // Inform user they need to use their original Spritz account
+    // Duplicate exists in a different integration (e.g., the main Spritz app)
+    console.log('Identity already verified with another Spritz account')
   }
 }
-```
-
-## Payment Flow
-
-### Basic payment flow
-
-Execute a payment in a few simple steps:
-
-1. **Select an Account**: Choose the account you wish to pay to.
-2. **Initiate Payment Request**: Use the account's ID, your desired payment amount, and the chosen blockchain network to create a payment request.
-3. **Retrieve Transaction Data**: Use the `getWeb3PaymentParams` method to obtain the necessary transaction data for fulfilling the payment request.
-4. **Blockchain Transaction**: Issue the required blockchain transaction from the user's wallet.
-5. **Payment Confirmation**: After blockchain transaction confirmation, check the status of the TradFi payment.
-
-### Note on Issuing the Blockchain Transaction
-
-For Spritz to process a TradFi payment to an account, we need to receive a blockchain transaction on our smart contract, which provides us the crypto funds. As an integrator, it's essential to manage how the blockchain transaction is initiated from the user's wallet to Spritz.
-
-- **Wallet Apps**: If your application functions as a wallet, prompt the user to sign a transaction using data from `getWeb3PaymentParams`.
-- **Web-based Dapps**: Use your existing connection to the user's wallet to prompt a transaction.
-
-If your application doesn't have a connection to the user's wallet, consider implementing one. Some popular options include:
-
-- [Web3Modal (Web-based)](https://github.com/WalletConnect/web3modal)
-- [Web3Modal (React Native)](https://github.com/WalletConnect/modal-react-native)
-- [Web3-Onboard](https://onboard.blocknative.com/docs/overview/introduction#features)
-
-### Example
-
-```typescript
-// Fetch all bank accounts for the user
-const bankAccounts = await client.bankAccount.list()
-
-// Choose a bank account to use for the payment request
-const account = bankAccounts[0]
-
-// Create a payment request for the selected bank account
-const paymentRequest = await client.paymentRequest.create({
-  amount: 100,
-  accountId: account.id,
-  network: PaymentNetwork.Ethereum,
-})
-
-// Retrieve the transaction data required to issue a blockchain transaction
-const transactionData = await client.paymentRequest.getWeb3PaymentParams({
-  paymentRequest,
-  paymentTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC on mainnet
-})
-
-/**
- * Issue blockchain transaction with the transaction data
- * and wait for confirmation
- **/
-
-// Retrieve the payment issued for the payment request to check the payment status and confirmation
-const payment = await client.payment.getForPaymentRequest(paymentRequest.id)
 ```
 
 ## Accounts
 
-Spritz emphasizes its capabilities in account handling and payment processing.
-
-### Account Types
-
-Spritz supports four distinct types of accounts:
-
-1. **Bank Account**
-2. **Debit Card**
-3. **Bill**
-4. **Virtual Card**
-
-Though each account type possesses its unique creation process and specific properties, it's important to understand that all of them are uniformly termed as an "account" within the Spritz platform.
-
-### Commonalities & Differences
-
-- **Common Properties**: Every type of account shares certain properties consistent across the platform.
-- **Unique Properties**: Each account type also has attributes specific to its nature and functionality.
-
-Recognizing these nuances is crucial for optimal interaction with the Spritz platform's account-related features.
+Spritz supports four account types: **Bank Account**, **Debit Card**, **Bill**, and **Virtual Card**. All are referred to as "accounts" within the platform and share common properties (`id`, `type`, `userId`, `country`, `currency`, `createdAt`), with additional fields specific to each type.
 
 ### Bank Accounts
 
-Spritz offers a dedicated interface to manage bank accounts, allowing seamless listing and addition of bank account details for users.
-
-#### List user bank accounts
-
-To retrieve all bank accounts linked to a user:
+#### List
 
 ```typescript
 const bankAccounts = await client.bankAccount.list()
 ```
 
-The `bankAccount.list()` method returns an array of user-linked bank accounts, complete with essential details to display in a UI and facilitate payments:
-
 ```typescript
-const bankAccounts = [{
-  id: "62d17d3b377dab6c1342136e",
-  name: "Precious Savings",
-  type: "BankAccount",
-  bankAccountType: "USBankAccount",
-  bankAccountSubType: "Checking",
-  userId: "62d17d3b377dab6c1342136e",
-  accountNumber: "1234567",
+// Example response
+[{
+  id: '62d17d3b377dab6c1342136e',
+  name: 'Precious Savings',
+  type: 'BankAccount',
+  bankAccountType: 'USBankAccount',
+  bankAccountSubType: 'Checking',
+  userId: '62d17d3b377dab6c1342136e',
+  accountNumber: '1234567',
   bankAccountDetails: {
-    routingNumber: "00000123",
-  }
-  country: "US",
-  currency: "USD",
-  email: "bilbo@shiremail.net",
+    routingNumber: '00000123',
+  },
+  country: 'US',
+  currency: 'USD',
+  email: 'bilbo@shiremail.net',
   institution: {
-    id: "62d27d4b277dab3c1342126e",
-    name: "Shire Bank",
-	logo: "https://tinyurl.com/shire-bank-logo",
+    id: '62d27d4b277dab3c1342126e',
+    name: 'Shire Bank',
+    logo: 'https://tinyurl.com/shire-bank-logo',
   },
   ownedByUser: true,
-  createdAt: "2023-05-03T11:25:02.401Z",
-  deliveryMethods: ['STANDARD', 'INSTANT']
+  createdAt: '2023-05-03T11:25:02.401Z',
+  deliveryMethods: ['STANDARD', 'INSTANT'],
 }]
 ```
 
-#### Add US bank account
-
-Currently, Spritz supports the addition of US bank accounts:
-
-The input structure for adding a US bank account is defined as:
-
-```typescript
-// Input arguments for creating a US bank account
-export interface USBankAccountInput {
-  accountNumber: string
-  email?: string | null
-  name?: string | null
-  ownedByUser?: boolean | null
-  routingNumber: string
-  subType: BankAccountSubType
-}
-```
+#### Create US Bank Account
 
 ```typescript
 import { BankAccountType, BankAccountSubType } from '@spritz-finance/api-client'
 
-const bankAccounts = await client.bankAccount.create(BankAccountType.USBankAccount, {
+const bankAccount = await client.bankAccount.create(BankAccountType.USBankAccount, {
   accountNumber: '123456789',
   routingNumber: '987654321',
   name: 'Precious Savings',
@@ -500,29 +284,25 @@ const bankAccounts = await client.bankAccount.create(BankAccountType.USBankAccou
 })
 ```
 
-#### Add Canadian bank account
-
-Currently, Spritz supports the addition of Canadian bank accounts:
-
-The input structure for adding a Canadian bank account is defined as:
+Input fields:
 
 ```typescript
-// Input arguments for creating a Canadian bank account
-export interface CABankAccountInput {
+interface USBankAccountInput {
   accountNumber: string
-  email?: string
-  name: string
-  ownedByUser?: boolean | null
-  transitNumber: string
-  institutionNumber: string
+  routingNumber: string
   subType: BankAccountSubType
+  name?: string | null
+  email?: string | null
+  ownedByUser?: boolean | null
 }
 ```
+
+#### Create Canadian Bank Account
 
 ```typescript
 import { BankAccountType, BankAccountSubType } from '@spritz-finance/api-client'
 
-const bankAccounts = await client.bankAccount.create(BankAccountType.CABankAccount, {
+const bankAccount = await client.bankAccount.create(BankAccountType.CABankAccount, {
   accountNumber: '123456789',
   transitNumber: '12345',
   institutionNumber: '123',
@@ -532,152 +312,145 @@ const bankAccounts = await client.bankAccount.create(BankAccountType.CABankAccou
 })
 ```
 
+Input fields:
+
+```typescript
+interface CABankAccountInput {
+  accountNumber: string
+  transitNumber: string
+  institutionNumber: string
+  name: string
+  subType: BankAccountSubType
+  email?: string
+  ownedByUser?: boolean | null
+}
+```
+
 ### Debit Cards
 
-Spritz provides support for adding debit cards as payment accounts, allowing users to make payments directly to their debit cards.
+Supported networks: **Visa** and **Mastercard**.
 
-#### List user debit cards
-
-To retrieve all debit cards linked to a user:
+#### List
 
 ```typescript
 const debitCards = await client.debitCard.list()
 ```
 
-The `debitCard.list()` method returns an array of user-linked debit cards:
-
 ```typescript
-const debitCards = [
-  {
-    id: '62d17d3b377dab6c1342136e',
-    type: 'DebitCard',
-    name: 'My Visa Debit',
-    userId: '62d17d3b377dab6c1342136e',
-    country: 'US',
-    currency: 'USD',
-    payable: true,
-    debitCardNetwork: 'Visa',
-    expirationDate: '12/25',
-    cardNumber: '4111111111111111',
-    mask: '1111',
-    createdAt: '2023-01-01T00:00:00Z',
-    paymentCount: 5,
-    externalId: 'ext-123',
-  },
-]
+// Example response
+[{
+  id: '62d17d3b377dab6c1342136e',
+  type: 'DebitCard',
+  name: 'My Visa Debit',
+  userId: '62d17d3b377dab6c1342136e',
+  country: 'US',
+  currency: 'USD',
+  payable: true,
+  debitCardNetwork: 'Visa',
+  expirationDate: '12/25',
+  cardNumber: '4111111111111111',
+  mask: '1111',
+  createdAt: '2023-01-01T00:00:00Z',
+  paymentCount: 5,
+  externalId: 'ext-123',
+}]
 ```
 
-#### Add a debit card
-
-To add a new debit card for a user:
+#### Create
 
 ```typescript
-import { DebitCardNetwork } from '@spritz-finance/api-client'
-
 const debitCard = await client.debitCard.create({
-  name: 'My Visa Debit',
-  cardNumber: '4111111111111111',
-  expirationDate: '12/25',
+  cardNumber: '4111111111111111', // 13-19 digits
+  expirationDate: '12/25',       // MM/YY
+  name: 'My Visa Debit',         // optional
 })
 ```
 
-The input structure for adding a debit card is:
-
-```typescript
-export interface DebitCardInput {
-  name?: string | null // Optional name for the card
-  cardNumber: string // Full card number (13-19 digits)
-  expirationDate: string // Expiration date in MM/YY format
-}
-```
-
-Supported debit card networks:
-
-- `Visa`
-- `Mastercard`
-
 ### Bills
 
-Spritz provides robust support for bills, allowing seamless management and interaction with user billing accounts. Below is a guide to the methods and functionalities specifically designed for handling bills within Spritz.
-
-#### List user bills
-
-To retrieve all bill accounts associated with a user:
+#### List
 
 ```typescript
 const bills = await client.bill.list()
 ```
 
-The `bill.list()` method returns an array of user-associated bills, complete with essential details for display in a UI and for processing payments:
-
 ```typescript
-const bills = [
-  {
-    id: '62d17d3b377dab6c1342136e',
-    name: 'Precious Credit Card',
-    type: 'Bill',
-    billType: 'CreditCard',
-    userId: '62d17d3b377dab6c1342136e',
-    mask: '4567',
-    originator: 'User',
-    payable: true,
-    verifying: false,
-    billAccountDetails: {
-      balance: 240.23,
-      amountDue: 28.34,
-      openedAt: '2023-05-03T11:25:02.401Z',
-      lastPaymentAmount: null,
-      lastPaymentDate: null,
-      nextPaymentDueDate: '2023-06-03T11:25:02.401Z',
-      nextPaymentMinimumAmount: 28.34,
-      lastStatementBalance: 180.23,
-      remainingStatementBalance: null,
-    },
-    country: 'US',
-    currency: 'USD',
-    dataSync: {
-      lastSync: '2023-05-03T11:25:02.401Z',
-      syncStatus: 'Active',
-    },
-    institution: {
-      id: '62d27d4b277dab3c1342126e',
-      name: 'Shire Bank Credit Card',
-      logo: 'https://tinyurl.com/shire-bank-logo',
-    },
-    createdAt: '2023-05-03T11:25:02.401Z',
-    deliveryMethods: ['STANDARD'],
+// Example response
+[{
+  id: '62d17d3b377dab6c1342136e',
+  name: 'Precious Credit Card',
+  type: 'Bill',
+  billType: 'CreditCard',
+  userId: '62d17d3b377dab6c1342136e',
+  mask: '4567',
+  originator: 'User',
+  payable: true,
+  verifying: false,
+  billAccountDetails: {
+    balance: 240.23,
+    amountDue: 28.34,
+    openedAt: '2023-05-03T11:25:02.401Z',
+    lastPaymentAmount: null,
+    lastPaymentDate: null,
+    nextPaymentDueDate: '2023-06-03T11:25:02.401Z',
+    nextPaymentMinimumAmount: 28.34,
+    lastStatementBalance: 180.23,
+    remainingStatementBalance: null,
   },
-]
+  country: 'US',
+  currency: 'USD',
+  dataSync: {
+    lastSync: '2023-05-03T11:25:02.401Z',
+    syncStatus: 'Active',
+  },
+  institution: {
+    id: '62d27d4b277dab3c1342126e',
+    name: 'Shire Bank Credit Card',
+    logo: 'https://tinyurl.com/shire-bank-logo',
+  },
+  createdAt: '2023-05-03T11:25:02.401Z',
+  deliveryMethods: ['STANDARD'],
+}]
 ```
 
-#### Add US bill account
+#### Create
 
-Currently, Spritz allows the addition of US bill accounts only. The process involves identifying the institution managing the bill and inputting the bill's account number. Here's a guide on how to add a bill for a user:
+Adding a bill requires the institution ID and the account number:
 
 ```typescript
 import { BillType } from '@spritz-finance/api-client'
 
 const institutions = await client.institution.popularUSBillInstitutions(BillType.CreditCard)
-const billInstitution = institutions[0]
-const accountNumber = '12345678913213'
-
-const bill = await client.bill.create(billInstitution.id, accountNumber, BillType.CreditCard)
+const bill = await client.bill.create(institutions[0].id, '12345678913213', BillType.CreditCard)
 ```
 
-### Virtual Card
+#### Finding Bill Institutions
 
-Spritz offers the ability to create virtual cards that users can fund using cryptocurrency. These virtual cards represent an alternative payment account offered by Spritz. To effectively interact with the Virtual Card feature, use the API endpoints detailed below.
+```typescript
+// Popular institutions (optionally filtered by bill type)
+const popular = await client.institution.popularUSBillInstitutions()
+const mortgages = await client.institution.popularUSBillInstitutions(BillType.Mortgage)
 
-#### Fetch a users virtual card
+// Search by name
+const results = await client.institution.searchUSBillInstitutions('american express')
+const filtered = await client.institution.searchUSBillInstitutions('american express', BillType.CreditCard)
+```
 
-The fetch endpoint returns an object containing details associated with the virtual card. Importantly, this object excludes sensitive card information such as the card number and the CVV.
+### Virtual Cards
+
+Virtual cards are crypto-funded payment cards.
+
+#### Fetch
+
+Returns card details excluding sensitive fields (card number, CVV):
 
 ```typescript
 const virtualCard = await client.virtualCard.fetch()
 ```
 
 ```typescript
-const virtualCard = {
+// Example response
+{
   id: '62d17d3b377dab6c1342136e',
   type: 'VirtualCard',
   virtualCardType: 'USVirtualDebitCard',
@@ -703,7 +476,7 @@ const virtualCard = {
 }
 ```
 
-#### Create a US virtual debit card
+#### Create
 
 ```typescript
 import { VirtualCardType } from '@spritz-finance/api-client'
@@ -711,189 +484,71 @@ import { VirtualCardType } from '@spritz-finance/api-client'
 const virtualCard = await client.virtualCard.create(VirtualCardType.USVirtualDebitCard)
 ```
 
-#### Displaying sensitive card details
+#### Displaying Sensitive Card Details
 
-To show the sensitive card details that users require for payment transactions, you must integrate our dedicated drop-in widget. This widget securely renders card details. Use the renderSecret, obtained from the standard fetch card endpoint, in conjunction with the user's API key.
+To render the full card number and CVV, use the `renderSecret` from the fetch response with one of the Spritz secure element libraries:
 
-We currently support and maintain the following packages for the card rendering process:
+- [React](https://www.npmjs.com/package/@spritz-finance/react-secure-elements)
+- [React Native](https://www.npmjs.com/package/@spritz-finance/react-native-secure-elements)
 
-- [React Library](https://www.npmjs.com/package/@spritz-finance/react-secure-elements)
-- [React Native Library](https://www.npmjs.com/package/@spritz-finance/react-native-secure-elements)
+### Address Book
 
-## Address Book
-
-Each account created in Spritz is allocated a unique on-chain payment address for each network. Tokens transferred to this address will be picked up and credited to the account. A list of the addresses, one per network, is available under the `paymentAddresses` property. Refer to the Spritz UI for which tokens are accepted for these addresses -- generally, we accept at least USDC and USDT on all networks which we integrate with.
+Each account is allocated a unique on-chain payment address per network. Tokens sent to these addresses are automatically credited to the account. Accepted tokens vary by network — generally USDC and USDT at minimum.
 
 ```typescript
-[
-  {
-    id: '62d17d3b377dab6c1342136e',
-    name: 'Precious Credit Card',
-    type: 'Bill',
-    billType: 'CreditCard',
-    ...
-    paymentAddresses: [
-      {
-        network: 'ethereum',
-        address: '0xc0ffee254729296a45a3885639AC7E10F9d54979',
-      },
-      {
-        network: 'polygon',
-        address: '0xc0ffee254729296a45a3885639AC7E10F9d54979',
-      },
-    ],
-  },
-]
+// Included in account responses
+{
+  paymentAddresses: [
+    { network: 'ethereum', address: '0xc0ffee254729296a45a3885639AC7E10F9d54979' },
+    { network: 'polygon', address: '0xc0ffee254729296a45a3885639AC7E10F9d54979' },
+  ],
+}
 ```
 
-## Account Management
-
-### Renaming accounts
-
-#### Rename a bank account
-
-You can conveniently change the display name of a bank account using the following endpoint. The first argument specifies the ID of the bank account, while the second argument represents the desired new name for the account.
+### Renaming Accounts
 
 ```typescript
-const updateAccount = await client.bankAccount.rename('62d17d3b377dab6c1342136e', 'My new account')
+await client.bankAccount.rename('account-id', 'New Name')
+await client.debitCard.rename('card-id', 'New Name')
+await client.bill.rename('bill-id', 'New Name')
 ```
 
-#### Rename a debit card
-
-You can change the display name of a debit card:
+### Deleting Accounts
 
 ```typescript
-const updatedCard = await client.debitCard.rename(
-  '62d17d3b377dab6c1342136e',
-  'My primary debit card'
-)
+await client.bankAccount.delete('account-id')
+await client.debitCard.delete('card-id')
+await client.bill.delete('bill-id')
 ```
 
-#### Rename a bill
+## Payments (Off-ramp)
 
-You can conveniently change the display name of a bill using the following endpoint. The first argument specifies the ID of the bill, while the second argument represents the desired new name for the account.
+### Payment Flow
 
-```typescript
-const updateAccount = await client.bill.rename('62d17d3b377dab6c1342136e', 'My first credit card')
-```
+1. **Select an account** — choose the bank account, debit card, or bill to pay.
+2. **Create a payment request** — specify amount, account ID, and blockchain network.
+3. **Get transaction data** — call `getWeb3PaymentParams` (EVM) or `getSolanaPaymentParams` (Solana).
+4. **Execute the blockchain transaction** — sign and submit from the user's wallet.
+5. **Check payment status** — query the resulting fiat payment.
 
-### Deleting accounts
+> Your application needs a connection to the user's wallet to sign transactions. If you don't have one, consider [Web3Modal](https://github.com/WalletConnect/web3modal) or [Web3-Onboard](https://onboard.blocknative.com/docs/overview/introduction#features).
 
-#### Delete a bank account
-
-To remove a bank account from a user's account, you can use the following endpoint. You only need to specify the ID of the bank account that you want to delete as an argument.
-
-```typescript
-await client.bankAccount.delete('62d17d3b377dab6c1342136e')
-```
-
-#### Delete a debit card
-
-To remove a debit card from a user's account:
+### Creating a Payment Request
 
 ```typescript
-await client.debitCard.delete('62d17d3b377dab6c1342136e')
-```
+import { PaymentNetwork, AmountMode } from '@spritz-finance/api-client'
 
-#### Delete a bill
-
-To remove a bill from a user's account, you can use the following endpoint. You only need to specify the ID of the bill that you want to delete as an argument.
-
-```typescript
-await client.bill.delete('62d17d3b377dab6c1342136e')
-```
-
-## Bill Institutions
-
-When adding a new bill for a user, we need to provide a reference to the institution who holds the account for the user. As an example, if a user wanted to add their Chase Visa Credit Card to their Spritz account, the Institution of the account would be `Chase Credit Cards` and then the account number provided would be the 16-digit card number for their credit card.
-
-Spritz exposes several endpoints to help users find the Institutions of their bill accounts.
-
-### Fetching popular bill institutions
-
-```typescript
-const popularInstitutions = await client.institution.popularUSBillInstitutions()
-
-// Optionally filter by a specific bill type
-const popularInstitutions = await client.institution.popularUSBillInstitutions(BillType.Mortgage)
-```
-
-### Searching for bill institutions by name
-
-```typescript
-const institutions = await client.institution.searchUSBillInstitutions('american express')
-
-// Optionally filter by a specific bill type
-const institutions = await client.institution.searchUSBillInstitutions(
-  'american express',
-  BillType.CreditCard
-)
-```
-
-## Payment Requests
-
-A payment request refers to the intent to initiate a payment to a specific account. Once a payment request is created, a blockchain transaction is required to fulfill it. After the blockchain transaction settles, the payment request is completed, and a fiat payment is issued to the designated account.
-
-### Create a payment request
-
-To initiate a payment request for a specific account, you can use the following functionality. The required inputs for creating a payment request include the ID of the account to be paid, the amount of the fiat payment in USD, and the network on which the blockchain transaction will settle.
-
-#### Amount Mode
-
-When creating a payment request, you can specify how the amount should be calculated using the `amountMode` parameter:
-
-- **`TOTAL_AMOUNT`**: The payer covers the entire amount including fees. The specified amount is the total that will be deducted from the payer's wallet.
-- **`AMOUNT_RECEIVED`** (default): The payment that arrives in the bank account excludes fees. The specified amount is what the recipient will receive, and fees are added on top.
-
-This allows you to control whether fees are included in or added to the specified amount.
-
-#### Fee Subsidies (Integrator Feature)
-
-Integrators can subsidize transaction fees on behalf of their users. When enabled, you can cover part or all of the transaction fees, which Spritz will invoice to you separately.
-
-> **Note**: Fee subsidies are a gated feature and must be enabled by the Spritz team before use. Contact Spritz to request access.
-
-**Parameters:**
-
-- **`feeSubsidyPercentage`** (string): The percentage of the transaction fee you want to subsidize for the user. For example, `"100"` covers the entire fee, `"50"` covers half.
-- **`maxFeeSubsidyAmount`** (string, optional): The maximum dollar amount you're willing to subsidize per transaction. If the fee exceeds this cap, the user pays the difference.
-
-**How it works:**
-
-1. Set `feeSubsidyPercentage` to define what portion of fees you'll cover
-2. Optionally set `maxFeeSubsidyAmount` to cap your exposure
-3. Spritz invoices you separately for the subsidized amounts
-4. Users see reduced or zero fees on their transactions
-
-**Example:**
-
-```typescript
-// Cover 100% of fees up to $5 per transaction
 const paymentRequest = await client.paymentRequest.create({
   amount: 100,
   accountId: account.id,
   network: PaymentNetwork.Ethereum,
-  feeSubsidyPercentage: '100',
-  maxFeeSubsidyAmount: '5',
+  deliveryMethod: 'INSTANT',                // optional
+  amountMode: AmountMode.TOTAL_AMOUNT,       // optional, defaults to AMOUNT_RECEIVED
 })
-
-// If transaction fee is $3: integrator pays $3, user pays $0
-// If transaction fee is $8: integrator pays $5, user pays $3
 ```
 
 ```typescript
-import {PaymentNetwork, AmountMode} from '@spritz-finance/api-client';
-
-const paymentRequest = await client.paymentRequest.create({
-	amount: 100,
-	accountId: account.id,
-	network: PaymentNetwork.Ethereum,
-  deliveryMethod: 'INSTANT',
-  amountMode: AmountMode.TOTAL_AMOUNT // Optional, defaults to AMOUNT_RECEIVED
-});
-
 // Example response
-
 {
   id: '645399c8c1ac408007b12273',
   userId: '63d12d3B577fab6c6382136e',
@@ -903,108 +558,98 @@ const paymentRequest = await client.paymentRequest.create({
   feeAmount: 0,
   amountDue: 100,
   network: 'ethereum',
-  createdAt: '2023-05-04T11:40:56.488Z'
+  createdAt: '2023-05-04T11:40:56.488Z',
 }
 ```
 
-### Fulfil a payment request (EVM transactions)
+#### Amount Mode
 
-After creating a payment request, you must issue a blockchain transaction to settle the payment request. For EVM compatible networks, this involves interacting with the SpritzPay smart contract (see: [SpritzPay deployments](https://docs.spritz.finance/docs/deployment-addresses)).
+- **`AMOUNT_RECEIVED`** (default) — the recipient receives the specified amount; fees are added on top.
+- **`TOTAL_AMOUNT`** — the specified amount includes fees; the recipient receives less.
 
-To obtain the data needed for the transaction, you can use the following endpoint.
+#### Fee Subsidies
+
+Integrators can subsidize transaction fees on behalf of users. This is a gated feature — contact Spritz to enable it.
 
 ```typescript
-import {PaymentNetwork} from '@spritz-finance/api-client';
-
 const paymentRequest = await client.paymentRequest.create({
-	amount: 100,
-	accountId: account.id,
-	network: PaymentNetwork.Ethereum,
-});
+  amount: 100,
+  accountId: account.id,
+  network: PaymentNetwork.Ethereum,
+  feeSubsidyPercentage: '100',     // percentage of fee to cover
+  maxFeeSubsidyAmount: '5',        // cap per transaction in USD
+})
 
+// Fee = $3 → integrator pays $3, user pays $0
+// Fee = $8 → integrator pays $5, user pays $3
+```
+
+Subsidized amounts are invoiced to the integrator separately.
+
+### Fulfilling a Payment — EVM
+
+For EVM networks, you interact with the SpritzPay smart contract ([deployment addresses](https://docs.spritz.finance/docs/deployment-addresses)):
+
+```typescript
 const transactionData = await client.paymentRequest.getWeb3PaymentParams({
-	paymentRequest,
-	paymentTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC on mainnet
+  paymentRequest,
+  paymentTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
 })
 
 // Example response
-
 {
   contractAddress: '0xbF7Abc15f00a8C2d6b13A952c58d12b7c194A8D0',
   method: 'payWithToken',
-  calldata: '0xd71d9632000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000000000000000000000000000000000000005f5e100000000000000000000000000000000000000000064539a31c1ac408007b12277',
+  calldata: '0xd71d9632...',
   value: null,
   requiredTokenInput: '100000000',
 }
 ```
 
-The contract address (to), calldata (data), and value are the primary components used to execute the blockchain transaction. You can use the `requiredTokenInput` to verify that the user's wallet has sufficient funds to complete the payment before initiating the transaction.
+Use `contractAddress` as `to`, `calldata` as `data`, and `value` to build the transaction. Check `requiredTokenInput` against the user's balance before submitting.
 
-### Fulfil a payment request (Solana transactions)
-
-For Solana payments, you need to obtain a versioned transaction that can be signed and submitted to the Solana network.
+### Fulfilling a Payment — Solana
 
 ```typescript
-import {PaymentNetwork} from '@spritz-finance/api-client';
-
-const paymentRequest = await client.paymentRequest.create({
-	amount: 100,
-	accountId: account.id,
-	network: PaymentNetwork.Solana,
-});
-
 const transactionData = await client.paymentRequest.getSolanaPaymentParams({
-	paymentRequest,
-	paymentTokenAddress: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC on Solana
-	signer: 'YourSolanaWalletAddress...',
+  paymentRequest,
+  paymentTokenAddress: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
+  signer: 'YourSolanaWalletAddress',
 })
 
 // Example response
-
 {
-  versionedTransaction: VersionedTransaction, // Deserialized transaction ready to sign
-  transactionSerialized: 'base64EncodedTransaction...' // Base64 encoded transaction
+  versionedTransaction: VersionedTransaction, // ready to sign
+  transactionSerialized: 'base64...',          // base64-encoded alternative
 }
 ```
 
-The `versionedTransaction` is a deserialized Solana transaction that can be signed with your wallet and submitted to the network. The `transactionSerialized` contains the same transaction in base64 encoded format if needed for your implementation.
+### Transaction Fees
 
-### Transaction fees
-
-Transaction fees are applied once the monthly transaction volume exceeds $100. To determine the fee amount for a specific payment value, you can use the following endpoint.
+Fees apply once monthly volume exceeds $100. To check the fee for a given amount:
 
 ```typescript
-const fees = await client.paymentRequest.transactionPrice(101)
-
-// Example response
-0.01
+const fee = await client.paymentRequest.transactionPrice(101)
+// Returns: 0.01
 ```
 
-## Payments
+### Retrieving Payments
 
-Payments represent a fiat payment that has been issued to the account. Once the status of the Payment Request has moved to `Confirmed` then the Payment will be created.
-
-### Transaction Details
-
-Payments now include transaction details about the blockchain transaction that fulfilled the payment. When a payment is completed, the `transaction` field contains:
-
-- **hash**: The blockchain transaction hash
-- **from**: The wallet address that sent the payment
-- **asset**: The token contract address used for payment
-- **value**: The amount transferred (in the token's smallest unit)
-- **network**: The blockchain network used (e.g., 'ethereum', 'polygon', etc.)
-
-This allows you to track the on-chain transaction that corresponds to each fiat payment.
-
-### Retrieve a payment by ID
-
-You can fetch a payment directly by its ID:
+Payments are created once a payment request reaches `Confirmed` status.
 
 ```typescript
-const payment = await client.payment.fetchById('6368e3a3ec516e9572bbd23b');
+// By payment ID
+const payment = await client.payment.fetchById('6368e3a3ec516e9572bbd23b')
 
+// By payment request ID
+const payment = await client.payment.getForPaymentRequest(paymentRequest.id)
+
+// All payments for an account
+const payments = await client.payment.listForAccount(account.id)
+```
+
+```typescript
 // Example response
-
 {
   id: '6368e3a3ec516e9572bbd23b',
   userId: '63d12d3B577fab6c6382136e',
@@ -1014,415 +659,121 @@ const payment = await client.payment.fetchById('6368e3a3ec516e9572bbd23b');
   feeAmount: null,
   createdAt: '2022-11-07T10:53:23.998Z',
   transaction: {
-    hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+    hash: '0x1234...abcdef',
     from: '0xYourWalletAddress',
     asset: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     value: 100000000,
-    network: 'ethereum'
-  }
+    network: 'ethereum',
+  },
 }
 ```
 
-### Retrieve the payment for a payment request
-
-```typescript
-import {PaymentNetwork} from '@spritz-finance/api-client';
-
-const paymentRequest = await client.paymentRequest.create({
-	amount: 100,
-	accountId: account.id,
-	network: PaymentNetwork.Ethereum,
-});
-
-const payment = await client.payment.getForPaymentRequest(paymentRequest.id);
-
-// Example response
-
-{
-  id: '6368e3a3ec516e9572bbd23b',
-  userId: '63d12d3B577fab6c6382136e',
-  status: 'PENDING',
-  accountId: '6322445f10d3f4d19c4d72fe',
-  amount: 100,
-  feeAmount: null,
-  createdAt: '2022-11-07T10:53:23.998Z',
-  transaction: null // Will be populated once the payment is fulfilled
-}
-
-```
-
-### Retrieve all payments for an account
-
-```typescript
-const payments = await client.payment.listForAccount(account.id)
-
-// Example response
-
-[
-    {
-        id: '6368e3a3ec516e9572bbd23b',
-        userId: '63d12d3B577fab6c6382136e',
-        status: 'COMPLETED',
-        accountId: '6322445f10d3f4d19c4d72fe',
-        amount: 100,
-        feeAmount: null,
-        createdAt: '2022-11-07T10:53:23.998Z',
-        transaction: {
-            __typename: 'BlockchainTransaction',
-            hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-            from: '0xYourWalletAddress',
-            asset: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-            value: 100000000,
-            network: 'ethereum'
-        }
-    },
-]
-```
-
-### Get payment limits for an account
-
-Retrieve the payment limits for a specific account, including the per-transaction limit and the remaining daily volume.
+### Payment Limits
 
 ```typescript
 const limits = await client.payment.getPaymentLimits(account.id)
 
 // Example response
 {
-    perTransaction: 20000,
-    dailyRemainingVolume: 150000,
+  perTransaction: 20000,
+  dailyRemainingVolume: 150000,
 }
 ```
 
-## Onramp Payments
+## On-ramp
 
-Onramp Payments are orders to buy crypto stablecoins with a bank transfer. Upon creating an onramp payment, you will receive deposit instructions to fulfill that order. When the bank transfer has been received and disbursed, the status of that onramp payment will change.
-
-### Create onramp payment
-
-```typescript
-const onrampPayment = await client.onrampPayment.create({
-  token: 'USDC' // Supported: currently only 'USDC'
-  network: 'ethereum' // supported: 'ethereum', 'polygon', 'avalanche'
-  amount: 100, // How much token to purchase (100 USDC)
-  address: '0xbB76483e33e01315438D8F6CF1Aee9C9b85f433b', // Wallet address to disburse tokens to
-  paymentMethod: 'ACH' // 'WIRE' or 'ACH'
-});
-
-// Example response
-
-{
-  "id": "653fab35ad263e5ae8b0e605",
-  "amount": 100,
-  "feeAmount": 1.5,
-  "depositInstructions": {
-    "amount": 101.5,
-    "currency": "USD",
-    "bankName": "Bank of Nowhere",
-    "bankAddress": "1800 North Pole St., Orlando, FL 32801",
-    "bankBeneficiaryName": "Bridge Ventures Inc",
-    "bankRoutingNumber": "123456789",
-    "bankAccountNumber": "11223344556677",
-    "paymentMethod": "WIRE",
-    "depositMessage": "BVI72D90851F051F4189",
-  },
-  "network": "ethereum",
-  "token": "USDC",
-  "address": "0xbb76483e33e01315438d8f6cf1aee9c9b85f433b",
-  "status": "AWAITING_FUNDS",
-  "createdAt": "2023-10-30T13:10:13.521Z",
-}
-
-
-```
-
-### Retrieve all onramp payments for an account
-
-```typescript
-const payments =
-  await client.onrampPayment.list()[
-    // Example response
-
-    {
-      id: '653fab35ad263e5ae8b0e605',
-      amount: 100,
-      feeAmount: 1.5,
-      depositInstructions: {
-        amount: 101.5,
-        currency: 'USD',
-        bankName: 'Bank of Nowhere',
-        bankAddress: '1800 North Pole St., Orlando, FL 32801',
-        bankBeneficiaryName: 'Bridge Ventures Inc',
-        bankRoutingNumber: '123456789',
-        bankAccountNumber: '11223344556677',
-        paymentMethod: 'WIRE',
-        depositMessage: 'BVI72D90851F051F4189',
-      },
-      network: 'ethereum',
-      token: 'USDC',
-      address: '0xbb76483e33e01315438d8f6cf1aee9c9b85f433b',
-      status: 'AWAITING_FUNDS',
-      createdAt: '2023-10-30T13:10:13.521Z',
-    }
-  ]
-```
-
-## Webhooks
-
-Instead of making a request to get information, webhooks send information to your specified endpoint as soon as an event occurs. Spritz's integration offers a variety of webhook events that can be crucial for maintaining data integrity and responsiveness in applications. Let's dive into how you can best utilize these.
-
-### Supported webhook events
-
-Spritz currently supports the following webhook events:
-
-#### Account Events
-
-- `account.created`: Triggered when a new account is created.
-- `account.updated`: Triggered when details of an account are updated.
-- `account.deleted`: Triggered when an account is deleted.
-
-#### Payment Events
-
-- `payment.created`: Triggered when a new payment is initiated.
-- `payment.updated`: Triggered when details of a payment are updated.
-- `payment.completed`: Triggered when a payment is successfully completed.
-- `payment.refunded`: Triggered when a payment is refunded.
-
-#### Verification Events
-
-- `verification.status.updated`: Triggered when a user's verification status changes.
-
-These events allow you to respond to changes in the account and payments for a user.
-
-### Setting up webhooks
-
-To set up a webhook with Spritz, you'll need to provide:
-
-1. **URL**: The endpoint URL where Spritz will send the webhook data.
-2. **Events**: The specific events you want to listen for.
-
-```typescript
-const webhook = await client.webhook.create({
-  url: 'https://my.webhook.url/spritz',
-  events: ['account.created', 'account.updated', 'account.deleted'],
-})
-```
-
-Upon receiving a webhook, your server will get a payload with the following structure:
-
-```json
-{
-  "userId": "user-id-here",
-  "id": "resource-id-here",
-  "eventName": "name-of-the-event-here"
-}
-```
-
-### Managing webhooks
-
-#### List all webhooks
-
-To retrieve all webhooks configured for your integration:
-
-```typescript
-const webhooks = await client.webhook.list()
-// Returns an array of webhook configurations
-```
-
-#### Delete a webhook
-
-To delete a specific webhook by its ID:
-
-```typescript
-const deletedWebhook = await client.webhook.delete('webhook-id-here')
-// Returns the deleted webhook object
-```
-
-### Webhook security and signing
-
-Each webhook request is signed using an HMAC SHA256 signature, based on the exact JSON payload sent in the body. This signature is included in the Signature HTTP header of the request.
-
-The secret key used to compute the signature is the webhook secret you set when configuring your webhook integration. If you have not set a webhook secret, there will be no Signature header in the webhook request.
-
-You can verify webhook authenticity by computing the HMAC signature and comparing it to the Signature header included in the webhook request.
-
-#### Example: Verifying a webhook signature (Node.js)
-
-```typescript
-import { createHmac } from "crypto";
-
-const signature = createHmac("sha256", <YOUR_WEBHOOK_SECRET>)
-  .update(<REQUEST_BODY_AS_JSON_STRING>) // JSON.stringify(payload)
-  .digest("hex");
-```
-
-Ensure that the computed signature matches the Signature header received in the webhook request before processing the payload.
-
-### Setting webhook secret
-
-To add or update a webhook secret for signing webhook requests:
-
-```typescript
-const result = await client.webhook.updateWebhookSecret('your-webhook-secret-here')
-// Returns: { success: true }
-```
-
-This secret will be used to sign all subsequent webhook requests sent to your endpoint. Always store your webhook secret securely and never expose it in client-side code.
-
-## On-ramp Setup Guide
-
-The on-ramp feature allows users to purchase cryptocurrency using traditional payment methods (ACH, Wire transfers). Before users can on-ramp, they must complete identity verification and accept terms of service.
+The on-ramp feature allows users to purchase crypto stablecoins via ACH or wire transfer.
 
 ### Prerequisites
 
-Before a user can on-ramp, they must:
-
 1. Complete platform-level KYC (identity verification)
 2. Accept the third-party on-ramp provider's Terms of Service
-3. Wait for the provider's KYC to process (happens automatically after accepting ToS)
+3. Provider KYC processes automatically after ToS acceptance
 
-### Checking User Access Capabilities
-
-Use the `getUserAccess()` method to check what features are available to a user and what requirements they need to complete:
-
-```typescript
-const accessCapabilities = await client.user.getUserAccess()
-
-// Check if on-ramp is active
-if (accessCapabilities.capabilities.onramp.active) {
-  console.log('User can on-ramp!')
-  console.log('Available features:', accessCapabilities.capabilities.onramp.features)
-  // Features may include: 'ach_purchase', 'wire_purchase'
-} else {
-  console.log('User needs to complete requirements:')
-  accessCapabilities.capabilities.onramp.requirements.forEach((req) => {
-    console.log(`- ${req.type}: ${req.description}`)
-    if (req.actionUrl) {
-      console.log(`  Action URL: ${req.actionUrl}`)
-    }
-  })
-}
-
-// Check if off-ramp is active
-if (accessCapabilities.capabilities.offramp.active) {
-  console.log('User can off-ramp!')
-  console.log('Available features:', accessCapabilities.capabilities.offramp.features)
-  // US users: 'us_bank_account', 'us_debit_card'
-  // CA users: 'ca_bank_account'
-}
-```
-
-### Step-by-Step On-ramp Activation
-
-#### 1. Check Initial Requirements
+### Checking User Access
 
 ```typescript
 const access = await client.user.getUserAccess()
 
-// Check platform-level KYC first
+// Off-ramp capabilities
+if (access.capabilities.offramp.active) {
+  console.log('Off-ramp features:', access.capabilities.offramp.features)
+  // US: 'us_bank_account', 'us_debit_card'
+  // CA: 'ca_bank_account'
+}
+
+// On-ramp capabilities
+if (access.capabilities.onramp.active) {
+  console.log('On-ramp features:', access.capabilities.onramp.features)
+  // May include: 'ach_purchase', 'wire_purchase'
+} else {
+  for (const req of access.capabilities.onramp.requirements) {
+    console.log(`${req.type}: ${req.description}`)
+  }
+}
+```
+
+### Activation Steps
+
+#### 1. Complete Platform KYC
+
+```typescript
+const access = await client.user.getUserAccess()
+
 if (!access.kycStatus.verified) {
-  // User needs to complete platform KYC
-  if (access.kycRequirement) {
-    if (access.kycRequirement.actionUrl) {
-      // Direct user to complete KYC
-      console.log('Complete KYC at:', access.kycRequirement.actionUrl)
-    }
-    if (access.kycRequirement.status === 'failed' && access.kycRequirement.retryable) {
-      // User can retry failed verification
-      await client.user.retryFailedVerification()
-    }
+  if (access.kycRequirement?.actionUrl) {
+    console.log('Complete KYC at:', access.kycRequirement.actionUrl)
+  }
+  if (access.kycRequirement?.status === 'failed' && access.kycRequirement.retryable) {
+    await client.user.retryFailedVerification()
   }
 }
 ```
 
 #### 2. Accept Terms of Service
 
-Once platform KYC is complete, the user needs to accept the third-party on-ramp provider's Terms of Service:
-
 ```typescript
 const access = await client.user.getUserAccess()
-
-// Find the Terms of Service requirement
 const tosRequirement = access.capabilities.onramp.requirements.find(
   (req) => req.type === 'terms_acceptance'
 )
 
-if (tosRequirement && tosRequirement.actionUrl) {
-  // Use this URL to guide the customer towards Terms of Service acceptance
-  // You can embed this URL in an iFrame or display in a new browser window
-
-  // For iFrame and WebView implementations:
-  // Listen to the postMessage event for the signedAgreementId
+if (tosRequirement?.actionUrl) {
+  // Display tosRequirement.actionUrl in a browser tab, iframe, or webview.
+  // Listen for the signedAgreementId via postMessage:
   window.addEventListener('message', (event) => {
     if (event.data.signedAgreementId) {
-      // Use the agreement ID to complete acceptance
       await client.onramp.acceptTermsOfService(event.data.signedAgreementId)
     }
   })
-
-  // Direct user to review the terms at tosRequirement.actionUrl
-  console.log('Terms of Service URL:', tosRequirement.actionUrl)
 }
 ```
 
-#### 3. Provider KYC Processing (Automatic)
+#### 3. Wait for Provider KYC
 
-After accepting the Terms of Service, the third-party provider's KYC process happens automatically in the background. When you accept the ToS, the platform automatically submits the user's existing KYC data to the provider. The integrator doesn't need to take any action - just monitor the status:
+Provider KYC runs automatically after ToS acceptance. No action required — monitor the status:
 
 ```typescript
-// After accepting ToS, provider KYC is processed automatically
-// You can monitor the status but no action is required
 const access = await client.user.getUserAccess()
-
-// Check provider KYC status (for monitoring only)
-const kycRequirement = access.capabilities.onramp.requirements.find(
+const kycReq = access.capabilities.onramp.requirements.find(
   (req) => req.type === 'identity_verification'
 )
 
-if (kycRequirement) {
-  switch (kycRequirement.status) {
-    case 'pending':
-      console.log('Provider KYC is being processed automatically')
-      break
-    case 'failed':
-      console.log('Provider KYC failed - user may need to retry')
-      break
-    default:
-      // KYC completed successfully if no requirement exists
-      console.log('Provider KYC complete!')
-  }
-}
+// kycReq is undefined when complete, otherwise check kycReq.status ('pending' | 'failed')
 ```
 
-#### 4. Monitor Capability Updates
+Use the `capabilities.updated` webhook event to be notified when the user's capabilities change.
 
-Use webhooks to be notified when user capabilities change:
+### Virtual Accounts
 
-```typescript
-// Set up a webhook to monitor capability updates
-const webhook = await client.webhook.create({
-  url: 'https://your-server.com/webhook',
-  events: ['capabilities.updated'],
-})
-
-// In your webhook handler:
-// When you receive a 'capabilities.updated' event, check the user's access again
-const updatedAccess = await client.user.getUserAccess()
-if (updatedAccess.capabilities.onramp.active) {
-  console.log('User can now on-ramp!')
-}
-```
-
-### Creating Virtual Accounts
-
-Once on-ramp is active, users can create virtual accounts to receive funds:
+Once on-ramp is active, users can create virtual accounts to receive fiat deposits:
 
 ```typescript
 import { PaymentNetwork, onrampSupportedTokens } from '@spritz-finance/api-client'
 
 // Check supported tokens for a network
-const supportedTokens = onrampSupportedTokens[PaymentNetwork.Ethereum]
-console.log('Supported tokens on Ethereum:', supportedTokens)
-// Output: ['USDC', 'USDT', 'DAI', 'USDP', 'PYUSD']
+const tokens = onrampSupportedTokens[PaymentNetwork.Ethereum]
+// ['USDC', 'USDT', 'DAI', 'USDP', 'PYUSD']
 
 // Create a virtual account
 const virtualAccount = await client.virtualAccounts.create({
@@ -1431,96 +782,101 @@ const virtualAccount = await client.virtualAccounts.create({
   token: 'USDC',
 })
 
-// The virtual account includes deposit instructions
-if (virtualAccount.depositInstructions) {
-  const instructions = virtualAccount.depositInstructions
-  console.log('Bank Name:', instructions.bankName)
-  console.log('Account Number:', instructions.bankAccountNumber)
-  console.log('Routing Number:', instructions.bankRoutingNumber)
-  console.log('Bank Address:', instructions.bankAddress)
-  // User sends wire/ACH to these details to fund their account
-}
-```
+// Deposit instructions for funding via ACH/wire
+const { bankName, bankAccountNumber, bankRoutingNumber, bankAddress } =
+  virtualAccount.depositInstructions
 
-### Listing Virtual Accounts
-
-```typescript
-// Get all virtual accounts for the user
+// List all virtual accounts
 const accounts = await client.virtualAccounts.list()
+```
 
-accounts.forEach((account) => {
-  console.log(`Network: ${account.network}`)
-  console.log(`Address: ${account.address}`)
-  console.log(`Token: ${account.token}`)
-  console.log(`Deposited: ${account.deposited}`)
+### Supported Tokens
 
-  if (account.microdeposits) {
-    console.log('Microdeposits:', account.microdeposits)
-  }
+| Network | Tokens |
+|---|---|
+| Ethereum | USDC, USDT, DAI, USDP, PYUSD |
+| Polygon | USDC |
+| Base | USDC |
+| Arbitrum | USDC |
+| Avalanche | USDC |
+| Optimism | USDC |
+| Solana | USDC, PYUSD |
+| Tron | USDT |
+
+## Webhooks
+
+### Events
+
+#### Account Events
+
+- `account.created` — new account created
+- `account.updated` — account details updated
+- `account.deleted` — account deleted
+
+#### Payment Events
+
+- `payment.created` — payment initiated
+- `payment.updated` — payment details updated
+- `payment.completed` — payment completed
+- `payment.refunded` — payment refunded
+
+#### Verification Events
+
+- `verification.status.updated` — user verification status changed
+
+#### Capability Events
+
+- `capabilities.updated` — user capabilities changed
+
+### Setup
+
+```typescript
+const webhook = await client.webhook.create({
+  url: 'https://my.webhook.url/spritz',
+  events: ['account.created', 'account.updated', 'payment.completed'],
 })
 ```
 
-### Supported Token Matrix
+Webhook payloads have the following shape:
 
-The following tokens are supported on each network for virtual accounts:
+```json
+{
+  "userId": "user-id",
+  "id": "resource-id",
+  "eventName": "event-name"
+}
+```
 
-- **Ethereum**: USDC, USDT, DAI, USDP, PYUSD
-- **Polygon**: USDC
-- **Base**: USDC
-- **Arbitrum**: USDC
-- **Avalanche**: USDC
-- **Optimism**: USDC
-- **Solana**: USDC, PYUSD
-- **Tron**: USDT
-
-### Complete Example
+### Management
 
 ```typescript
-import { SpritzApiClient, Environment, PaymentNetwork } from '@spritz-finance/api-client'
+// List all webhooks
+const webhooks = await client.webhook.list()
 
-const client = SpritzApiClient.initialize({
-  environment: Environment.Production,
-  integrationKey: 'YOUR_INTEGRATION_KEY',
-})
+// Delete a webhook
+await client.webhook.delete('webhook-id')
+```
 
-// Set user API key
-client.setApiKey(userApiKey)
+### Security and Signing
 
-async function setupOnramp() {
-  // 1. Check current access
-  const access = await client.user.getUserAccess()
+Webhook requests are signed with HMAC SHA256 using your webhook secret. The signature is sent in the `Signature` HTTP header.
 
-  if (!access.capabilities.onramp.active) {
-    console.log('On-ramp not active. Requirements:')
+#### Setting a Webhook Secret
 
-    for (const req of access.capabilities.onramp.requirements) {
-      if (req.type === 'terms_acceptance' && req.actionUrl) {
-        // Direct user to accept terms
-        console.log('Accept terms at:', req.actionUrl)
-        // After acceptance, call:
-        // await client.onramp.acceptTermsOfService(agreementId)
-      }
-    }
+```typescript
+await client.webhook.updateWebhookSecret('your-secret')
+```
 
-    return false
-  }
+#### Verifying Signatures
 
-  // 2. Create virtual account
-  const virtualAccount = await client.virtualAccounts.create({
-    network: PaymentNetwork.Ethereum,
-    address: '0xUserWalletAddress',
-    token: 'USDC',
-  })
+```typescript
+import { createHmac } from 'crypto'
 
-  console.log('Virtual account created!')
-  console.log('Send funds to:', virtualAccount.depositInstructions)
+const expected = createHmac('sha256', WEBHOOK_SECRET)
+  .update(JSON.stringify(payload))
+  .digest('hex')
 
-  return true
+if (expected !== request.headers['signature']) {
+  throw new Error('Invalid webhook signature')
 }
-
-setupOnramp().then((success) => {
-  if (success) {
-    console.log('On-ramp setup complete!')
-  }
-})
 ```
