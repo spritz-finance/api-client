@@ -3,7 +3,7 @@ export interface UserAccessCapabilities {
     kycRequirement?: Requirement
     capabilities: {
         onramp: CategoryAccess
-        // offramp: CategoryAccess
+        offramp: CategoryAccess
         // card: CategoryAccess
     }
 }

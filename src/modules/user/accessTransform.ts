@@ -2,6 +2,7 @@ import { UserAccess, UserAccess_bridgeUser } from '../../graph/queries/__types__
 import {
     CategoryAccess,
     KycStatus,
+    OfframpFeatureType,
     OnrampFeatureType,
     Requirement,
     RequirementStatus,
@@ -140,6 +141,34 @@ function getOnrampFeatures(country: string | null): string[] {
     return features
 }
 
+const offrampFeaturesByCountry: Record<string, string[]> = {
+    US: [OfframpFeatureType.UsBankAccount, OfframpFeatureType.UsDebitCard],
+    CA: [OfframpFeatureType.CaBankAccount],
+}
+
+function getOfframpFeatures(country: string | null): string[] {
+    if (!country) return []
+    return offrampFeaturesByCountry[country.toUpperCase()] ?? []
+}
+
+function getOfframpAccess(kycStatus: KycStatus): CategoryAccess {
+    if (!kycStatus.verified) {
+        return {
+            active: false,
+            features: [],
+            requirements: [],
+        }
+    }
+
+    const features = getOfframpFeatures(kycStatus.country ?? null)
+
+    return {
+        active: features.length > 0,
+        features,
+        requirements: [],
+    }
+}
+
 function getOnrampAccess(kycStatus: KycStatus, bridgeUser?: UserAccess_bridgeUser): CategoryAccess {
     const availableFeatures = getOnrampFeatures(kycStatus.country ?? null)
 
@@ -205,6 +234,7 @@ export function transformToUserAccess(
 
     const capabilities = {
         onramp: getOnrampAccess(kycStatus, bridgeUser),
+        offramp: getOfframpAccess(kycStatus),
     }
 
     return {

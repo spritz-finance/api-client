@@ -1301,6 +1301,14 @@ if (accessCapabilities.capabilities.onramp.active) {
     }
   })
 }
+
+// Check if off-ramp is active
+if (accessCapabilities.capabilities.offramp.active) {
+  console.log('User can off-ramp!')
+  console.log('Available features:', accessCapabilities.capabilities.offramp.features)
+  // US users: 'us_bank_account', 'us_debit_card'
+  // CA users: 'ca_bank_account'
+}
 ```
 
 ### Step-by-Step On-ramp Activation
