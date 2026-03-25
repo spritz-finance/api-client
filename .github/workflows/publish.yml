@@ -36,6 +36,15 @@ jobs:
             - name: Install dependencies
               run: yarn install --frozen-lockfile
 
+            - name: Upgrade npm for trusted publishing
+              run: npm install --global npm@^11.5.1
+
+            - name: Show tool versions
+              run: |
+                  node --version
+                  npm --version
+                  yarn --version
+
             - name: Verify
               run: yarn agent:check
 
