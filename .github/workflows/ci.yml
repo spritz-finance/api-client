@@ -26,3 +26,25 @@ jobs:
 
             - name: Verify
               run: yarn agent:check
+
+    changeset:
+        if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/')
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version-file: '.node-version'
+                  cache: 'yarn'
+
+            - name: Install dependencies
+              run: yarn install --frozen-lockfile
+
+            - name: Require changeset
+              run: yarn changeset status --since=origin/${{ github.base_ref }}

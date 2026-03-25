@@ -27,6 +27,9 @@
         "url": "https://github.com/spritz-finance/api-client/issues"
     },
     "homepage": "https://github.com/spritz-finance/api-client#readme",
+    "publishConfig": {
+        "access": "public"
+    },
     "scripts": {
         "prebuild": "rimraf dist",
         "prepare": "rollup -c",
@@ -37,15 +40,18 @@
         "lint": "oxlint .",
         "lint:fix": "oxlint --fix .",
         "agent:check": "yarn format:check && yarn lint && yarn test && yarn build",
+        "changeset": "changeset",
+        "version-packages": "changeset version",
+        "release": "changeset publish",
         "codegen": "bash codegen.sh && yarn codegen:rest",
         "codegen:rest": "openapi-typescript https://sandbox.spritz.finance/openapi/json -o src/rest/__generated__/api.d.ts",
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
-        "test:ui": "vitest --ui",
-        "bump:patch": "node bump.js patch"
+        "test:ui": "vitest --ui"
     },
     "devDependencies": {
+        "@changesets/cli": "^2.30.0",
         "@rollup/plugin-graphql": "2.0.5",
         "@types/graphql": "^14.5.0",
         "@types/node": "^20.5.0",

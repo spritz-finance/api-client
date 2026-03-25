@@ -1,0 +1,43 @@
+name: Publish
+
+on:
+    pull_request:
+        types:
+            - closed
+
+concurrency: ${{ github.workflow }}-${{ github.event.pull_request.merge_commit_sha || github.run_id }}
+
+permissions:
+    contents: read
+    id-token: write
+
+jobs:
+    publish:
+        if: >
+            github.event.pull_request.merged == true &&
+            github.event.pull_request.base.ref == 'main' &&
+            startsWith(github.event.pull_request.head.ref, 'changeset-release/')
+        runs-on: ubuntu-latest
+        environment: production
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22.14.0'
+                  cache: 'yarn'
+                  registry-url: 'https://registry.npmjs.org'
+
+            - name: Install dependencies
+              run: yarn install --frozen-lockfile
+
+            - name: Verify
+              run: yarn agent:check
+
+            - name: Publish to npm
+              run: yarn release

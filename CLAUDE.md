@@ -19,6 +19,10 @@
 - `yarn test:ui` - Run tests with UI
 - `yarn build` - Build the project
 - `yarn codegen` - Generate GraphQL types
+- `yarn changeset` - Create a release note for a releasable change
+- `yarn changeset --empty` - Record an internal-only change so PR checks still pass
+- `yarn version-packages` - Apply queued changesets to package versions and changelogs
+- Merging the automated release PR triggers the publish workflow, which runs in the `production` environment
 
 ## Testing
 
@@ -38,4 +42,4 @@
 
 - Oxlint for linting
 - Oxfmt for code formatting
-- All code must pass linting and tests before commit
+- All code must pass `yarn agent:check` before commit

@@ -1,30 +1,36 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+cd "$SCRIPT_DIR"
 
 create_index() {
-  dir="$1"
-  index_file="${dir}/index.ts"
+    local dir="$1"
+    local index_file="${dir}/index.ts"
 
-  if [ ! -d "$dir" ]; then
-    echo "Directory not found: $dir"
-    return
-  fi
-
-  echo "// Auto-generated index file" > "$index_file"
-  for file in "$dir"/*.ts; do
-    filename=$(basename "$file")
-    if [ "$filename" != "index.ts" ]; then
-      module_name="${filename%.ts}"
-      echo "export * from './$module_name';" >> "$index_file"
+    if [[ ! -d "$dir" ]]; then
+        echo "Directory not found: $dir" >&2
+        return 1
     fi
-  done
 
-  echo "Generated gql types index file: $index_file"
+    printf "// Auto-generated index file\n" > "$index_file"
+
+    while IFS= read -r file; do
+        local filename module_name
+        filename="$(basename "$file")"
+        module_name="${filename%.ts}"
+        printf "export * from './%s'\n" "$module_name" >> "$index_file"
+    done < <(find "$dir" -maxdepth 1 -type f -name '*.ts' ! -name 'index.ts' | sort)
+
+    echo "Generated gql types index file: $index_file"
 }
 
 directories=("src/graph/queries/__types__")
 
 for dir in "${directories[@]}"; do
-  create_index "$dir"
+    create_index "$dir"
 done
 
 yarn oxfmt --no-error-on-unmatched-pattern 'src/**/__types__/index.ts'
