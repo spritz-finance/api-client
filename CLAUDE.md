@@ -19,7 +19,6 @@
 - `yarn test:ui` - Run tests with UI
 - `yarn build` - Build the project
 - `yarn codegen` - Generate GraphQL types
-- `yarn demo` - Run demo script
 
 ## Testing
 
