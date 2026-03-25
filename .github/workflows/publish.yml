@@ -11,6 +11,9 @@ on:
                 required: true
                 default: main
 
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 concurrency: ${{ github.workflow }}-${{ github.event.pull_request.merge_commit_sha || github.run_id }}
 
 permissions:
