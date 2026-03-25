@@ -23,6 +23,7 @@
 - `yarn changeset --empty` - Record an internal-only change so PR checks still pass
 - `yarn version-packages` - Apply queued changesets to package versions and changelogs
 - Merging the automated release PR triggers the publish workflow, which runs in the `production` environment
+- The repo's enterprise policy keeps `GITHUB_TOKEN` read-only. Set `CHANGESETS_GITHUB_TOKEN` in repo secrets so the release workflow can open the automated release PR.
 
 ## Testing
 
