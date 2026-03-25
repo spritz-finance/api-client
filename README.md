@@ -16,17 +16,17 @@ yarn add @spritz-finance/api-client
 
 ```typescript
 import {
-  SpritzApiClient,
-  Environment,
-  PaymentNetwork,
-  BankAccountType,
-  BankAccountSubType,
+    SpritzApiClient,
+    Environment,
+    PaymentNetwork,
+    BankAccountType,
+    BankAccountSubType,
 } from '@spritz-finance/api-client'
 
 // Initialize with your integration key
 const client = SpritzApiClient.initialize({
-  environment: Environment.Sandbox,
-  integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
+    environment: Environment.Sandbox,
+    integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
 })
 
 // Create a user and set their API key
@@ -35,24 +35,24 @@ client.setApiKey(user.apiKey)
 
 // Add a bank account
 const bankAccount = await client.bankAccount.create(BankAccountType.USBankAccount, {
-  accountNumber: '123456789',
-  routingNumber: '987654321',
-  name: 'My Checking Account',
-  ownedByUser: true,
-  subType: BankAccountSubType.Checking,
+    accountNumber: '123456789',
+    routingNumber: '987654321',
+    name: 'My Checking Account',
+    ownedByUser: true,
+    subType: BankAccountSubType.Checking,
 })
 
 // Create a payment request
 const paymentRequest = await client.paymentRequest.create({
-  amount: 100,
-  accountId: bankAccount.id,
-  network: PaymentNetwork.Ethereum,
+    amount: 100,
+    accountId: bankAccount.id,
+    network: PaymentNetwork.Ethereum,
 })
 
 // Get transaction data for the blockchain payment
 const transactionData = await client.paymentRequest.getWeb3PaymentParams({
-  paymentRequest,
-  paymentTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
+    paymentRequest,
+    paymentTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
 })
 
 // Execute the blockchain transaction from the user's wallet
@@ -62,37 +62,37 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
 
 - [Authentication](#authentication)
 - [Users](#users)
-  - [Creating a User](#creating-a-user)
-  - [Reauthorization](#reauthorization)
-  - [User Data](#user-data)
-  - [Identity Verification](#identity-verification)
+    - [Creating a User](#creating-a-user)
+    - [Reauthorization](#reauthorization)
+    - [User Data](#user-data)
+    - [Identity Verification](#identity-verification)
 - [Accounts](#accounts)
-  - [Bank Accounts](#bank-accounts)
-  - [Debit Cards](#debit-cards)
-  - [Bills](#bills)
-  - [Virtual Cards](#virtual-cards)
-  - [Address Book](#address-book)
-  - [Renaming Accounts](#renaming-accounts)
-  - [Deleting Accounts](#deleting-accounts)
+    - [Bank Accounts](#bank-accounts)
+    - [Debit Cards](#debit-cards)
+    - [Bills](#bills)
+    - [Virtual Cards](#virtual-cards)
+    - [Address Book](#address-book)
+    - [Renaming Accounts](#renaming-accounts)
+    - [Deleting Accounts](#deleting-accounts)
 - [Payments (Off-ramp)](#payments-off-ramp)
-  - [Payment Flow](#payment-flow)
-  - [Creating a Payment Request](#creating-a-payment-request)
-  - [Fulfilling a Payment — EVM](#fulfilling-a-payment--evm)
-  - [Fulfilling a Payment — Solana](#fulfilling-a-payment--solana)
-  - [Transaction Fees](#transaction-fees)
-  - [Retrieving Payments](#retrieving-payments)
-  - [Payment Limits](#payment-limits)
+    - [Payment Flow](#payment-flow)
+    - [Creating a Payment Request](#creating-a-payment-request)
+    - [Fulfilling a Payment — EVM](#fulfilling-a-payment--evm)
+    - [Fulfilling a Payment — Solana](#fulfilling-a-payment--solana)
+    - [Transaction Fees](#transaction-fees)
+    - [Retrieving Payments](#retrieving-payments)
+    - [Payment Limits](#payment-limits)
 - [On-ramp](#on-ramp)
-  - [Prerequisites](#prerequisites)
-  - [Checking User Access](#checking-user-access)
-  - [Activation Steps](#activation-steps)
-  - [Virtual Accounts](#virtual-accounts)
-  - [Supported Tokens](#supported-tokens)
+    - [Prerequisites](#prerequisites)
+    - [Checking User Access](#checking-user-access)
+    - [Activation Steps](#activation-steps)
+    - [Virtual Accounts](#virtual-accounts)
+    - [Supported Tokens](#supported-tokens)
 - [Webhooks](#webhooks)
-  - [Events](#events)
-  - [Setup](#setup)
-  - [Management](#management)
-  - [Security and Signing](#security-and-signing)
+    - [Events](#events)
+    - [Setup](#setup)
+    - [Management](#management)
+    - [Security and Signing](#security-and-signing)
 
 ## Authentication
 
@@ -105,9 +105,9 @@ Spritz uses two levels of authentication:
 import { SpritzApiClient, Environment } from '@spritz-finance/api-client'
 
 const client = SpritzApiClient.initialize({
-  environment: Environment.Sandbox,
-  integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
-  apiKey: 'YOUR_USER_API_KEY_HERE', // omit if no user exists yet
+    environment: Environment.Sandbox,
+    integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
+    apiKey: 'YOUR_USER_API_KEY_HERE', // omit if no user exists yet
 })
 ```
 
@@ -146,8 +146,8 @@ const { success } = await client.user.requestApiKey('bilbo@shiremail.net')
 
 // Confirm with the OTP code the user provides
 const { apiKey, userId, email } = await client.user.authorizeApiKeyWithOTP({
-  email: 'bilbo@shiremail.net',
-  otp: '123456',
+    email: 'bilbo@shiremail.net',
+    otp: '123456',
 })
 ```
 
@@ -202,16 +202,16 @@ const { inquiryId, sessionToken } = await client.user.getVerificationParams()
 
 When verification fails, the `verificationMetadata` field on the user object provides the failure reason:
 
-| Failure Reason | Description |
-|---|---|
-| `verify_sms` | SMS verification failed |
+| Failure Reason             | Description                  |
+| -------------------------- | ---------------------------- |
+| `verify_sms`               | SMS verification failed      |
 | `documentary_verification` | Document verification failed |
-| `risk_check` | Risk assessment failed |
-| `kyc_check` | KYC check failed |
-| `watchlist_screening` | Watchlist screening failed |
-| `selfie_check` | Selfie verification failed |
-| `address_invalid` | Invalid address |
-| `duplicate_identity` | Identity already exists |
+| `risk_check`               | Risk assessment failed       |
+| `kyc_check`                | KYC check failed             |
+| `watchlist_screening`      | Watchlist screening failed   |
+| `selfie_check`             | Selfie verification failed   |
+| `address_invalid`          | Invalid address              |
+| `duplicate_identity`       | Identity already exists      |
 
 For `duplicate_identity` failures, `matchedEmail` indicates whether the duplicate was created through your integration:
 
@@ -219,15 +219,15 @@ For `duplicate_identity` failures, `matchedEmail` indicates whether the duplicat
 const userData = await client.user.getCurrentUser()
 
 if (userData.verificationMetadata?.failureReason === 'duplicate_identity') {
-  const matchedEmail = userData.verificationMetadata.details.matchedEmail
+    const matchedEmail = userData.verificationMetadata.details.matchedEmail
 
-  if (matchedEmail) {
-    // Duplicate exists within your integration — guide user to their existing account
-    console.log(`Already verified as: ${matchedEmail}`)
-  } else {
-    // Duplicate exists in a different integration (e.g., the main Spritz app)
-    console.log('Identity already verified with another Spritz account')
-  }
+    if (matchedEmail) {
+        // Duplicate exists within your integration — guide user to their existing account
+        console.log(`Already verified as: ${matchedEmail}`)
+    } else {
+        // Duplicate exists in a different integration (e.g., the main Spritz app)
+        console.log('Identity already verified with another Spritz account')
+    }
 }
 ```
 
@@ -245,29 +245,31 @@ const bankAccounts = await client.bankAccount.list()
 
 ```typescript
 // Example response
-[{
-  id: '62d17d3b377dab6c1342136e',
-  name: 'Precious Savings',
-  type: 'BankAccount',
-  bankAccountType: 'USBankAccount',
-  bankAccountSubType: 'Checking',
-  userId: '62d17d3b377dab6c1342136e',
-  accountNumber: '1234567',
-  bankAccountDetails: {
-    routingNumber: '00000123',
-  },
-  country: 'US',
-  currency: 'USD',
-  email: 'bilbo@shiremail.net',
-  institution: {
-    id: '62d27d4b277dab3c1342126e',
-    name: 'Shire Bank',
-    logo: 'https://tinyurl.com/shire-bank-logo',
-  },
-  ownedByUser: true,
-  createdAt: '2023-05-03T11:25:02.401Z',
-  deliveryMethods: ['STANDARD', 'INSTANT'],
-}]
+;[
+    {
+        id: '62d17d3b377dab6c1342136e',
+        name: 'Precious Savings',
+        type: 'BankAccount',
+        bankAccountType: 'USBankAccount',
+        bankAccountSubType: 'Checking',
+        userId: '62d17d3b377dab6c1342136e',
+        accountNumber: '1234567',
+        bankAccountDetails: {
+            routingNumber: '00000123',
+        },
+        country: 'US',
+        currency: 'USD',
+        email: 'bilbo@shiremail.net',
+        institution: {
+            id: '62d27d4b277dab3c1342126e',
+            name: 'Shire Bank',
+            logo: 'https://tinyurl.com/shire-bank-logo',
+        },
+        ownedByUser: true,
+        createdAt: '2023-05-03T11:25:02.401Z',
+        deliveryMethods: ['STANDARD', 'INSTANT'],
+    },
+]
 ```
 
 #### Create US Bank Account
@@ -276,11 +278,11 @@ const bankAccounts = await client.bankAccount.list()
 import { BankAccountType, BankAccountSubType } from '@spritz-finance/api-client'
 
 const bankAccount = await client.bankAccount.create(BankAccountType.USBankAccount, {
-  accountNumber: '123456789',
-  routingNumber: '987654321',
-  name: 'Precious Savings',
-  ownedByUser: true,
-  subType: BankAccountSubType.Savings,
+    accountNumber: '123456789',
+    routingNumber: '987654321',
+    name: 'Precious Savings',
+    ownedByUser: true,
+    subType: BankAccountSubType.Savings,
 })
 ```
 
@@ -288,12 +290,12 @@ Input fields:
 
 ```typescript
 interface USBankAccountInput {
-  accountNumber: string
-  routingNumber: string
-  subType: BankAccountSubType
-  name?: string | null
-  email?: string | null
-  ownedByUser?: boolean | null
+    accountNumber: string
+    routingNumber: string
+    subType: BankAccountSubType
+    name?: string | null
+    email?: string | null
+    ownedByUser?: boolean | null
 }
 ```
 
@@ -303,12 +305,12 @@ interface USBankAccountInput {
 import { BankAccountType, BankAccountSubType } from '@spritz-finance/api-client'
 
 const bankAccount = await client.bankAccount.create(BankAccountType.CABankAccount, {
-  accountNumber: '123456789',
-  transitNumber: '12345',
-  institutionNumber: '123',
-  name: 'Precious Savings',
-  ownedByUser: true,
-  subType: BankAccountSubType.Savings,
+    accountNumber: '123456789',
+    transitNumber: '12345',
+    institutionNumber: '123',
+    name: 'Precious Savings',
+    ownedByUser: true,
+    subType: BankAccountSubType.Savings,
 })
 ```
 
@@ -316,13 +318,13 @@ Input fields:
 
 ```typescript
 interface CABankAccountInput {
-  accountNumber: string
-  transitNumber: string
-  institutionNumber: string
-  name: string
-  subType: BankAccountSubType
-  email?: string
-  ownedByUser?: boolean | null
+    accountNumber: string
+    transitNumber: string
+    institutionNumber: string
+    name: string
+    subType: BankAccountSubType
+    email?: string
+    ownedByUser?: boolean | null
 }
 ```
 
@@ -338,31 +340,33 @@ const debitCards = await client.debitCard.list()
 
 ```typescript
 // Example response
-[{
-  id: '62d17d3b377dab6c1342136e',
-  type: 'DebitCard',
-  name: 'My Visa Debit',
-  userId: '62d17d3b377dab6c1342136e',
-  country: 'US',
-  currency: 'USD',
-  payable: true,
-  debitCardNetwork: 'Visa',
-  expirationDate: '12/25',
-  cardNumber: '4111111111111111',
-  mask: '1111',
-  createdAt: '2023-01-01T00:00:00Z',
-  paymentCount: 5,
-  externalId: 'ext-123',
-}]
+;[
+    {
+        id: '62d17d3b377dab6c1342136e',
+        type: 'DebitCard',
+        name: 'My Visa Debit',
+        userId: '62d17d3b377dab6c1342136e',
+        country: 'US',
+        currency: 'USD',
+        payable: true,
+        debitCardNetwork: 'Visa',
+        expirationDate: '12/25',
+        cardNumber: '4111111111111111',
+        mask: '1111',
+        createdAt: '2023-01-01T00:00:00Z',
+        paymentCount: 5,
+        externalId: 'ext-123',
+    },
+]
 ```
 
 #### Create
 
 ```typescript
 const debitCard = await client.debitCard.create({
-  cardNumber: '4111111111111111', // 13-19 digits
-  expirationDate: '12/25',       // MM/YY
-  name: 'My Visa Debit',         // optional
+    cardNumber: '4111111111111111', // 13-19 digits
+    expirationDate: '12/25', // MM/YY
+    name: 'My Visa Debit', // optional
 })
 ```
 
@@ -376,41 +380,43 @@ const bills = await client.bill.list()
 
 ```typescript
 // Example response
-[{
-  id: '62d17d3b377dab6c1342136e',
-  name: 'Precious Credit Card',
-  type: 'Bill',
-  billType: 'CreditCard',
-  userId: '62d17d3b377dab6c1342136e',
-  mask: '4567',
-  originator: 'User',
-  payable: true,
-  verifying: false,
-  billAccountDetails: {
-    balance: 240.23,
-    amountDue: 28.34,
-    openedAt: '2023-05-03T11:25:02.401Z',
-    lastPaymentAmount: null,
-    lastPaymentDate: null,
-    nextPaymentDueDate: '2023-06-03T11:25:02.401Z',
-    nextPaymentMinimumAmount: 28.34,
-    lastStatementBalance: 180.23,
-    remainingStatementBalance: null,
-  },
-  country: 'US',
-  currency: 'USD',
-  dataSync: {
-    lastSync: '2023-05-03T11:25:02.401Z',
-    syncStatus: 'Active',
-  },
-  institution: {
-    id: '62d27d4b277dab3c1342126e',
-    name: 'Shire Bank Credit Card',
-    logo: 'https://tinyurl.com/shire-bank-logo',
-  },
-  createdAt: '2023-05-03T11:25:02.401Z',
-  deliveryMethods: ['STANDARD'],
-}]
+;[
+    {
+        id: '62d17d3b377dab6c1342136e',
+        name: 'Precious Credit Card',
+        type: 'Bill',
+        billType: 'CreditCard',
+        userId: '62d17d3b377dab6c1342136e',
+        mask: '4567',
+        originator: 'User',
+        payable: true,
+        verifying: false,
+        billAccountDetails: {
+            balance: 240.23,
+            amountDue: 28.34,
+            openedAt: '2023-05-03T11:25:02.401Z',
+            lastPaymentAmount: null,
+            lastPaymentDate: null,
+            nextPaymentDueDate: '2023-06-03T11:25:02.401Z',
+            nextPaymentMinimumAmount: 28.34,
+            lastStatementBalance: 180.23,
+            remainingStatementBalance: null,
+        },
+        country: 'US',
+        currency: 'USD',
+        dataSync: {
+            lastSync: '2023-05-03T11:25:02.401Z',
+            syncStatus: 'Active',
+        },
+        institution: {
+            id: '62d27d4b277dab3c1342126e',
+            name: 'Shire Bank Credit Card',
+            logo: 'https://tinyurl.com/shire-bank-logo',
+        },
+        createdAt: '2023-05-03T11:25:02.401Z',
+        deliveryMethods: ['STANDARD'],
+    },
+]
 ```
 
 #### Create
@@ -433,7 +439,10 @@ const mortgages = await client.institution.popularUSBillInstitutions(BillType.Mo
 
 // Search by name
 const results = await client.institution.searchUSBillInstitutions('american express')
-const filtered = await client.institution.searchUSBillInstitutions('american express', BillType.CreditCard)
+const filtered = await client.institution.searchUSBillInstitutions(
+    'american express',
+    BillType.CreditCard
+)
 ```
 
 ### Virtual Cards
@@ -539,11 +548,11 @@ await client.bill.delete('bill-id')
 import { PaymentNetwork, AmountMode } from '@spritz-finance/api-client'
 
 const paymentRequest = await client.paymentRequest.create({
-  amount: 100,
-  accountId: account.id,
-  network: PaymentNetwork.Ethereum,
-  deliveryMethod: 'INSTANT',                // optional
-  amountMode: AmountMode.TOTAL_AMOUNT,       // optional, defaults to AMOUNT_RECEIVED
+    amount: 100,
+    accountId: account.id,
+    network: PaymentNetwork.Ethereum,
+    deliveryMethod: 'INSTANT', // optional
+    amountMode: AmountMode.TOTAL_AMOUNT, // optional, defaults to AMOUNT_RECEIVED
 })
 ```
 
@@ -573,11 +582,11 @@ Integrators can subsidize transaction fees on behalf of users. This is a gated f
 
 ```typescript
 const paymentRequest = await client.paymentRequest.create({
-  amount: 100,
-  accountId: account.id,
-  network: PaymentNetwork.Ethereum,
-  feeSubsidyPercentage: '100',     // percentage of fee to cover
-  maxFeeSubsidyAmount: '5',        // cap per transaction in USD
+    amount: 100,
+    accountId: account.id,
+    network: PaymentNetwork.Ethereum,
+    feeSubsidyPercentage: '100', // percentage of fee to cover
+    maxFeeSubsidyAmount: '5', // cap per transaction in USD
 })
 
 // Fee = $3 → integrator pays $3, user pays $0
@@ -697,19 +706,19 @@ const access = await client.user.getUserAccess()
 
 // Off-ramp capabilities
 if (access.capabilities.offramp.active) {
-  console.log('Off-ramp features:', access.capabilities.offramp.features)
-  // US: 'us_bank_account', 'us_debit_card'
-  // CA: 'ca_bank_account'
+    console.log('Off-ramp features:', access.capabilities.offramp.features)
+    // US: 'us_bank_account', 'us_debit_card'
+    // CA: 'ca_bank_account'
 }
 
 // On-ramp capabilities
 if (access.capabilities.onramp.active) {
-  console.log('On-ramp features:', access.capabilities.onramp.features)
-  // May include: 'ach_purchase', 'wire_purchase'
+    console.log('On-ramp features:', access.capabilities.onramp.features)
+    // May include: 'ach_purchase', 'wire_purchase'
 } else {
-  for (const req of access.capabilities.onramp.requirements) {
-    console.log(`${req.type}: ${req.description}`)
-  }
+    for (const req of access.capabilities.onramp.requirements) {
+        console.log(`${req.type}: ${req.description}`)
+    }
 }
 ```
 
@@ -721,12 +730,12 @@ if (access.capabilities.onramp.active) {
 const access = await client.user.getUserAccess()
 
 if (!access.kycStatus.verified) {
-  if (access.kycRequirement?.actionUrl) {
-    console.log('Complete KYC at:', access.kycRequirement.actionUrl)
-  }
-  if (access.kycRequirement?.status === 'failed' && access.kycRequirement.retryable) {
-    await client.user.retryFailedVerification()
-  }
+    if (access.kycRequirement?.actionUrl) {
+        console.log('Complete KYC at:', access.kycRequirement.actionUrl)
+    }
+    if (access.kycRequirement?.status === 'failed' && access.kycRequirement.retryable) {
+        await client.user.retryFailedVerification()
+    }
 }
 ```
 
@@ -735,17 +744,17 @@ if (!access.kycStatus.verified) {
 ```typescript
 const access = await client.user.getUserAccess()
 const tosRequirement = access.capabilities.onramp.requirements.find(
-  (req) => req.type === 'terms_acceptance'
+    (req) => req.type === 'terms_acceptance'
 )
 
 if (tosRequirement?.actionUrl) {
-  // Display tosRequirement.actionUrl in a browser tab, iframe, or webview.
-  // Listen for the signedAgreementId via postMessage:
-  window.addEventListener('message', (event) => {
-    if (event.data.signedAgreementId) {
-      await client.onramp.acceptTermsOfService(event.data.signedAgreementId)
-    }
-  })
+    // Display tosRequirement.actionUrl in a browser tab, iframe, or webview.
+    // Listen for the signedAgreementId via postMessage:
+    window.addEventListener('message', (event) => {
+        if (event.data.signedAgreementId) {
+            await client.onramp.acceptTermsOfService(event.data.signedAgreementId)
+        }
+    })
 }
 ```
 
@@ -756,7 +765,7 @@ Provider KYC runs automatically after ToS acceptance. No action required — mon
 ```typescript
 const access = await client.user.getUserAccess()
 const kycReq = access.capabilities.onramp.requirements.find(
-  (req) => req.type === 'identity_verification'
+    (req) => req.type === 'identity_verification'
 )
 
 // kycReq is undefined when complete, otherwise check kycReq.status ('pending' | 'failed')
@@ -777,14 +786,14 @@ const tokens = onrampSupportedTokens[PaymentNetwork.Ethereum]
 
 // Create a virtual account
 const virtualAccount = await client.virtualAccounts.create({
-  network: PaymentNetwork.Ethereum,
-  address: '0xYourEthereumAddress',
-  token: 'USDC',
+    network: PaymentNetwork.Ethereum,
+    address: '0xYourEthereumAddress',
+    token: 'USDC',
 })
 
 // Deposit instructions for funding via ACH/wire
 const { bankName, bankAccountNumber, bankRoutingNumber, bankAddress } =
-  virtualAccount.depositInstructions
+    virtualAccount.depositInstructions
 
 // List all virtual accounts
 const accounts = await client.virtualAccounts.list()
@@ -792,16 +801,16 @@ const accounts = await client.virtualAccounts.list()
 
 ### Supported Tokens
 
-| Network | Tokens |
-|---|---|
-| Ethereum | USDC, USDT, DAI, USDP, PYUSD |
-| Polygon | USDC |
-| Base | USDC |
-| Arbitrum | USDC |
-| Avalanche | USDC |
-| Optimism | USDC |
-| Solana | USDC, PYUSD |
-| Tron | USDT |
+| Network   | Tokens                       |
+| --------- | ---------------------------- |
+| Ethereum  | USDC, USDT, DAI, USDP, PYUSD |
+| Polygon   | USDC                         |
+| Base      | USDC                         |
+| Arbitrum  | USDC                         |
+| Avalanche | USDC                         |
+| Optimism  | USDC                         |
+| Solana    | USDC, PYUSD                  |
+| Tron      | USDT                         |
 
 ## Webhooks
 
@@ -832,8 +841,8 @@ const accounts = await client.virtualAccounts.list()
 
 ```typescript
 const webhook = await client.webhook.create({
-  url: 'https://my.webhook.url/spritz',
-  events: ['account.created', 'account.updated', 'payment.completed'],
+    url: 'https://my.webhook.url/spritz',
+    events: ['account.created', 'account.updated', 'payment.completed'],
 })
 ```
 
@@ -841,9 +850,9 @@ Webhook payloads have the following shape:
 
 ```json
 {
-  "userId": "user-id",
-  "id": "resource-id",
-  "eventName": "event-name"
+    "userId": "user-id",
+    "id": "resource-id",
+    "eventName": "event-name"
 }
 ```
 
@@ -872,11 +881,9 @@ await client.webhook.updateWebhookSecret('your-secret')
 ```typescript
 import { createHmac } from 'crypto'
 
-const expected = createHmac('sha256', WEBHOOK_SECRET)
-  .update(JSON.stringify(payload))
-  .digest('hex')
+const expected = createHmac('sha256', WEBHOOK_SECRET).update(JSON.stringify(payload)).digest('hex')
 
 if (expected !== request.headers['signature']) {
-  throw new Error('Invalid webhook signature')
+    throw new Error('Invalid webhook signature')
 }
 ```

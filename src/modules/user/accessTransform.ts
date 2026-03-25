@@ -58,7 +58,6 @@ function getKycRequirement({
 
 function transformTosLink(link: string) {
     try {
-        // eslint-disable-next-line no-undef
         const url = new URL(link)
         url.searchParams.delete('redirect_uri')
         return url.toString()

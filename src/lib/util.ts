@@ -1,17 +1,19 @@
-export const castToError = (err: any): Error => {
+export const castToError = (err: unknown): Error => {
     if (err instanceof Error) return err
-    return new Error(err)
+
+    if (typeof err === 'string') {
+        return new Error(err)
+    }
+
+    return new Error(String(err))
 }
 
 export type Headers = Record<string, string | null | undefined>
 
 export const isRunningInBrowser = () => {
     return (
-        // @ts-ignore
-        typeof window !== 'undefined' &&
-        // @ts-ignore
-        typeof window.document !== 'undefined' &&
-        // @ts-ignore
-        typeof navigator !== 'undefined'
+        typeof globalThis.window !== 'undefined' &&
+        typeof globalThis.window.document !== 'undefined' &&
+        typeof globalThis.navigator !== 'undefined'
     )
 }

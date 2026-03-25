@@ -1,0 +1,18 @@
+{
+    "$schema": "./node_modules/oxfmt/configuration_schema.json",
+    "trailingComma": "es5",
+    "tabWidth": 4,
+    "semi": false,
+    "singleQuote": true,
+    "printWidth": 100,
+    "sortPackageJson": false,
+    "ignorePatterns": [
+        "node_modules",
+        "dist",
+        "build",
+        "coverage",
+        "**/*.d.ts",
+        "src/graph/**/__types__/**",
+        "src/rest/__generated__/**"
+    ]
+}

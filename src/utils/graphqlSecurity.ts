@@ -1,4 +1,13 @@
-import { DocumentNode, OperationDefinitionNode } from 'graphql'
+import { DocumentNode, OperationDefinitionNode, SelectionSetNode } from 'graphql'
+
+type SanitizedValue =
+    | string
+    | number
+    | boolean
+    | null
+    | undefined
+    | SanitizedValue[]
+    | { [key: string]: SanitizedValue }
 
 /**
  * Maximum allowed query depth to prevent deeply nested queries
@@ -20,8 +29,8 @@ export function validateGraphQLQuery(query: DocumentNode): void {
 
     // Check for multiple operations (potential attack vector)
     const operationDefinitions = query.definitions.filter(
-        (def) => def.kind === 'OperationDefinition'
-    ) as OperationDefinitionNode[]
+        (def): def is OperationDefinitionNode => def.kind === 'OperationDefinition'
+    )
 
     if (operationDefinitions.length > 1) {
         throw new Error('Invalid GraphQL query: multiple operations not allowed')
@@ -34,13 +43,13 @@ export function validateGraphQLQuery(query: DocumentNode): void {
     const operation = operationDefinitions[0]
 
     // Validate query depth
-    const depth = calculateQueryDepth(operation as OperationDefinitionNode)
+    const depth = calculateQueryDepth(operation)
     if (depth > MAX_QUERY_DEPTH) {
         throw new Error(`GraphQL query too deep: ${depth} levels (max: ${MAX_QUERY_DEPTH})`)
     }
 
     // Validate query complexity
-    const complexity = calculateQueryComplexity(operation as OperationDefinitionNode)
+    const complexity = calculateQueryComplexity(operation)
     if (complexity > MAX_QUERY_COMPLEXITY) {
         throw new Error(
             `GraphQL query too complex: ${complexity} fields (max: ${MAX_QUERY_COMPLEXITY})`
@@ -48,8 +57,8 @@ export function validateGraphQLQuery(query: DocumentNode): void {
     }
 
     // Validate operation type
-    if (operation?.operation !== 'query' && operation?.operation !== 'mutation') {
-        throw new Error(`Invalid GraphQL operation type: ${operation?.operation}`)
+    if (operation.operation !== 'query' && operation.operation !== 'mutation') {
+        throw new Error(`Invalid GraphQL operation type: ${operation.operation}`)
     }
 }
 
@@ -57,11 +66,7 @@ export function validateGraphQLQuery(query: DocumentNode): void {
  * Calculates the depth of a GraphQL query
  */
 function calculateQueryDepth(operation: OperationDefinitionNode): number {
-    if (!operation.selectionSet) {
-        return 0
-    }
-
-    function getDepth(selectionSet: any): number {
+    function getDepth(selectionSet: SelectionSetNode): number {
         let maxDepth = 0
 
         for (const selection of selectionSet.selections) {
@@ -87,11 +92,7 @@ function calculateQueryDepth(operation: OperationDefinitionNode): number {
  * Calculates the complexity of a GraphQL query (rough estimate)
  */
 function calculateQueryComplexity(operation: OperationDefinitionNode): number {
-    if (!operation.selectionSet) {
-        return 0
-    }
-
-    function getComplexity(selectionSet: any): number {
+    function getComplexity(selectionSet: SelectionSetNode): number {
         let complexity = 0
 
         for (const selection of selectionSet.selections) {
@@ -117,14 +118,14 @@ function calculateQueryComplexity(operation: OperationDefinitionNode): number {
  * Sanitizes GraphQL variables to prevent injection attacks
  */
 export function sanitizeGraphQLVariables(
-    variables: Record<string, any> | undefined
-): Record<string, any> | undefined {
+    variables: Record<string, unknown> | undefined
+): Record<string, SanitizedValue> | undefined {
     if (!variables) {
         return undefined
     }
 
     // Create a clean object to prevent prototype pollution
-    const sanitized = Object.create(null)
+    const sanitized: Record<string, SanitizedValue> = Object.create(null)
 
     for (const [key, value] of Object.entries(variables)) {
         // Validate key format (should be valid GraphQL variable name)
@@ -153,18 +154,26 @@ function isValidVariableName(name: string): boolean {
     return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)
 }
 
+function stripControlCharacters(value: string): string {
+    return Array.from(value)
+        .filter((character) => {
+            const codePoint = character.charCodeAt(0)
+            return codePoint > 0x1f && codePoint !== 0x7f
+        })
+        .join('')
+}
+
 /**
  * Sanitizes a value to prevent injection attacks
  */
-function sanitizeValue(value: any): any {
+function sanitizeValue(value: unknown): SanitizedValue {
     if (value === null || value === undefined) {
         return value
     }
 
     if (typeof value === 'string') {
         // Basic string sanitization - remove control characters
-        // eslint-disable-next-line no-control-regex
-        return value.replace(/[\x00-\x1F\x7F]/g, '')
+        return stripControlCharacters(value)
     }
 
     if (typeof value === 'number' || typeof value === 'boolean') {
@@ -177,15 +186,10 @@ function sanitizeValue(value: any): any {
 
     if (typeof value === 'object') {
         // Create a clean object to prevent prototype pollution
-        const sanitized = Object.create(null)
+        const sanitized: Record<string, SanitizedValue> = Object.create(null)
 
         for (const [key, val] of Object.entries(value)) {
-            // Validate property names
-            if (
-                typeof key !== 'string' ||
-                key.includes('__proto__') ||
-                key.includes('constructor')
-            ) {
+            if (key.includes('__proto__') || key.includes('constructor')) {
                 throw new Error(`Invalid property name: ${key}`)
             }
 
@@ -196,6 +200,5 @@ function sanitizeValue(value: any): any {
     }
 
     // For any other type, convert to string and sanitize
-    // eslint-disable-next-line no-control-regex
-    return String(value).replace(/[\x00-\x1F\x7F]/g, '')
+    return stripControlCharacters(String(value))
 }

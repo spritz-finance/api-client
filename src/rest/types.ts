@@ -14,9 +14,7 @@ export type PathResponse<
 export type PathRequestBody<
     P extends keyof paths,
     M extends HttpMethod & keyof paths[P],
-> = paths[P][M] extends { requestBody: { content: { 'application/json': infer B } } }
-    ? B
-    : never
+> = paths[P][M] extends { requestBody: { content: { 'application/json': infer B } } } ? B : never
 
 /** Extract query parameters for a path + method */
 export type PathQuery<

@@ -8,7 +8,7 @@ describe('DebitCardValidation', () => {
             cardNumber: '4111111111111111',
             expirationDate: '12/25',
         }
-        
+
         const result = DebitCardValidation.safeParse(validInput)
         expect(result.success).toBe(true)
     })
@@ -19,7 +19,7 @@ describe('DebitCardValidation', () => {
             cardNumber: '5555555555554444',
             expirationDate: '12/25',
         }
-        
+
         const result = DebitCardValidation.safeParse(validInput)
         expect(result.success).toBe(true)
     })
@@ -30,7 +30,7 @@ describe('DebitCardValidation', () => {
             cardNumber: '4111-1111-1111-1111',
             expirationDate: '12/25',
         }
-        
+
         const result = DebitCardValidation.safeParse(validInput)
         expect(result.success).toBe(true)
         if (result.success) {
@@ -44,7 +44,7 @@ describe('DebitCardValidation', () => {
             cardNumber: '4111 1111 1111 1111',
             expirationDate: '12/25',
         }
-        
+
         const result = DebitCardValidation.safeParse(validInput)
         expect(result.success).toBe(true)
         if (result.success) {
@@ -57,7 +57,7 @@ describe('DebitCardValidation', () => {
             cardNumber: '4111111111111111',
             expirationDate: '12/25',
         }
-        
+
         const result = DebitCardValidation.safeParse(validInput)
         expect(result.success).toBe(true)
     })
@@ -68,7 +68,7 @@ describe('DebitCardValidation', () => {
             cardNumber: '4111111111111111',
             expirationDate: '12/25',
         }
-        
+
         const result = DebitCardValidation.safeParse(validInput)
         expect(result.success).toBe(true)
     })
@@ -79,11 +79,13 @@ describe('DebitCardValidation', () => {
             cardNumber: '3411111111111111', // Starts with 3, not valid
             expirationDate: '12/25',
         }
-        
+
         const result = DebitCardValidation.safeParse(invalidInput)
         expect(result.success).toBe(false)
         if (!result.success) {
-            expect(result.error.issues[0].message).toBe('Card must be a valid 16-digit Visa or Mastercard number')
+            expect(result.error.issues[0].message).toBe(
+                'Card must be a valid 16-digit Visa or Mastercard number'
+            )
         }
     })
 
@@ -93,11 +95,13 @@ describe('DebitCardValidation', () => {
             cardNumber: '411111111111111', // 15 digits
             expirationDate: '12/25',
         }
-        
+
         const result = DebitCardValidation.safeParse(invalidInput)
         expect(result.success).toBe(false)
         if (!result.success) {
-            expect(result.error.issues[0].message).toBe('Card must be a valid 16-digit Visa or Mastercard number')
+            expect(result.error.issues[0].message).toBe(
+                'Card must be a valid 16-digit Visa or Mastercard number'
+            )
         }
     })
 
@@ -107,7 +111,7 @@ describe('DebitCardValidation', () => {
             cardNumber: '',
             expirationDate: '12/25',
         }
-        
+
         const result = DebitCardValidation.safeParse(invalidInput)
         expect(result.success).toBe(false)
         if (!result.success) {
@@ -121,11 +125,13 @@ describe('DebitCardValidation', () => {
             cardNumber: '5055555555554444', // 50 prefix not valid for Mastercard
             expirationDate: '12/25',
         }
-        
+
         const result = DebitCardValidation.safeParse(invalidInput)
         expect(result.success).toBe(false)
         if (!result.success) {
-            expect(result.error.issues[0].message).toBe('Card must be a valid 16-digit Visa or Mastercard number')
+            expect(result.error.issues[0].message).toBe(
+                'Card must be a valid 16-digit Visa or Mastercard number'
+            )
         }
     })
 
@@ -135,7 +141,7 @@ describe('DebitCardValidation', () => {
             cardNumber: '4111111111111111',
             expirationDate: '13/25', // Invalid month
         }
-        
+
         const result = DebitCardValidation.safeParse(invalidInput)
         expect(result.success).toBe(false)
         if (!result.success) {
@@ -149,7 +155,7 @@ describe('DebitCardValidation', () => {
             cardNumber: '4111111111111111',
             expirationDate: '',
         }
-        
+
         const result = DebitCardValidation.safeParse(invalidInput)
         expect(result.success).toBe(false)
         if (!result.success) {
@@ -161,19 +167,15 @@ describe('DebitCardValidation', () => {
         const invalidInput = {
             name: 'Test Card',
         }
-        
+
         const result = DebitCardValidation.safeParse(invalidInput)
         expect(result.success).toBe(false)
     })
 
     it('should accept various valid Visa card numbers', () => {
-        const cardNumbers = [
-            '4111111111111111',
-            '4012888888881881',
-            '4222222222222222',
-        ]
+        const cardNumbers = ['4111111111111111', '4012888888881881', '4222222222222222']
 
-        cardNumbers.forEach(cardNumber => {
+        cardNumbers.forEach((cardNumber) => {
             const result = DebitCardValidation.safeParse({
                 cardNumber,
                 expirationDate: '12/25',
@@ -191,7 +193,7 @@ describe('DebitCardValidation', () => {
             '5555555555554444',
         ]
 
-        cardNumbers.forEach(cardNumber => {
+        cardNumbers.forEach((cardNumber) => {
             const result = DebitCardValidation.safeParse({
                 cardNumber,
                 expirationDate: '12/25',
@@ -201,16 +203,9 @@ describe('DebitCardValidation', () => {
     })
 
     it('should accept various valid expiration dates', () => {
-        const expirationDates = [
-            '01/25',
-            '02/30',
-            '09/99',
-            '10/00',
-            '11/23',
-            '12/50',
-        ]
+        const expirationDates = ['01/25', '02/30', '09/99', '10/00', '11/23', '12/50']
 
-        expirationDates.forEach(expirationDate => {
+        expirationDates.forEach((expirationDate) => {
             const result = DebitCardValidation.safeParse({
                 cardNumber: '4111111111111111',
                 expirationDate,

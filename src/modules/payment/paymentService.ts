@@ -12,10 +12,7 @@ import PaymentQuery from '../../graph/queries/payment.graphql'
 import { SpritzClient } from '../../lib/client'
 import type { PathResponse } from '../../rest/types'
 
-type PaymentLimitsRaw = PathResponse<
-    '/v1/bank-accounts/{accountId}/payment-limits',
-    'get'
->
+type PaymentLimitsRaw = PathResponse<'/v1/bank-accounts/{accountId}/payment-limits', 'get'>
 
 export interface PaymentLimitsResponse {
     perTransaction: number

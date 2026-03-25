@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import {
     CreateDebitCard,
     CreateDebitCardVariables,
@@ -80,9 +81,8 @@ export class DebitCardService {
 
             return response?.createDebitCard ?? null
         } catch (err) {
-            if (err instanceof Error && 'issues' in err) {
-                const zodError = err as any
-                throw new Error(zodError?.issues?.[0]?.message ?? 'Input validation failure')
+            if (err instanceof z.ZodError) {
+                throw new Error(err.issues[0]?.message ?? 'Input validation failure')
             }
             throw err
         }

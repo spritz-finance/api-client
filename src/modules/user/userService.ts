@@ -31,12 +31,12 @@ interface CreateUserParams {
 
 interface AuthorizeApiKeyResponse {
     apiKey: string
-    userId: any
+    userId: string
     email: string
 }
 
 interface AuthorizeApiKeyParams {
-    otp: any
+    otp: string
     email: string
 }
 

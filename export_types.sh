@@ -27,4 +27,4 @@ for dir in "${directories[@]}"; do
   create_index "$dir"
 done
 
-yarn prettier --write '**/__types__/index.ts' --loglevel=silent
+yarn oxfmt --no-error-on-unmatched-pattern 'src/**/__types__/index.ts'

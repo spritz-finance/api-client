@@ -37,7 +37,14 @@ const UKBankAccountDetailsValidation = z.object({
         .regex(/^[0-9]{6}$/, 'Sort code should contain only digits.'),
 })
 
-export const BankAccountDetailsValidation: Record<BankAccountType, z.ZodObject<any>> = {
+type BankAccountDetailsValidationMap = {
+    [BankAccountType.CABankAccount]: typeof CABankAccountDetailsValidation
+    [BankAccountType.USBankAccount]: typeof USBankAccountDetailsValidation
+    [BankAccountType.IbanAccount]: typeof IbanAccountDetailsValidation
+    [BankAccountType.UKBankAccount]: typeof UKBankAccountDetailsValidation
+}
+
+export const BankAccountDetailsValidation: BankAccountDetailsValidationMap = {
     [BankAccountType.CABankAccount]: CABankAccountDetailsValidation,
     [BankAccountType.USBankAccount]: USBankAccountDetailsValidation,
     [BankAccountType.IbanAccount]: IbanAccountDetailsValidation,

@@ -1,11 +1,25 @@
 import { castToError, Headers } from './util'
 
+type APIErrorPayload = Record<string, unknown>
+
+function stringifyError(value: unknown): string {
+    if (typeof value === 'string') {
+        return value
+    }
+
+    try {
+        return JSON.stringify(value)
+    } catch {
+        return String(value)
+    }
+}
+
 export class SpritzApiError extends Error {
     readonly timestamp: string
     readonly headers: Headers
 
-    constructor(message: string, headers?: Headers, ...params: any[]) {
-        super(...params)
+    constructor(message: string, headers?: Headers) {
+        super(message)
         this.name = 'SpritzApiError'
         this.message = message
         this.headers = headers ?? {}
@@ -20,7 +34,7 @@ export class APIError extends Error {
 
     constructor(
         status: number | undefined,
-        error: Record<string, any> | undefined,
+        error: APIErrorPayload | undefined,
         message: string | undefined,
         headers: Headers | undefined
     ) {
@@ -30,19 +44,22 @@ export class APIError extends Error {
         this.timestamp = new Date().toISOString()
     }
 
-    private static makeMessage(error: any, message: string | undefined) {
-        return error?.message
-            ? typeof error.message === 'string'
-                ? error.message
-                : JSON.stringify(error.message)
-            : error
-              ? JSON.stringify(error)
-              : message || 'Unknown error occurred'
+    private static makeMessage(error: unknown, message: string | undefined) {
+        if (error && typeof error === 'object' && 'message' in error) {
+            const errorMessage = error.message
+            return typeof errorMessage === 'string' ? errorMessage : stringifyError(errorMessage)
+        }
+
+        if (error !== undefined) {
+            return stringifyError(error)
+        }
+
+        return message || 'Unknown error occurred'
     }
 
     static generate(
         status: number | undefined,
-        error: Record<string, any> | undefined,
+        error: APIErrorPayload | undefined,
         message: string | undefined,
         headers: Headers | undefined
     ) {

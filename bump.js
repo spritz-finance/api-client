@@ -15,7 +15,7 @@ function showUsage() {
 
 function bumpVersion(currentVersion, bumpType) {
     const [major, minor, patch] = currentVersion.split('.').map(Number)
-    
+
     switch (bumpType) {
         case 'major':
             return `${major + 1}.0.0`
@@ -30,34 +30,33 @@ function bumpVersion(currentVersion, bumpType) {
 
 function main() {
     const bumpType = process.argv[2]
-    
+
     if (!bumpType || !VALID_BUMP_TYPES.includes(bumpType)) {
         showUsage()
     }
-    
+
     try {
         // Read current package.json
         const packageJson = JSON.parse(readFileSync('package.json', 'utf8'))
         const currentVersion = packageJson.version
-        
+
         // Calculate new version
         const newVersion = bumpVersion(currentVersion, bumpType)
-        
+
         console.log(`Bumping version from ${currentVersion} to ${newVersion}`)
-        
+
         // Update package.json
         packageJson.version = newVersion
         writeFileSync('package.json', JSON.stringify(packageJson, null, 4) + '\n')
-        
+
         // Stage the change
         execSync('git add package.json', { stdio: 'inherit' })
-        
+
         // Create commit
         const commitMessage = `Bump version to ${newVersion}`
         execSync(`git commit -m "${commitMessage}"`, { stdio: 'inherit' })
-        
+
         console.log(`✅ Version bumped to ${newVersion} and committed`)
-        
     } catch (error) {
         console.error('❌ Error:', error.message)
         process.exit(1)

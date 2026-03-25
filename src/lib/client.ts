@@ -7,7 +7,9 @@ import { APIConnectionError, APIConnectionTimeoutError, APIError, SpritzApiError
 import { gracefulParseJSON } from '../utils/json'
 import { validateGraphQLQuery, sanitizeGraphQLVariables } from '../utils/graphqlSecurity'
 
-interface QueryParams<V = any> {
+type GraphQLVariables = Record<string, unknown>
+
+interface QueryParams<V extends GraphQLVariables | undefined = GraphQLVariables> {
     query: DocumentNode
     variables?: V | undefined
 }
@@ -67,16 +69,19 @@ export class SpritzClient {
         this.timeout = validatePositiveInteger('timeout', timeout)
     }
 
-    async query<Q = any, V = any>({ query, variables }: QueryParams<V>) {
+    async query<Q, V extends GraphQLVariables | undefined = GraphQLVariables>({
+        query,
+        variables,
+    }: QueryParams<V>) {
         // Validate GraphQL query for security
         validateGraphQLQuery(query)
 
         // Sanitize variables to prevent injection attacks
-        const sanitizedVariables = sanitizeGraphQLVariables(variables as Record<string, any>)
+        const sanitizedVariables = sanitizeGraphQLVariables(variables)
 
-        return this.sendQuery<V>({
+        return this.sendQuery({
             query,
-            variables: sanitizedVariables as V,
+            variables: sanitizedVariables,
         })
             .then((res) => parseAPIResponse<GraphQLResponseData<Q>>(res))
             .then(({ response, headers }) => {
@@ -91,7 +96,7 @@ export class SpritzClient {
             })
     }
 
-    public async request<Response, Request extends Record<string, any> = Record<string, any>>({
+    public async request<Response, Request extends GraphQLVariables = GraphQLVariables>({
         method,
         path,
         body = undefined,
@@ -109,7 +114,7 @@ export class SpritzClient {
             .then(({ response }) => response)
     }
 
-    public async restApi<Response, Request extends Record<string, any> = Record<string, any>>({
+    public async restApi<Response, Request extends GraphQLVariables = GraphQLVariables>({
         method,
         path,
         body = undefined,
@@ -127,11 +132,11 @@ export class SpritzClient {
             .then(({ response }) => response)
     }
 
-    public async sendQuery<V = any>({
+    public async sendQuery({
         query: documentNodeQuery,
         variables: inputVariables,
-    }: QueryParams<V>) {
-        const { url, req, timeout } = this.buildGraphRequest<V>({
+    }: QueryParams<GraphQLVariables>) {
+        const { url, req, timeout } = this.buildGraphRequest({
             query: documentNodeQuery,
             variables: inputVariables,
         })
@@ -145,7 +150,7 @@ export class SpritzClient {
     }: {
         method: HTTPMethod
         path: string
-        body: Record<string, any> | undefined
+        body: GraphQLVariables | undefined
     }) {
         const { url, req, timeout } = this.buildRestRequest(method, path, body)
         return this.sendHTTPRequest({ url, req, timeout })
@@ -158,7 +163,7 @@ export class SpritzClient {
     }: {
         method: HTTPMethod
         path: string
-        body: Record<string, any> | undefined
+        body: GraphQLVariables | undefined
     }) {
         const { url, req, timeout } = this.buildRestRequest(method, path, body, this.baseRestApiURL)
         return this.sendHTTPRequest({ url, req, timeout })
@@ -225,7 +230,7 @@ export class SpritzClient {
         return fetch(url, { ...options, signal: combinedSignal })
     }
 
-    private buildGraphRequest<V = any>({ query, variables }: QueryParams<V>) {
+    private buildGraphRequest({ query, variables }: QueryParams<GraphQLVariables>) {
         const reqBody = {
             query: print(query),
             variables,
@@ -248,7 +253,7 @@ export class SpritzClient {
 
         const req: RequestInit = {
             method: 'POST',
-            ...(body && { body: body as any }),
+            ...(body ? { body } : {}),
             headers: reqHeaders,
         }
 
@@ -262,7 +267,7 @@ export class SpritzClient {
     private buildRestRequest(
         method: HTTPMethod,
         path: string,
-        reqBody?: Record<string, any> | null,
+        reqBody?: GraphQLVariables | null,
         baseURL?: string
     ) {
         const body = reqBody ? JSON.stringify(reqBody, null, 2) : null
@@ -281,7 +286,7 @@ export class SpritzClient {
 
         const req: RequestInit = {
             method,
-            ...(body && { body: body as any }),
+            ...(body ? { body } : {}),
             headers: reqHeaders,
         }
 
@@ -327,7 +332,7 @@ export class SpritzClient {
 
     private makeStatusError(
         status: number | undefined,
-        error: Record<string, any> | undefined,
+        error: Record<string, unknown> | undefined,
         message: string | undefined,
         headers: Headers | undefined
     ) {
