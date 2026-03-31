@@ -25,6 +25,12 @@ export type ClientOptions = {
     integrationKey?: string
 
     /**
+     * The integrator's HMAC secret used to sign REST API requests.
+     * Required for authenticated REST API calls to the platform.
+     */
+    integratorSecret?: string
+
+    /**
      * The client will wait up to a specified duration (in milliseconds)
      * for a response from the server before considering a single request as timed out.
      *
@@ -47,6 +53,7 @@ export class SpritzApiClient {
     private environment: Environment
     private apiKey: string | undefined
     private integrationKey: string | undefined
+    private integratorSecret: string | undefined
 
     private client: SpritzClient
     public user: UserService
@@ -66,7 +73,8 @@ export class SpritzApiClient {
         environment: Environment,
         apiKey?: string,
         integrationKey?: string,
-        dangerouslyAllowBrowser?: boolean
+        integratorSecret?: string,
+        dangerouslyAllowBrowser?: boolean,
     ) {
         if (apiKey === undefined && integrationKey === undefined) {
             throw new Error(
@@ -76,6 +84,7 @@ export class SpritzApiClient {
         this.environment = environment
         this.apiKey = apiKey
         this.integrationKey = integrationKey
+        this.integratorSecret = integratorSecret
 
         if (!dangerouslyAllowBrowser && isRunningInBrowser()) {
             throw new Error(
@@ -88,13 +97,15 @@ export class SpritzApiClient {
         environment = Environment.Sandbox,
         apiKey,
         integrationKey,
+        integratorSecret,
         dangerouslyAllowBrowser = false,
     }: ClientOptions) {
         const client = new SpritzApiClient(
             environment,
             apiKey,
             integrationKey,
-            dangerouslyAllowBrowser
+            integratorSecret,
+            dangerouslyAllowBrowser,
         )
         client.init()
         return client
@@ -105,6 +116,7 @@ export class SpritzApiClient {
             environment: this.environment,
             apiKey: this.apiKey,
             integrationKey: this.integrationKey,
+            integratorSecret: this.integratorSecret,
         })
         this.user = new UserService(this.client)
         this.bankAccount = new BankAccountService(this.client)
