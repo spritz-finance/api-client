@@ -81,6 +81,11 @@ export class SpritzApiClient {
                 'The integrationKey or apiKey variable appears to be missing or empty. Please ensure you provide it, or when initializing the SpritzApiClient, opt for the integratorKey option.'
             )
         }
+        if (integratorSecret && !integrationKey) {
+            throw new Error(
+                'integratorSecret requires integrationKey to be provided. Both are needed for HMAC-signed REST API requests.'
+            )
+        }
         this.environment = environment
         this.apiKey = apiKey
         this.integrationKey = integrationKey

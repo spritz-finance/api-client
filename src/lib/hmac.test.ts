@@ -264,35 +264,42 @@ describe('HMAC Request Stamping', () => {
     })
 
     describe('cross-compatibility with platform server', () => {
-        // These tests verify that the Web Crypto implementation produces
-        // the same payload format as the platform's Node crypto implementation.
-        // Payload: `{timestamp}.{METHOD}.{path}.{bodyHash}`
+        // Golden test vectors computed using the platform's Node crypto implementation:
+        //   crypto.createHmac('sha256', secret).update(payload).digest('hex')
+        // Payload format: `{timestamp}.{METHOD}.{path}.{bodyHash}`
 
-        it('produces correct payload structure for POST with body', async () => {
-            const timestamp = 1700000000000
-            // Two calls with same inputs must produce identical signatures,
-            // confirming deterministic payload construction
-            const sig1 = await generateHmacSignature(testSecret, timestamp, {
+        it('matches platform signature for POST with body', async () => {
+            const sig = await generateHmacSignature(testSecret, 1700000000000, {
                 method: 'POST',
                 path: '/v1/transactions',
                 body: '{"amount":100}',
             })
-            const sig2 = await generateHmacSignature(testSecret, timestamp, {
-                method: 'POST',
-                path: '/v1/transactions',
-                body: '{"amount":100}',
-            })
-            expect(sig1).toBe(sig2)
+            expect(sig).toBe(
+                'sha256=12dcf2a7647146ce08a465349ab03f992d8a18542cd576d40a9eb8e2958d4b9f',
+            )
         })
 
-        it('produces correct payload structure for GET without body', async () => {
-            const timestamp = 1700000000000
-            const sig = await generateHmacSignature(testSecret, timestamp, {
+        it('matches platform signature for GET without body', async () => {
+            const sig = await generateHmacSignature(testSecret, 1700000000000, {
                 method: 'GET',
                 path: '/v1/users/me',
             })
-            // Empty body hash should be empty string in payload
-            expect(sig).toMatch(/^sha256=[0-9a-f]{64}$/)
+            expect(sig).toBe(
+                'sha256=147ecf7209d3d91ca62d3cc190473954120d305b85c007b50976d4fe88551c52',
+            )
+        })
+
+        it('matches platform signature for GET with canonicalized query params', async () => {
+            const url = new URL(
+                'https://api.example.com/v1/on-ramps?token=USDC&limit=20&network=ethereum',
+            )
+            const sig = await generateHmacSignature(testSecret, 1700000000000, {
+                method: 'GET',
+                path: buildPathWithQuery(url),
+            })
+            expect(sig).toBe(
+                'sha256=77cc4cdebcc5256d682fb3974346c15e84b289f6a4bb454adaa7f9495d3bbc55',
+            )
         })
     })
 })
