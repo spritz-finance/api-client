@@ -7,7 +7,7 @@
  *
  * Requires SPRITZ_API_KEY in .env
  */
-import { createClient } from './client'
+import { createRestClient } from './client'
 import { requireEnv } from './env'
 
 function parseArgs(args: string[]): Record<string, string> {
@@ -22,7 +22,7 @@ function parseArgs(args: string[]): Record<string, string> {
 }
 
 async function main() {
-    requireEnv('SPRITZ_API_KEY')
+    const apiKey = requireEnv('SPRITZ_API_KEY')
     const query = parseArgs(process.argv.slice(2))
 
     console.log('=== On-Ramps (REST API) ===')
@@ -30,8 +30,8 @@ async function main() {
         console.log('Filters:', query)
     }
 
-    const client = createClient()
-    const onRamps = await client.restApi({
+    const rest = createRestClient(apiKey)
+    const onRamps = await rest.restApi({
         method: 'get',
         path: '/v1/on-ramps/',
         query,
