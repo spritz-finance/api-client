@@ -13,8 +13,8 @@ SCRIPT="${1:?Usage: run.sh <script-name> [args...]}"
 shift
 
 echo "Building..."
-yarn build --silent 2>/dev/null
+yarn build --silent
 echo "Build OK"
 echo ""
 
-exec npx tsx "scripts/sandbox/${SCRIPT}.ts" "$@"
+exec yarn tsx "scripts/sandbox/${SCRIPT}.ts" "$@"
