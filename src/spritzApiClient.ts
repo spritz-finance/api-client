@@ -137,6 +137,19 @@ export class SpritzApiClient {
         this.webhook = new WebhookService(this.client)
     }
 
+    /**
+     * Make a direct REST API call to the platform.
+     * Requests are HMAC-signed when integratorSecret is configured.
+     */
+    public async restApi<Response, Request extends Record<string, unknown> = Record<string, unknown>>(args: {
+        method: 'get' | 'post' | 'put' | 'patch' | 'delete'
+        path: string
+        body?: Request
+        query?: Record<string, string | number | boolean | undefined>
+    }) {
+        return this.client.restApi<Response, Request>(args)
+    }
+
     setApiKey(_apiKey: string) {
         this.apiKey = _apiKey
         this.init()
