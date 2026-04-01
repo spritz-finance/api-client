@@ -6,6 +6,7 @@ import { validatePositiveInteger } from '../utils/validatePositiveInteger'
 import { APIConnectionError, APIConnectionTimeoutError, APIError, SpritzApiError } from './error'
 import { gracefulParseJSON } from '../utils/json'
 import { validateGraphQLQuery, sanitizeGraphQLVariables } from '../utils/graphqlSecurity'
+import { stampRequest } from './hmac'
 
 type GraphQLVariables = Record<string, unknown>
 
@@ -49,20 +50,24 @@ export class SpritzClient {
     private timeout: number
     private apiKey: string | undefined
     private integrationKey: string | undefined
+    private integratorSecret: string | undefined
 
     constructor({
         environment,
         timeout = 300000, // 5 minutes
         apiKey,
         integrationKey,
+        integratorSecret,
     }: {
         environment: Environment
         timeout?: number | undefined
         integrationKey: string | undefined
+        integratorSecret: string | undefined
         apiKey: string | undefined
     }) {
         this.apiKey = apiKey
         this.integrationKey = integrationKey
+        this.integratorSecret = integratorSecret
         this.baseGraphURL = config[environment].graphEndpoint
         this.baseRestURL = config[environment].baseEndpoint
         this.baseRestApiURL = config[environment].restEndpoint
@@ -118,15 +123,18 @@ export class SpritzClient {
         method,
         path,
         body = undefined,
+        query,
     }: {
         method: HTTPMethod
         path: string
         body?: Request | undefined
+        query?: Record<string, string | number | boolean | undefined>
     }) {
         return this.sendRestApiRequest({
             method,
             path,
             body,
+            query,
         })
             .then((res) => parseAPIResponse<Response>(res))
             .then(({ response }) => response)
@@ -160,12 +168,26 @@ export class SpritzClient {
         method,
         path,
         body,
+        query,
     }: {
         method: HTTPMethod
         path: string
         body: GraphQLVariables | undefined
+        query?: Record<string, string | number | boolean | undefined>
     }) {
-        const { url, req, timeout } = this.buildRestRequest(method, path, body, this.baseRestApiURL)
+        const { url, req, timeout } = this.buildRestRequest(method, path, body, this.baseRestApiURL, query)
+
+        if (this.integrationKey && this.integratorSecret) {
+            const stamped = await stampRequest(
+                this.integrationKey,
+                this.integratorSecret,
+                method,
+                url,
+                (req.body as string | undefined) ?? null,
+            )
+            req.headers = { ...(req.headers as Record<string, string>), ...stamped }
+        }
+
         return this.sendHTTPRequest({ url, req, timeout })
     }
 
@@ -268,7 +290,8 @@ export class SpritzClient {
         method: HTTPMethod,
         path: string,
         reqBody?: GraphQLVariables | null,
-        baseURL?: string
+        baseURL?: string,
+        query?: Record<string, string | number | boolean | undefined>,
     ) {
         const body = reqBody ? JSON.stringify(reqBody, null, 2) : null
         const contentLength = this.calculateContentLength(body)
@@ -291,9 +314,19 @@ export class SpritzClient {
         }
 
         const base = baseURL ?? this.baseRestURL
+        const normalizedPath = path.startsWith('/') ? path : '/' + path
+        const url = new URL(normalizedPath, base)
+
+        if (query) {
+            for (const [key, value] of Object.entries(query)) {
+                if (value !== undefined) {
+                    url.searchParams.set(key, String(value))
+                }
+            }
+        }
 
         return {
-            url: `${base}${path.startsWith('/') ? path : '/' + path}`,
+            url: url.toString(),
             req,
             timeout,
         }
