@@ -185,7 +185,8 @@ export class SpritzClient {
                 url,
                 (req.body as string | undefined) ?? null,
             )
-            req.headers = { ...(req.headers as Record<string, string>), ...stamped }
+            const { 'X-INTEGRATION-KEY': _, ...headers } = req.headers as Record<string, string>
+            req.headers = { ...headers, ...stamped }
         }
 
         return this.sendHTTPRequest({ url, req, timeout })
@@ -293,7 +294,7 @@ export class SpritzClient {
         baseURL?: string,
         query?: Record<string, string | number | boolean | undefined>,
     ) {
-        const body = reqBody ? JSON.stringify(reqBody, null, 2) : null
+        const body = reqBody ? JSON.stringify(reqBody) : null
         const contentLength = this.calculateContentLength(body)
         const timeout = this.timeout
 
