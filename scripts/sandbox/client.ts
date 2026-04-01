@@ -1,20 +1,23 @@
 import { SpritzApiClient, Environment } from '../../dist/spritz-api-client.mjs'
 import { SpritzClient } from '../../src/lib/client'
+import { Environment as SrcEnvironment } from '../../src/env'
 import { requireEnv, optionalEnv } from './env'
+
+function credentials(apiKey?: string) {
+    return {
+        integrationKey: requireEnv('SPRITZ_INTEGRATION_KEY'),
+        integratorSecret: requireEnv('SPRITZ_INTEGRATOR_SECRET'),
+        apiKey: apiKey ?? optionalEnv('SPRITZ_API_KEY'),
+    }
+}
 
 /**
  * High-level client for service methods (GraphQL + typed REST via services).
  */
 export function createClient(apiKey?: string) {
-    const integrationKey = requireEnv('SPRITZ_INTEGRATION_KEY')
-    const integratorSecret = requireEnv('SPRITZ_INTEGRATOR_SECRET')
-    const key = apiKey ?? optionalEnv('SPRITZ_API_KEY')
-
     return SpritzApiClient.initialize({
         environment: Environment.Sandbox,
-        integrationKey,
-        integratorSecret,
-        apiKey: key,
+        ...credentials(apiKey),
     })
 }
 
@@ -23,14 +26,8 @@ export function createClient(apiKey?: string) {
  * Use for endpoints not yet wrapped in a service.
  */
 export function createRestClient(apiKey?: string) {
-    const integrationKey = requireEnv('SPRITZ_INTEGRATION_KEY')
-    const integratorSecret = requireEnv('SPRITZ_INTEGRATOR_SECRET')
-    const key = apiKey ?? optionalEnv('SPRITZ_API_KEY')
-
     return new SpritzClient({
-        environment: 'staging',
-        integrationKey,
-        integratorSecret,
-        apiKey: key,
+        environment: SrcEnvironment.Sandbox,
+        ...credentials(apiKey),
     })
 }
