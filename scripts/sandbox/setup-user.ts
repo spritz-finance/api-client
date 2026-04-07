@@ -6,7 +6,7 @@
  *
  * If no email is provided, generates one using a timestamp.
  */
-import { createClient } from './client'
+import { createClient, createRestClient } from './client'
 
 const email = process.argv[2] ?? `sandbox+${Date.now()}@spritz.finance`
 
@@ -20,8 +20,8 @@ async function main() {
 
     // Bypass KYC via REST API (HMAC-signed)
     console.log('\nBypassing KYC...')
-    client.setApiKey(user.apiKey)
-    await client.restApi({
+    const rest = createRestClient(user.apiKey)
+    await rest.restApi({
         method: 'post',
         path: '/v1/sandbox/bypass-kyc',
         body: { country: 'US' },
@@ -29,6 +29,7 @@ async function main() {
     console.log('KYC bypassed (US)')
 
     // Verify by fetching user profile
+    client.setApiKey(user.apiKey)
     const currentUser = await client.user.getCurrentUser()
     console.log('\nUser profile:')
     console.log(JSON.stringify(currentUser, null, 2))

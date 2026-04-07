@@ -6,16 +6,17 @@
  *
  * Requires SPRITZ_API_KEY in .env (user must be KYC-verified)
  */
-import { createClient } from './client'
+import { createClient, createRestClient } from './client'
 import { requireEnv } from './env'
 
 async function main() {
-    requireEnv('SPRITZ_API_KEY')
+    const apiKey = requireEnv('SPRITZ_API_KEY')
     const client = createClient()
+    const rest = createRestClient(apiKey)
 
     // Create via REST API (HMAC-signed POST with body)
     console.log('=== Creating US bank account (REST API) ===')
-    const created = await client.restApi<{ id: string }>({
+    const created = await rest.restApi<{ id: string }>({
         method: 'post',
         path: '/v1/bank-accounts/',
         body: {
@@ -38,7 +39,7 @@ async function main() {
 
     // List via REST API to confirm
     console.log('\n=== Verifying via REST API ===')
-    const restAccounts = await client.restApi<unknown[]>({
+    const restAccounts = await rest.restApi<unknown[]>({
         method: 'get',
         path: '/v1/bank-accounts/',
     })
@@ -46,7 +47,7 @@ async function main() {
 
     // Delete via REST API (HMAC-signed DELETE, no body)
     console.log(`\n=== Deleting ${accountId} (REST API) ===`)
-    await client.restApi({
+    await rest.restApi({
         method: 'delete',
         path: `/v1/bank-accounts/${accountId}`,
     })

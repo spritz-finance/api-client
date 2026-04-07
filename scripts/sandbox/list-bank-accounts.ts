@@ -6,12 +6,13 @@
  *
  * Requires SPRITZ_API_KEY in .env
  */
-import { createClient } from './client'
+import { createClient, createRestClient } from './client'
 import { requireEnv } from './env'
 
 async function main() {
-    requireEnv('SPRITZ_API_KEY')
+    const apiKey = requireEnv('SPRITZ_API_KEY')
     const client = createClient()
+    const rest = createRestClient(apiKey)
 
     // GraphQL path
     console.log('=== Bank Accounts (GraphQL) ===')
@@ -23,7 +24,7 @@ async function main() {
 
     // REST API path (HMAC-signed)
     console.log('\n=== Bank Accounts (REST API) ===')
-    const restAccounts = await client.restApi({
+    const restAccounts = await rest.restApi({
         method: 'get',
         path: '/v1/bank-accounts/',
     })
