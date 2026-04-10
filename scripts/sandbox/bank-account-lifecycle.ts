@@ -11,7 +11,7 @@ import { requireEnv } from './env'
 
 async function main() {
     const apiKey = requireEnv('SPRITZ_API_KEY')
-    const client = createClient()
+    const client = createClient(apiKey)
     const rest = createRestClient(apiKey)
 
     // Create via REST API (HMAC-signed POST with body)
@@ -43,7 +43,7 @@ async function main() {
         method: 'get',
         path: '/v1/bank-accounts/',
     })
-    console.log(`REST API returned ${(restAccounts as unknown[]).length} account(s)`)
+    console.log(`REST API returned ${restAccounts.length} account(s)`)
 
     // Delete via REST API (HMAC-signed DELETE, no body)
     console.log(`\n=== Deleting ${accountId} (REST API) ===`)

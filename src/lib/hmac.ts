@@ -19,7 +19,7 @@ async function hmacSha256Hex(secret: string, data: string): Promise<string> {
         encoder.encode(secret),
         { name: 'HMAC', hash: 'SHA-256' },
         false,
-        ['sign'],
+        ['sign']
     )
     const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data))
     return hexEncode(signature)
@@ -62,7 +62,7 @@ export function buildPathWithQuery(url: URL): string {
 export async function generateHmacSignature(
     secret: string,
     timestamp: number,
-    request: { method: string; path: string; body?: string | null },
+    request: { method: string; path: string; body?: string | null }
 ): Promise<string> {
     const bodyHash = request.body ? await sha256Hex(request.body) : ''
     const payload = `${timestamp}.${request.method.toUpperCase()}.${request.path}.${bodyHash}`
@@ -89,7 +89,7 @@ export async function stampRequest(
     integratorSecret: string,
     method: string,
     url: string,
-    body?: string | null,
+    body?: string | null
 ): Promise<StampedHeaders> {
     const parsedUrl = new URL(url)
     const path = buildPathWithQuery(parsedUrl)

@@ -175,7 +175,13 @@ export class SpritzClient {
         body: GraphQLVariables | undefined
         query?: Record<string, string | number | boolean | undefined>
     }) {
-        const { url, req, timeout } = this.buildRestRequest(method, path, body, this.baseRestApiURL, query)
+        const { url, req, timeout } = this.buildRestRequest(
+            method,
+            path,
+            body,
+            this.baseRestApiURL,
+            query
+        )
 
         if (this.integrationKey && this.integratorSecret) {
             const stamped = await stampRequest(
@@ -183,9 +189,13 @@ export class SpritzClient {
                 this.integratorSecret,
                 method,
                 url,
-                (req.body as string | undefined) ?? null,
+                (req.body as string | undefined) ?? null
             )
-            const { 'X-INTEGRATION-KEY': _, ...headers } = req.headers as Record<string, string>
+            const { 'X-INTEGRATION-KEY': _integrationKey, ...headers } = req.headers as Record<
+                string,
+                string
+            >
+            void _integrationKey
             req.headers = { ...headers, ...stamped }
         }
 
@@ -292,7 +302,7 @@ export class SpritzClient {
         path: string,
         reqBody?: GraphQLVariables | null,
         baseURL?: string,
-        query?: Record<string, string | number | boolean | undefined>,
+        query?: Record<string, string | number | boolean | undefined>
     ) {
         const body = reqBody ? JSON.stringify(reqBody) : null
         const contentLength = this.calculateContentLength(body)
