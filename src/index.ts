@@ -55,6 +55,11 @@ export type {
 } from './modules/bankAccount/bankAccountService'
 export type { BypassKycRequest } from './modules/sandbox/sandboxService'
 export type {
+    OnRamp,
+    OnRampListResponse,
+    OnRampListQuery,
+} from './modules/onrampPayment/onrampPaymentService'
+export type {
     paths as RestApiPaths,
     operations as RestApiOperations,
 } from './rest/__generated__/api'
