@@ -28,6 +28,7 @@ import {
     BankAccountSubType,
     BankAccountType,
     PayableAccountType,
+    PaymentDeliveryMethod,
 } from '../../types/globalTypes'
 import { raise } from '../../utils/raise'
 import { BankAccountDetailsValidation } from './validation'
@@ -100,7 +101,10 @@ function transformBankAccount(acct: RestBankAccount): UserBankAccounts_bankAccou
         email: null,
         ownedByUser: true,
         bankAccountDetails,
-        deliveryMethods: [],
+        deliveryMethods: [
+            PaymentDeliveryMethod.STANDARD,
+            ...(acct.supportedRails.includes('rtp') ? [PaymentDeliveryMethod.INSTANT] : []),
+        ],
         institution,
         paymentAddresses: [],
     }
