@@ -11,7 +11,7 @@ import { requireEnv } from './env'
 
 async function main() {
     const apiKey = requireEnv('SPRITZ_API_KEY')
-    const client = createClient()
+    const client = createClient(apiKey)
     const rest = createRestClient(apiKey)
 
     // GraphQL path
