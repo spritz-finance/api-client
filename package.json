@@ -1,6 +1,6 @@
 {
     "name": "@spritz-finance/api-client",
-    "version": "0.4.28",
+    "version": "0.5.0",
     "packageManager": "yarn@1.22.22",
     "description": "Typescript library for interacting with the Spritz Finance API",
     "type": "module",
