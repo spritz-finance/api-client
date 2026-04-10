@@ -1,9 +1,9 @@
 import { afterAll, afterEach, beforeAll } from 'vitest'
 import { setupServer } from 'msw/node'
-import { graphqlHandlers } from './mocks/graphqlHandlers'
+import { graphqlHandlers, restHandlers } from './mocks/graphqlHandlers'
 
-// Setup MSW server with only GraphQL handlers
-export const server = setupServer(...graphqlHandlers)
+// Setup MSW server with GraphQL and REST handlers
+export const server = setupServer(...restHandlers, ...graphqlHandlers)
 
 // Start server before all tests
 beforeAll(() => {
