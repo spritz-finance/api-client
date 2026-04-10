@@ -8,6 +8,7 @@ import { DepositService } from './modules/deposit/depositService'
 import { DepositDestinationService } from './modules/depositDestination/depositDestinationService'
 import { FundingSourceService } from './modules/fundingSource/fundingSourceService'
 import { InstitutionService } from './modules/institution/institutionService'
+import { SandboxService } from './modules/sandbox/sandboxService'
 import { OnrampPaymentService } from './modules/onrampPayment/onrampPaymentService'
 import { OnrampService } from './modules/onramp/onrampService'
 import { VirtualAccountsService } from './modules/virtualAccounts/virtualAccountsService'
@@ -73,6 +74,7 @@ export class SpritzApiClient {
     public virtualCard: VirtualCardService
     public bill: BillService
     public institution: InstitutionService
+    public sandbox: SandboxService
     public webhook: WebhookService
 
     constructor(
@@ -143,6 +145,7 @@ export class SpritzApiClient {
         this.virtualCard = new VirtualCardService(this.client)
         this.bill = new BillService(this.client)
         this.institution = new InstitutionService(this.client)
+        this.sandbox = new SandboxService(this.client)
         this.webhook = new WebhookService(this.client)
     }
 

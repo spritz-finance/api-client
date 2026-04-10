@@ -11,8 +11,16 @@ Link Bank Account → Funding Source → Bind Wallet → Authorize Deposit → U
 
 - **Integration credentials** — integration key and HMAC secret (provided by Spritz)
 - **User API key** — the authenticated user must have completed KYC
-- **Plaid Link SDK** — for bank account linking (browser-side)
+- **Plaid Link SDK** — for bank account linking ([React Native](https://plaid.com/docs/link/react-native/), [Web](https://plaid.com/docs/link/web/), [iOS](https://plaid.com/docs/link/ios/), [Android](https://plaid.com/docs/link/android/))
 - **Ed25519 signing** — the user's Solana wallet must sign authorization messages
+
+### KYC Verification
+
+Users must be KYC-verified before they can link a bank account or create deposits. In production, use the Persona verification flow (see the main [README](../README.md#identity-verification)). In sandbox, bypass it programmatically:
+
+```typescript
+await client.sandbox.bypassKyc({ country: 'US' })
+```
 
 ### SDK Setup
 
@@ -49,13 +57,33 @@ const { linkToken, hostedLinkUrl } = await client.bankAccount.createLinkToken()
 
 ### 1b. Run Plaid Link
 
-Use the `linkToken` with the [Plaid Link SDK](https://plaid.com/docs/link/web/) on your frontend:
+Use the `linkToken` with the Plaid Link SDK on your frontend. Plaid provides SDKs for [React Native](https://plaid.com/docs/link/react-native/), [Web](https://plaid.com/docs/link/web/), [iOS](https://plaid.com/docs/link/ios/), and [Android](https://plaid.com/docs/link/android/).
+
+**React Native** (using [`react-native-plaid-link-sdk`](https://github.com/plaid/react-native-plaid-link-sdk)):
+
+```typescript
+import { create, open } from 'react-native-plaid-link-sdk'
+
+create({ token: linkToken })
+
+open({
+    onSuccess: async ({ publicToken, metadata }) => {
+        await client.bankAccount.completeLinking({
+            publicToken,
+            accountIds: metadata.accounts.map((a) => a.id),
+            institutionId: metadata.institution?.id,
+            institutionName: metadata.institution?.name,
+        })
+    },
+})
+```
+
+**Web** (using [`react-plaid-link`](https://github.com/plaid/react-plaid-link) or the vanilla JS SDK):
 
 ```typescript
 const handler = Plaid.create({
     token: linkToken,
     onSuccess: async (publicToken, metadata) => {
-        // Exchange the token server-side
         await client.bankAccount.completeLinking({
             publicToken,
             accountIds: metadata.accounts.map((a) => a.id),
