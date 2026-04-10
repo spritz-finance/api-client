@@ -88,6 +88,9 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
     - [Activation Steps](#activation-steps)
     - [Virtual Accounts](#virtual-accounts)
     - [Supported Tokens](#supported-tokens)
+- [ACH Onramp (Direct Debit)](#ach-onramp-direct-debit)
+- [Sandbox](#sandbox)
+    - [Bypassing KYC](#bypassing-kyc)
 - [Webhooks](#webhooks)
     - [Events](#events)
     - [Setup](#setup)
@@ -811,6 +814,39 @@ const accounts = await client.virtualAccounts.list()
 | Optimism  | USDC                         |
 | Solana    | USDC, PYUSD                  |
 | Tron      | USDT                         |
+
+## ACH Onramp (Direct Debit)
+
+ACH onramp lets users convert USD from their bank account into USDC delivered to a Solana wallet. The flow is:
+
+1. **Link bank account** via Plaid → funding source created automatically
+2. **Bind wallet** — user signs a message proving wallet ownership
+3. **Create deposit** — user authorizes an ACH debit, USDC released to wallet
+
+For a complete walkthrough with code examples, request/response schemas, and deposit lifecycle documentation, see the **[ACH Onramp Integration Guide](docs/ach-onramp-guide.md)**.
+
+A standalone sandbox demo is available at `scripts/sandbox/ach-onramp.html` — open it in a browser to walk through the full flow interactively.
+
+## Sandbox
+
+Use `Environment.Sandbox` for development and testing. The sandbox environment is available at `https://sandbox.spritz.finance`.
+
+### Bypassing KYC
+
+In sandbox, you can skip identity verification to speed up testing:
+
+```typescript
+// Simulate successful US KYC verification
+await client.sandbox.bypassKyc()
+
+// Simulate KYC for a specific country
+await client.sandbox.bypassKyc({ country: 'CA' })
+
+// Simulate a failed KYC check
+await client.sandbox.bypassKyc({ failed: true })
+```
+
+This endpoint returns 403 in production.
 
 ## Webhooks
 

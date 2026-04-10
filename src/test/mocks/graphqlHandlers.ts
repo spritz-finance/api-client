@@ -1,4 +1,26 @@
-import { graphql, HttpResponse } from 'msw'
+import { graphql, http, HttpResponse } from 'msw'
+
+export const restHandlers = [
+    http.get('https://sandbox.spritz.finance/v1/bank-accounts/', () => {
+        return HttpResponse.json([
+            {
+                id: 'bank-account-123',
+                status: 'active',
+                accountHolderName: 'Test User',
+                institution: { name: 'Test Bank', logo: null },
+                supportedRails: ['ach_standard'],
+                label: 'Test Bank Account',
+                createdAt: '2023-01-01T00:00:00Z',
+                fundingSourceId: null,
+                type: 'us',
+                currency: 'USD',
+                accountNumberLast4: '6789',
+                routingNumberLast4: '0021',
+                accountSubtype: 'checking',
+            },
+        ])
+    }),
+]
 
 export const graphqlHandlers = [
     // Current User Query
