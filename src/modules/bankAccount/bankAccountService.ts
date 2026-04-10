@@ -19,9 +19,13 @@ import RenameBankAccountMutation from '../../graph/mutations/renameBankAccount.g
 import { UserBankAccounts } from '../../graph/queries/__types__'
 import UserBankAccountsQuery from '../../graph/queries/bankAccounts.graphql'
 import { SpritzClient } from '../../lib/client'
+import type { PathRequestBody, PathResponse } from '../../rest/types'
 import { BankAccountInput, BankAccountType } from '../../types/globalTypes'
 import { raise } from '../../utils/raise'
 import { BankAccountDetailsValidation } from './validation'
+
+export type LinkTokenResponse = PathResponse<'/v1/bank-accounts/link-token', 'post'>
+export type CompleteLinkingRequest = PathRequestBody<'/v1/bank-accounts/link-complete', 'post'>
 
 type BaseBankAccountInput = Omit<BankAccountInput, 'details' | 'type'>
 
@@ -89,6 +93,24 @@ export class BankAccountService {
             (response?.deletePayableAccount as DeletePayableAccount_deletePayableAccount_BankAccount) ??
             null
         )
+    }
+
+    public async createLinkToken() {
+        return this.client.restApi<LinkTokenResponse>({
+            method: 'post',
+            path: '/v1/bank-accounts/link-token',
+        })
+    }
+
+    public async completeLinking(input: CompleteLinkingRequest) {
+        return this.client.restApi<
+            PathResponse<'/v1/bank-accounts/link-complete', 'post'>,
+            CompleteLinkingRequest
+        >({
+            method: 'post',
+            path: '/v1/bank-accounts/link-complete',
+            body: input,
+        })
     }
 
     public async create<T extends BankAccountType>(type: T, input: CreateInputMapping[T]) {

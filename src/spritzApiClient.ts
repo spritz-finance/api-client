@@ -4,6 +4,9 @@ import { isRunningInBrowser } from './lib/util'
 import { BankAccountService } from './modules/bankAccount/bankAccountService'
 import { BillService } from './modules/bill/billService'
 import { DebitCardService } from './modules/debitCard/debitCardService'
+import { DepositService } from './modules/deposit/depositService'
+import { DepositDestinationService } from './modules/depositDestination/depositDestinationService'
+import { FundingSourceService } from './modules/fundingSource/fundingSourceService'
 import { InstitutionService } from './modules/institution/institutionService'
 import { OnrampPaymentService } from './modules/onrampPayment/onrampPaymentService'
 import { OnrampService } from './modules/onramp/onrampService'
@@ -59,6 +62,9 @@ export class SpritzApiClient {
     public user: UserService
     public bankAccount: BankAccountService
     public debitCard: DebitCardService
+    public deposit: DepositService
+    public depositDestination: DepositDestinationService
+    public fundingSource: FundingSourceService
     public paymentRequest: PaymentRequestService
     public payment: PaymentService
     public onrampPayment: OnrampPaymentService
@@ -126,6 +132,9 @@ export class SpritzApiClient {
         this.user = new UserService(this.client)
         this.bankAccount = new BankAccountService(this.client)
         this.debitCard = new DebitCardService(this.client)
+        this.deposit = new DepositService(this.client)
+        this.depositDestination = new DepositDestinationService(this.client)
+        this.fundingSource = new FundingSourceService(this.client)
         this.paymentRequest = new PaymentRequestService(this.client)
         this.payment = new PaymentService(this.client)
         this.onrampPayment = new OnrampPaymentService(this.client)

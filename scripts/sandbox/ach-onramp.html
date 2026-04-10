@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>ACH Onramp — Spritz Sandbox Demo</title>
+        <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+        <style>
+            :root {
+                --bg: #0a0a0a;
+                --surface: #141414;
+                --border: #262626;
+                --text: #e5e5e5;
+                --muted: #737373;
+                --accent: #6366f1;
+                --green: #22c55e;
+                --red: #ef4444;
+                --yellow: #eab308;
+            }
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+                background: var(--bg);
+                color: var(--text);
+                padding: 2rem;
+                max-width: 720px;
+                margin: 0 auto;
+                line-height: 1.6;
+            }
+            h1 {
+                font-size: 1.25rem;
+                margin-bottom: 0.25rem;
+            }
+            .subtitle {
+                color: var(--muted);
+                font-size: 0.8rem;
+                margin-bottom: 2rem;
+            }
+            .config {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 1.25rem;
+                margin-bottom: 1.5rem;
+            }
+            .config label {
+                display: block;
+                font-size: 0.75rem;
+                color: var(--muted);
+                margin-bottom: 0.25rem;
+                margin-top: 0.75rem;
+            }
+            .config label:first-child {
+                margin-top: 0;
+            }
+            .config input {
+                width: 100%;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                padding: 0.5rem;
+                color: var(--text);
+                font-family: inherit;
+                font-size: 0.8rem;
+            }
+            .config input:focus {
+                outline: none;
+                border-color: var(--accent);
+            }
+            .step {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 1.25rem;
+                margin-bottom: 1rem;
+            }
+            .step-header {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 0.75rem;
+            }
+            .step-num {
+                background: var(--border);
+                color: var(--muted);
+                font-size: 0.7rem;
+                padding: 0.15rem 0.5rem;
+                border-radius: 100px;
+            }
+            .step-num.done {
+                background: var(--green);
+                color: #000;
+            }
+            .step-num.active {
+                background: var(--accent);
+                color: #fff;
+            }
+            .step-num.error {
+                background: var(--red);
+                color: #fff;
+            }
+            .step-title {
+                font-size: 0.85rem;
+                font-weight: 600;
+            }
+            .step-body {
+                font-size: 0.8rem;
+                color: var(--muted);
+            }
+            button {
+                background: var(--accent);
+                color: #fff;
+                border: none;
+                border-radius: 6px;
+                padding: 0.5rem 1rem;
+                font-family: inherit;
+                font-size: 0.8rem;
+                cursor: pointer;
+                margin-top: 0.75rem;
+            }
+            button:hover {
+                opacity: 0.9;
+            }
+            button:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
+            pre {
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                padding: 0.75rem;
+                font-size: 0.7rem;
+                overflow-x: auto;
+                margin-top: 0.5rem;
+                white-space: pre-wrap;
+                word-break: break-all;
+            }
+            .log {
+                margin-top: 1.5rem;
+            }
+            .log-entry {
+                font-size: 0.7rem;
+                padding: 0.2rem 0;
+                border-bottom: 1px solid var(--border);
+            }
+            .log-entry.error {
+                color: var(--red);
+            }
+            .log-entry.success {
+                color: var(--green);
+            }
+            .mono {
+                font-family: inherit;
+            }
+            .field {
+                margin-top: 0.5rem;
+            }
+            .field-label {
+                font-size: 0.65rem;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+            .field-value {
+                font-size: 0.8rem;
+                word-break: break-all;
+            }
+            select {
+                width: 100%;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                padding: 0.5rem;
+                color: var(--text);
+                font-family: inherit;
+                font-size: 0.8rem;
+                margin-top: 0.25rem;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>ACH Onramp Demo</h1>
+        <p class="subtitle">Spritz Finance — Sandbox Environment</p>
+
+        <div class="config">
+            <label>Integration Key</label>
+            <input id="integrationKey" placeholder="ik_..." />
+            <label>Integrator Secret</label>
+            <input id="integratorSecret" type="password" placeholder="secret" />
+            <label>API Key</label>
+            <input id="apiKey" placeholder="ak_..." />
+            <button onclick="startDemo()">Start</button>
+        </div>
+
+        <div id="steps"></div>
+        <div class="log" id="log"></div>
+
+        <script>
+            const BASE = 'https://sandbox.spritz.finance'
+
+            // --- Base58 encoder/decoder ---
+            const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+            function base58Encode(bytes) {
+                const digits = [0]
+                for (const byte of bytes) {
+                    let carry = byte
+                    for (let j = 0; j < digits.length; j++) {
+                        carry += digits[j] << 8
+                        digits[j] = carry % 58
+                        carry = (carry / 58) | 0
+                    }
+                    while (carry > 0) {
+                        digits.push(carry % 58)
+                        carry = (carry / 58) | 0
+                    }
+                }
+                let str = ''
+                for (let i = 0; i < bytes.length && bytes[i] === 0; i++) str += ALPHABET[0]
+                for (let i = digits.length - 1; i >= 0; i--) str += ALPHABET[digits[i]]
+                return str
+            }
+
+            // --- HMAC signing (mirrors src/lib/hmac.ts) ---
+            function hexEncode(buf) {
+                return Array.from(new Uint8Array(buf))
+                    .map((b) => b.toString(16).padStart(2, '0'))
+                    .join('')
+            }
+            async function sha256Hex(data) {
+                const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data))
+                return hexEncode(hash)
+            }
+            async function hmacSha256Hex(secret, data) {
+                const enc = new TextEncoder()
+                const key = await crypto.subtle.importKey(
+                    'raw',
+                    enc.encode(secret),
+                    { name: 'HMAC', hash: 'SHA-256' },
+                    false,
+                    ['sign']
+                )
+                const sig = await crypto.subtle.sign('HMAC', key, enc.encode(data))
+                return hexEncode(sig)
+            }
+            async function stampRequest(integratorKey, integratorSecret, method, url, body) {
+                const parsed = new URL(url)
+                const params = [...parsed.searchParams.keys()].sort()
+                const qs = params
+                    .map(
+                        (k) =>
+                            `${encodeURIComponent(k)}=${encodeURIComponent(parsed.searchParams.get(k))}`
+                    )
+                    .join('&')
+                const path = qs ? `${parsed.pathname}?${qs}` : parsed.pathname
+                const timestamp = Date.now()
+                const bodyHash = body ? await sha256Hex(body) : ''
+                const payload = `${timestamp}.${method.toUpperCase()}.${path}.${bodyHash}`
+                const signature = `sha256=${await hmacSha256Hex(integratorSecret, payload)}`
+                return {
+                    'X-Integrator-Key': integratorKey,
+                    'X-Signature': signature,
+                    'X-Timestamp': String(timestamp),
+                }
+            }
+
+            // --- API client ---
+            async function api(method, path, body) {
+                const url = `${BASE}${path}`
+                const bodyStr = body ? JSON.stringify(body) : null
+                const cfg = getConfig()
+                const hmacHeaders = await stampRequest(
+                    cfg.integrationKey,
+                    cfg.integratorSecret,
+                    method,
+                    url,
+                    bodyStr
+                )
+                const headers = {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${cfg.apiKey}`,
+                    ...hmacHeaders,
+                }
+                const res = await fetch(url, { method, headers, body: bodyStr })
+                const json = await res.json()
+                if (!res.ok) throw new Error(json.detail || json.title || `HTTP ${res.status}`)
+                return json
+            }
+
+            function getConfig() {
+                return {
+                    integrationKey: document.getElementById('integrationKey').value.trim(),
+                    integratorSecret: document.getElementById('integratorSecret').value.trim(),
+                    apiKey: document.getElementById('apiKey').value.trim(),
+                }
+            }
+
+            // --- Ed25519 wallet ---
+            async function generateWallet() {
+                const keyPair = await crypto.subtle.generateKey('Ed25519', true, ['sign', 'verify'])
+                const pubRaw = new Uint8Array(
+                    await crypto.subtle.exportKey('raw', keyPair.publicKey)
+                )
+                return { keyPair, address: base58Encode(pubRaw) }
+            }
+
+            async function signMessage(keyPair, message) {
+                const sig = await crypto.subtle.sign(
+                    'Ed25519',
+                    keyPair.privateKey,
+                    new TextEncoder().encode(message)
+                )
+                return base58Encode(new Uint8Array(sig))
+            }
+
+            // --- UI ---
+            let steps = []
+            function log(msg, type) {
+                const el = document.getElementById('log')
+                const entry = document.createElement('div')
+                entry.className = `log-entry ${type || ''}`
+                entry.textContent = `${new Date().toLocaleTimeString()} ${msg}`
+                el.prepend(entry)
+            }
+
+            function renderStep(idx, title, status, content) {
+                if (!steps[idx]) {
+                    const div = document.createElement('div')
+                    div.className = 'step'
+                    div.id = `step-${idx}`
+                    document.getElementById('steps').appendChild(div)
+                    steps[idx] = div
+                }
+                const statusClass =
+                    status === 'done'
+                        ? 'done'
+                        : status === 'active'
+                          ? 'active'
+                          : status === 'error'
+                            ? 'error'
+                            : ''
+                steps[idx].innerHTML = `
+    <div class="step-header">
+      <span class="step-num ${statusClass}">${status === 'done' ? '✓' : status === 'error' ? '✗' : idx + 1}</span>
+      <span class="step-title">${title}</span>
+    </div>
+    <div class="step-body">${content}</div>
+  `
+            }
+
+            function field(label, value) {
+                return `<div class="field"><div class="field-label">${label}</div><div class="field-value">${value}</div></div>`
+            }
+
+            // --- Demo flow ---
+            let state = {}
+
+            async function startDemo() {
+                const cfg = getConfig()
+                if (!cfg.integrationKey || !cfg.integratorSecret || !cfg.apiKey) {
+                    alert('Fill in all credentials')
+                    return
+                }
+                document.getElementById('steps').innerHTML = ''
+                document.getElementById('log').innerHTML = ''
+                steps = []
+
+                try {
+                    await step1_checkFundingSources()
+                } catch (e) {
+                    log(`Error: ${e.message}`, 'error')
+                }
+            }
+
+            async function step1_checkFundingSources() {
+                renderStep(0, 'Check Funding Sources', 'active', 'Fetching...')
+                log('GET /v1/funding-sources/')
+
+                const sources = await api('GET', '/v1/funding-sources/')
+                state.fundingSources = sources
+
+                if (sources.length === 0) {
+                    renderStep(
+                        0,
+                        'Link Bank Account',
+                        'active',
+                        'No funding sources found. Link a bank account via Plaid first.' +
+                            '<button onclick="startPlaidLink()">Open Plaid Link</button>'
+                    )
+                    log('No funding sources — need Plaid linking')
+                    return
+                }
+
+                const active = sources.find((s) => s.status === 'active')
+                if (active) {
+                    state.selectedSource = active
+                    renderStep(
+                        0,
+                        'Funding Source',
+                        'done',
+                        field('ID', active.id) +
+                            field('Institution', active.institutionName || '(unknown)') +
+                            field(
+                                'Account',
+                                `****${active.accountNumberLast4 || '????'} (${active.accountType})`
+                            ) +
+                            field('Status', active.status)
+                    )
+                    log(`Using funding source: ${active.id}`, 'success')
+                    await step2_generateWallet()
+                } else {
+                    const first = sources[0]
+                    renderStep(
+                        0,
+                        'Funding Source',
+                        'active',
+                        field('ID', first.id) +
+                            field('Status', `${first.status} — waiting for activation`) +
+                            '<p style="margin-top:0.5rem">Funding source is not yet active. This may take a moment after Plaid linking.</p>' +
+                            '<button onclick="step1_checkFundingSources()">Refresh</button>'
+                    )
+                    log(`Funding source ${first.id} status: ${first.status}`)
+                }
+            }
+
+            async function startPlaidLink() {
+                renderStep(0, 'Link Bank Account', 'active', 'Creating Plaid link token...')
+                log('POST /v1/bank-accounts/link-token')
+
+                const { linkToken } = await api('POST', '/v1/bank-accounts/link-token')
+                log(`Link token received`, 'success')
+
+                const handler = Plaid.create({
+                    token: linkToken,
+                    onSuccess: async (publicToken, metadata) => {
+                        log(`Plaid success — exchanging token`)
+                        renderStep(0, 'Link Bank Account', 'active', 'Completing link...')
+
+                        const accountIds = metadata.accounts.map((a) => a.id)
+                        await api('POST', '/v1/bank-accounts/link-complete', {
+                            publicToken,
+                            accountIds,
+                            institutionId: metadata.institution?.institution_id,
+                            institutionName: metadata.institution?.name,
+                        })
+
+                        log('Bank account linked', 'success')
+                        renderStep(0, 'Link Bank Account', 'done', 'Bank account linked via Plaid.')
+                        await step1_checkFundingSources()
+                    },
+                    onExit: (err) => {
+                        if (err) {
+                            log(`Plaid error: ${err.display_message || err.error_code}`, 'error')
+                            renderStep(
+                                0,
+                                'Link Bank Account',
+                                'error',
+                                `Plaid error: ${err.display_message || err.error_code}<br><button onclick="startPlaidLink()">Retry</button>`
+                            )
+                        } else {
+                            log('Plaid link closed')
+                            renderStep(
+                                0,
+                                'Link Bank Account',
+                                'active',
+                                'Plaid link closed.<br><button onclick="startPlaidLink()">Retry</button>'
+                            )
+                        }
+                    },
+                })
+                handler.open()
+            }
+
+            async function step2_generateWallet() {
+                renderStep(1, 'Generate Solana Wallet', 'active', 'Generating Ed25519 keypair...')
+
+                state.wallet = await generateWallet()
+                log(`Wallet: ${state.wallet.address}`, 'success')
+
+                renderStep(
+                    1,
+                    'Solana Wallet',
+                    'done',
+                    field('Address', state.wallet.address) +
+                        '<p style="margin-top:0.25rem;font-size:0.7rem;color:var(--yellow)">Ephemeral keypair — for demo only</p>'
+                )
+
+                await step3_bindDestination()
+            }
+
+            async function step3_bindDestination() {
+                renderStep(2, 'Bind Deposit Destination', 'active', 'Preparing bind message...')
+                log('POST /v1/deposit-destinations/prepare')
+
+                const prep = await api('POST', '/v1/deposit-destinations/prepare', {
+                    sourceId: state.selectedSource.id,
+                    network: 'solana',
+                    asset: 'USDC',
+                    address: state.wallet.address,
+                })
+                state.bindPrep = prep
+                log(`Preparation: ${prep.preparationId}`)
+
+                renderStep(
+                    2,
+                    'Bind Deposit Destination',
+                    'active',
+                    'Signing message...' + `<pre>${prep.message}</pre>`
+                )
+                const signature = await signMessage(state.wallet.keyPair, prep.message)
+                log(`Signed bind message`)
+
+                renderStep(2, 'Bind Deposit Destination', 'active', 'Confirming bind...')
+                log('POST /v1/deposit-destinations/')
+
+                const dest = await api('POST', '/v1/deposit-destinations/', {
+                    preparationId: prep.preparationId,
+                    signature,
+                    signerAddress: state.wallet.address,
+                })
+                state.destination = dest
+                log(`Destination bound: ${dest.id}`, 'success')
+
+                renderStep(
+                    2,
+                    'Deposit Destination',
+                    'done',
+                    field('ID', dest.id) +
+                        field('Network / Asset', `${dest.network} / ${dest.asset}`) +
+                        field('Address', dest.address) +
+                        field('Status', dest.status)
+                )
+
+                await step4_createDeposit()
+            }
+
+            async function step4_createDeposit() {
+                renderStep(3, 'Create Deposit', 'active', 'Preparing deposit quote ($1.00)...')
+                log('POST /v1/deposits/prepare')
+
+                const prep = await api('POST', '/v1/deposits/prepare', {
+                    sourceId: state.selectedSource.id,
+                    destinationId: state.destination.id,
+                    quoteType: 'exact_input',
+                    amountUsd: '1.00',
+                    priority: 'normal',
+                })
+                state.depositPrep = prep
+                const s = prep.summary
+                log(`Quote: $${s.totalDebitAmountUsd} debit → ${s.expectedAssetAmount} USDC`)
+
+                renderStep(
+                    3,
+                    'Create Deposit',
+                    'active',
+                    field('Requested', `$${s.requestedAmountUsd}`) +
+                        field('Fee', `$${s.userFeeUsd} (${s.feeRateBps} bps)`) +
+                        field('Total Debit', `$${s.totalDebitAmountUsd}`) +
+                        field('Expected USDC', s.expectedAssetAmount) +
+                        '<p style="margin-top:0.5rem;font-size:0.7rem">Signing authorization...</p>' +
+                        `<pre>${prep.message}</pre>`
+                )
+
+                const signature = await signMessage(state.wallet.keyPair, prep.message)
+                log('Signed deposit authorization')
+                log('POST /v1/deposits/')
+
+                const deposit = await api('POST', '/v1/deposits/', {
+                    preparationId: prep.preparationId,
+                    signature,
+                })
+                state.deposit = deposit
+                log(`Deposit created: ${deposit.id} [${deposit.status}]`, 'success')
+
+                renderStep(
+                    3,
+                    'Deposit Created',
+                    'done',
+                    field('ID', deposit.id) +
+                        field('Status', deposit.status) +
+                        field('Debit', `$${deposit.totalDebitAmountUsd}`) +
+                        field(
+                            'Release',
+                            `${deposit.expectedAssetAmount} ${deposit.asset} on ${deposit.network}`
+                        ) +
+                        field('To', deposit.address)
+                )
+
+                renderStep(
+                    4,
+                    'Done',
+                    'done',
+                    '<p style="color:var(--green)">ACH onramp flow complete.</p>' +
+                        field('Funding Source', state.selectedSource.id) +
+                        field('Deposit Destination', state.destination.id) +
+                        field('Deposit', deposit.id) +
+                        field('Wallet', state.wallet.address)
+                )
+            }
+        </script>
+    </body>
+</html>

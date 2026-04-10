@@ -382,7 +382,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/billers/": {
+    "/v1/funding-sources/": {
         parameters: {
             query?: never;
             header?: never;
@@ -390,10 +390,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Search billers
-         * @description Search the RPPS biller directory by name or alias. Minimum 2 characters required.
+         * List funding sources
+         * @description Returns all funding sources for the authenticated user.
          */
-        get: operations["getV1Billers"];
+        get: operations["getV1Funding-sources"];
         put?: never;
         post?: never;
         delete?: never;
@@ -402,7 +402,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/billers/{billerId}": {
+    "/v1/funding-sources/{fundingSourceId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -410,12 +410,176 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get biller details
-         * @description Get details for a specific biller including account format requirements.
+         * Get a funding source
+         * @description Returns details for a specific funding source for the authenticated user.
          */
-        get: operations["getV1BillersByBillerId"];
+        get: operations["getV1Funding-sourcesByFundingSourceId"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/deposit-destinations/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prepare a deposit destination bind
+         * @description Creates the canonical message a wallet must sign to bind a deposit destination to a funding source.
+         */
+        post: operations["postV1Deposit-destinationsPrepare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/deposit-destinations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List deposit destinations
+         * @description Returns the authenticated user's bound deposit destinations.
+         */
+        get: operations["getV1Deposit-destinations"];
+        put?: never;
+        /**
+         * Bind a deposit destination
+         * @description Verifies the signed destination bind message and stores the bound wallet destination.
+         */
+        post: operations["postV1Deposit-destinations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/deposits/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prepare a deposit authorization
+         * @description Creates the canonical ACH authorization message a wallet must sign for a single deposit.
+         */
+        post: operations["postV1DepositsPrepare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/deposits/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a deposit
+         * @description Verifies the signed ACH authorization and creates a deposit for asynchronous debit and release processing.
+         */
+        post: operations["postV1Deposits"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bank-accounts/link-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a bank account link token
+         * @description Creates a Plaid Link token and hosted URL for linking a bank account. Use the linkToken with Plaid Link SDK, or open hostedLinkUrl in a browser/webview.
+         */
+        post: operations["postV1Bank-accountsLink-token"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bank-accounts/link-complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete bank account linking
+         * @description Completes the Plaid Link flow by exchanging the public token, retrieving account details, and storing the linked bank accounts.
+         */
+        post: operations["postV1Bank-accountsLink-complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bills/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List bills
+         * @description Returns all linked bills for the authenticated user.
+         */
+        get: operations["getV1Bills"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bills/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Activate bills
+         * @description Activates bills for the authenticated user if not already active.
+         */
+        post: operations["postV1BillsActivate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -432,70 +596,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Add a bill via token
-         * @description Link a card to your account using an encrypted token from the Tabapay Browser SDK.
+         * Link card via token
+         * @description Link a card to your account using an encrypted token from the TabaPay Browser SDK. Optionally overwrites an existing bill.
          */
         post: operations["postV1BillsToken"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/bills/link-token": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get bill linking token
-         * @description Get a token to initialize the bill linking widget.
-         */
-        post: operations["postV1BillsLink-token"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/bills/{billId}/authorize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Authorize bill for payments
-         * @description Record user authorization for bill payments (Proof of Authorization).
-         */
-        post: operations["postV1BillsByBillIdAuthorize"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/bills/admin/sync-billers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Sync biller directory
-         * @description Trigger RPPS biller directory sync. Dev only.
-         */
-        post: operations["postV1BillsAdminSync-billers"];
         delete?: never;
         options?: never;
         head?: never;
@@ -929,6 +1033,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/device/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Initiate device authorization
+         * @description Generates a device code and user code for CLI authentication. The user opens verification_uri_complete in their browser to approve.
+         */
+        post: operations["postV1DeviceAuthorize"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/device/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Poll for device authorization token
+         * @description CLI polls this endpoint to check if the user has approved the device code. Returns the API key on success.
+         */
+        post: operations["postV1DeviceToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/device/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get device authorization request info
+         * @description Returns details about a pending device authorization request so the user can review before approving.
+         */
+        get: operations["getV1DeviceInfo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/device/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve device authorization
+         * @description User approves the CLI's device authorization request, selecting permissions and expiry. Mints a scoped API key.
+         */
+        post: operations["postV1DeviceApprove"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/sandbox/bypass-kyc": {
         parameters: {
             query?: never;
@@ -1002,40 +1186,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/internal-api/tabapay/accounts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create Tabapay account via internal API */
-        post: operations["postV1Internal-apiTabapayAccounts"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/internal-api/tabapay/transactions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create Tabapay transaction via internal API */
-        post: operations["postV1Internal-apiTabapayTransactions"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1069,7 +1219,7 @@ export interface operations {
                          * @example 507f1f77bcf86cd799439011
                          */
                         id: string;
-                        /** @description Bank account details for depositing fiat funds. Use these instructions to initiate ACH or wire transfers. */
+                        /** @description Deposit instructions for the virtual account. The `type` field indicates the account format: `us` for ACH/wire (routing + account number) or `iban` for SEPA (IBAN + BIC). */
                         depositInstructions: {
                             /**
                              * @description Name of the bank holding the virtual account
@@ -1082,15 +1232,39 @@ export interface operations {
                              */
                             bankAddress: string;
                             /**
-                             * @description ABA routing number for the bank (9 digits). Used for ACH and wire transfers.
+                             * @description Supported payment rails for depositing funds
+                             * @example [
+                             *       "ach",
+                             *       "wire"
+                             *     ]
+                             */
+                            paymentRails: string[];
+                            /**
+                             * @description US deposit instructions (ACH/wire)
+                             * @constant
+                             */
+                            type: "us";
+                            /**
+                             * @description 9-digit ABA routing number
                              * @example 101019644
                              */
                             bankRoutingNumber: string;
                             /**
-                             * @description Account number for deposits. This is the full account number required to initiate transfers to this virtual account.
+                             * @description Bank account number for deposits
                              * @example 1234567890
                              */
                             bankAccountNumber: string;
+                        } | {
+                            /**
+                             * @description Name of the bank holding the virtual account
+                             * @example Lead Bank
+                             */
+                            bankName: string;
+                            /**
+                             * @description Physical address of the bank
+                             * @example 1801 Main St, Kansas City, MO 64108
+                             */
+                            bankAddress: string;
                             /**
                              * @description Supported payment rails for depositing funds
                              * @example [
@@ -1099,6 +1273,21 @@ export interface operations {
                              *     ]
                              */
                             paymentRails: string[];
+                            /**
+                             * @description IBAN deposit instructions (SEPA)
+                             * @constant
+                             */
+                            type: "iban";
+                            /**
+                             * @description International Bank Account Number for deposits
+                             * @example DE89370400440532013000
+                             */
+                            iban: string;
+                            /**
+                             * @description Bank Identifier Code (SWIFT)
+                             * @example COBADEFFXXX
+                             */
+                            bic?: string;
                         };
                         /**
                          * @description Blockchain network where converted crypto will be sent. Lowercase network identifier.
@@ -1324,7 +1513,7 @@ export interface operations {
                          * @example 507f1f77bcf86cd799439011
                          */
                         id: string;
-                        /** @description Bank account details for depositing fiat funds. Use these instructions to initiate ACH or wire transfers. */
+                        /** @description Deposit instructions for the virtual account. The `type` field indicates the account format: `us` for ACH/wire (routing + account number) or `iban` for SEPA (IBAN + BIC). */
                         depositInstructions: {
                             /**
                              * @description Name of the bank holding the virtual account
@@ -1337,15 +1526,39 @@ export interface operations {
                              */
                             bankAddress: string;
                             /**
-                             * @description ABA routing number for the bank (9 digits). Used for ACH and wire transfers.
+                             * @description Supported payment rails for depositing funds
+                             * @example [
+                             *       "ach",
+                             *       "wire"
+                             *     ]
+                             */
+                            paymentRails: string[];
+                            /**
+                             * @description US deposit instructions (ACH/wire)
+                             * @constant
+                             */
+                            type: "us";
+                            /**
+                             * @description 9-digit ABA routing number
                              * @example 101019644
                              */
                             bankRoutingNumber: string;
                             /**
-                             * @description Account number for deposits. This is the full account number required to initiate transfers to this virtual account.
+                             * @description Bank account number for deposits
                              * @example 1234567890
                              */
                             bankAccountNumber: string;
+                        } | {
+                            /**
+                             * @description Name of the bank holding the virtual account
+                             * @example Lead Bank
+                             */
+                            bankName: string;
+                            /**
+                             * @description Physical address of the bank
+                             * @example 1801 Main St, Kansas City, MO 64108
+                             */
+                            bankAddress: string;
                             /**
                              * @description Supported payment rails for depositing funds
                              * @example [
@@ -1354,6 +1567,21 @@ export interface operations {
                              *     ]
                              */
                             paymentRails: string[];
+                            /**
+                             * @description IBAN deposit instructions (SEPA)
+                             * @constant
+                             */
+                            type: "iban";
+                            /**
+                             * @description International Bank Account Number for deposits
+                             * @example DE89370400440532013000
+                             */
+                            iban: string;
+                            /**
+                             * @description Bank Identifier Code (SWIFT)
+                             * @example COBADEFFXXX
+                             */
+                            bic?: string;
                         };
                         /**
                          * @description Blockchain network where converted crypto will be sent. Lowercase network identifier.
@@ -1535,7 +1763,7 @@ export interface operations {
                          * @example 507f1f77bcf86cd799439011
                          */
                         id: string;
-                        /** @description Bank account details for depositing fiat funds. Use these instructions to initiate ACH or wire transfers. */
+                        /** @description Deposit instructions for the virtual account. The `type` field indicates the account format: `us` for ACH/wire (routing + account number) or `iban` for SEPA (IBAN + BIC). */
                         depositInstructions: {
                             /**
                              * @description Name of the bank holding the virtual account
@@ -1548,15 +1776,39 @@ export interface operations {
                              */
                             bankAddress: string;
                             /**
-                             * @description ABA routing number for the bank (9 digits). Used for ACH and wire transfers.
+                             * @description Supported payment rails for depositing funds
+                             * @example [
+                             *       "ach",
+                             *       "wire"
+                             *     ]
+                             */
+                            paymentRails: string[];
+                            /**
+                             * @description US deposit instructions (ACH/wire)
+                             * @constant
+                             */
+                            type: "us";
+                            /**
+                             * @description 9-digit ABA routing number
                              * @example 101019644
                              */
                             bankRoutingNumber: string;
                             /**
-                             * @description Account number for deposits. This is the full account number required to initiate transfers to this virtual account.
+                             * @description Bank account number for deposits
                              * @example 1234567890
                              */
                             bankAccountNumber: string;
+                        } | {
+                            /**
+                             * @description Name of the bank holding the virtual account
+                             * @example Lead Bank
+                             */
+                            bankName: string;
+                            /**
+                             * @description Physical address of the bank
+                             * @example 1801 Main St, Kansas City, MO 64108
+                             */
+                            bankAddress: string;
                             /**
                              * @description Supported payment rails for depositing funds
                              * @example [
@@ -1565,6 +1817,21 @@ export interface operations {
                              *     ]
                              */
                             paymentRails: string[];
+                            /**
+                             * @description IBAN deposit instructions (SEPA)
+                             * @constant
+                             */
+                            type: "iban";
+                            /**
+                             * @description International Bank Account Number for deposits
+                             * @example DE89370400440532013000
+                             */
+                            iban: string;
+                            /**
+                             * @description Bank Identifier Code (SWIFT)
+                             * @example COBADEFFXXX
+                             */
+                            bic?: string;
                         };
                         /**
                          * @description Blockchain network where converted crypto will be sent. Lowercase network identifier.
@@ -1735,7 +2002,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 69a546e71b2e721f28577f68
+                     * @example 69d896b963684ce65a59ab04
                      */
                     accountId: string;
                     /**
@@ -1746,7 +2013,7 @@ export interface operations {
                     /** @enum {string} */
                     amountMode?: "output" | "input";
                     /** @enum {string} */
-                    rail?: "ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay";
+                    rail?: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                     /** @enum {string} */
                     chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
                     /**
@@ -1763,7 +2030,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 69a546e71b2e721f28577f68
+                     * @example 69d896b963684ce65a59ab04
                      */
                     accountId: string;
                     /**
@@ -1774,7 +2041,7 @@ export interface operations {
                     /** @enum {string} */
                     amountMode?: "output" | "input";
                     /** @enum {string} */
-                    rail?: "ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay";
+                    rail?: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                     /** @enum {string} */
                     chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
                     /**
@@ -1791,7 +2058,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 69a546e71b2e721f28577f68
+                     * @example 69d896b963684ce65a59ab04
                      */
                     accountId: string;
                     /**
@@ -1802,7 +2069,7 @@ export interface operations {
                     /** @enum {string} */
                     amountMode?: "output" | "input";
                     /** @enum {string} */
-                    rail?: "ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay";
+                    rail?: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                     /** @enum {string} */
                     chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
                     /**
@@ -1838,7 +2105,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-03-02T08:14:31.158Z
+                         * @example 2026-04-10T06:20:41.018Z
                          */
                         createdAt: string;
                         /** @description What the user pays — total USD cost and token used. */
@@ -1874,10 +2141,10 @@ export interface operations {
                              */
                             currency: string;
                             /** @enum {string} */
-                            rail: "ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay";
+                            rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 69a546e71b2e721f28577f69
+                             * @example 69d896b963684ce65a59ab05
                              */
                             accountId: string;
                         };
@@ -1894,8 +2161,7 @@ export interface operations {
                              */
                             currency: string;
                         };
-                        /** @description Present when `fulfillment` is `send_to_address`. Send exactly `amount` of `token` to `address` before `expiresAt`. */
-                        sendTo?: {
+                        sendTo: ({
                             /**
                              * @description Blockchain address to send crypto to
                              * @example bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
@@ -1916,9 +2182,8 @@ export interface operations {
                              * @description Deadline to send crypto. Quote expires after this time.
                              */
                             expiresAt: string;
-                        };
-                        /** @description Present after on-chain transaction is detected. */
-                        confirmation?: {
+                        } | null) | null;
+                        confirmation: ({
                             /**
                              * @description On-chain transaction hash
                              * @example 0xabc123...
@@ -1929,7 +2194,7 @@ export interface operations {
                              * @example https://etherscan.io/tx/0xabc123...
                              */
                             explorerUrl: string;
-                        };
+                        } | null) | null;
                     };
                 };
             };
@@ -2086,7 +2351,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-03-02T08:14:31.158Z
+                         * @example 2026-04-10T06:20:41.018Z
                          */
                         createdAt: string;
                         /** @description What the user pays — total USD cost and token used. */
@@ -2122,10 +2387,10 @@ export interface operations {
                              */
                             currency: string;
                             /** @enum {string} */
-                            rail: "ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay";
+                            rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 69a546e71b2e721f28577f69
+                             * @example 69d896b963684ce65a59ab05
                              */
                             accountId: string;
                         };
@@ -2142,8 +2407,7 @@ export interface operations {
                              */
                             currency: string;
                         };
-                        /** @description Present when `fulfillment` is `send_to_address`. Send exactly `amount` of `token` to `address` before `expiresAt`. */
-                        sendTo?: {
+                        sendTo: ({
                             /**
                              * @description Blockchain address to send crypto to
                              * @example bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
@@ -2164,9 +2428,8 @@ export interface operations {
                              * @description Deadline to send crypto. Quote expires after this time.
                              */
                             expiresAt: string;
-                        };
-                        /** @description Present after on-chain transaction is detected. */
-                        confirmation?: {
+                        } | null) | null;
+                        confirmation: ({
                             /**
                              * @description On-chain transaction hash
                              * @example 0xabc123...
@@ -2177,7 +2440,7 @@ export interface operations {
                              * @example https://etherscan.io/tx/0xabc123...
                              */
                             explorerUrl: string;
-                        };
+                        } | null) | null;
                     };
                 };
             };
@@ -2591,27 +2854,47 @@ export interface operations {
                             status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
                             /** Format: date-time */
                             createdAt: string;
-                            payout: {
+                            completedAt: (string | null) | null;
+                            input: ({
                                 /**
-                                 * @description Offramp amount
+                                 * @description Crypto amount sent
+                                 * @example 0.25
+                                 */
+                                amount: string;
+                                /**
+                                 * @description Token symbol
+                                 * @example USDC
+                                 */
+                                token: string;
+                                /**
+                                 * @description Blockchain network the crypto transaction occurs on
+                                 * @example ethereum
+                                 */
+                                chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
+                            } | null) | null;
+                            /** @description What the destination receives — fiat delivery details. */
+                            output: {
+                                /**
+                                 * @description Fiat amount delivered
                                  * @example 100.00
                                  */
                                 amount: string;
                                 /**
-                                 * @description Offramp currency code
+                                 * @description Fiat currency code
                                  * @example USD
                                  * @example EUR
                                  */
                                 currency: string;
+                                /**
+                                 * @description Destination account ID
+                                 * @example 69d896b963684ce65a59ab06
+                                 */
+                                accountId: string;
+                                accountName: (string | null) | null;
+                                rail: (("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit") | null) | null;
                             };
-                            /**
-                             * @description Destination account ID
-                             * @example 69a546e71b2e721f28577f6a
-                             */
-                            accountId: string;
-                            /** @enum {string} */
-                            chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
-                            fees?: {
+                            fiatDestination: (("bank_account" | "bill" | "crypto_card") | null) | null;
+                            fees: ({
                                 /**
                                  * @description Fee amount
                                  * @example 1.25
@@ -2622,34 +2905,18 @@ export interface operations {
                                  * @example USD
                                  */
                                 currency: string;
-                            };
-                            paymentAsset?: {
-                                /**
-                                 * @description Asset amount
-                                 * @example 0.25
-                                 */
-                                amount: string;
-                                /**
-                                 * @description Asset symbol
-                                 * @example USDC
-                                 */
-                                token: string;
-                            };
-                            transaction?: {
+                            } | null) | null;
+                            transaction: ({
                                 hash: (string | null) | null;
                                 explorerUrl: (string | null) | null;
-                            };
+                            } | null) | null;
                         }[];
                         /**
                          * @description Whether there are more results
                          * @example true
                          */
                         hasMore: boolean;
-                        /**
-                         * @description Cursor for fetching the next page
-                         * @example eyJpZCI6Im9mZnJhbXBfeHl6Nzg5In0=
-                         */
-                        nextCursor?: string;
+                        nextCursor: (string | null) | null;
                     };
                 };
             };
@@ -2803,27 +3070,47 @@ export interface operations {
                         status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
                         /** Format: date-time */
                         createdAt: string;
-                        payout: {
+                        completedAt: (string | null) | null;
+                        input: ({
                             /**
-                             * @description Offramp amount
+                             * @description Crypto amount sent
+                             * @example 0.25
+                             */
+                            amount: string;
+                            /**
+                             * @description Token symbol
+                             * @example USDC
+                             */
+                            token: string;
+                            /**
+                             * @description Blockchain network the crypto transaction occurs on
+                             * @example ethereum
+                             */
+                            chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
+                        } | null) | null;
+                        /** @description What the destination receives — fiat delivery details. */
+                        output: {
+                            /**
+                             * @description Fiat amount delivered
                              * @example 100.00
                              */
                             amount: string;
                             /**
-                             * @description Offramp currency code
+                             * @description Fiat currency code
                              * @example USD
                              * @example EUR
                              */
                             currency: string;
+                            /**
+                             * @description Destination account ID
+                             * @example 69d896b963684ce65a59ab06
+                             */
+                            accountId: string;
+                            accountName: (string | null) | null;
+                            rail: (("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit") | null) | null;
                         };
-                        /**
-                         * @description Destination account ID
-                         * @example 69a546e71b2e721f28577f6a
-                         */
-                        accountId: string;
-                        /** @enum {string} */
-                        chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
-                        fees?: {
+                        fiatDestination: (("bank_account" | "bill" | "crypto_card") | null) | null;
+                        fees: ({
                             /**
                              * @description Fee amount
                              * @example 1.25
@@ -2834,23 +3121,11 @@ export interface operations {
                              * @example USD
                              */
                             currency: string;
-                        };
-                        paymentAsset?: {
-                            /**
-                             * @description Asset amount
-                             * @example 0.25
-                             */
-                            amount: string;
-                            /**
-                             * @description Asset symbol
-                             * @example USDC
-                             */
-                            token: string;
-                        };
-                        transaction?: {
+                        } | null) | null;
+                        transaction: ({
                             hash: (string | null) | null;
                             explorerUrl: (string | null) | null;
-                        };
+                        } | null) | null;
                     };
                 };
             };
@@ -3007,7 +3282,7 @@ export interface operations {
                              */
                             id: string;
                             /** @enum {string} */
-                            status: "awaiting_payment" | "processing" | "completed" | "cancelled" | "refunded" | "in_review";
+                            status: "awaiting_payment" | "processing" | "partially_delivered" | "completed" | "cancelled" | "failed" | "reversed" | "refunded" | "in_review";
                             /** Format: date-time */
                             createdAt: string;
                             input: {
@@ -3019,7 +3294,7 @@ export interface operations {
                                 /** @enum {string} */
                                 currency: "USD" | "CAD" | "EUR" | "GBP";
                                 /** @enum {string} */
-                                rail: "ach_push" | "wire_push" | "sepa_push";
+                                rail: "ach_credit" | "wire" | "sepa_credit_transfer";
                             };
                             fees: {
                                 /**
@@ -3035,12 +3310,12 @@ export interface operations {
                             };
                             output?: {
                                 /**
-                                 * @description Crypto amount received
+                                 * @description Total crypto amount expected for this on-ramp
                                  * @example 5130.43
                                  */
                                 amount: string;
                                 /**
-                                 * @description Token received
+                                 * @description Token to be received
                                  * @example USDC
                                  */
                                 token: string;
@@ -3052,11 +3327,60 @@ export interface operations {
                                  */
                                 address: string;
                                 /**
-                                 * @description Blockchain transaction hash
+                                 * @description Legacy convenience transaction hash for single-delivery payouts
                                  * @example 0xabc...
                                  */
                                 txHash?: string;
                             };
+                            deliverySummary?: {
+                                /**
+                                 * @description Crypto amount delivered or submitted so far
+                                 * @example 40.00
+                                 */
+                                deliveredAmount: string;
+                                /**
+                                 * @description Crypto amount confirmed on-chain so far
+                                 * @example 25.00
+                                 */
+                                confirmedAmount: string;
+                                /**
+                                 * @description Crypto amount still remaining to be delivered
+                                 * @example 60.00
+                                 */
+                                remainingAmount: string;
+                            };
+                            deliveries?: {
+                                /**
+                                 * @description Unique delivery identifier
+                                 * @example release_abc123
+                                 */
+                                id: string;
+                                /** @enum {string} */
+                                status: "queued" | "submitted" | "confirmed" | "failed";
+                                /**
+                                 * @description Crypto amount for this delivery tranche
+                                 * @example 25.00
+                                 */
+                                amount: string;
+                                /**
+                                 * @description USD equivalent of this delivery tranche
+                                 * @example 25.00
+                                 */
+                                amountUsd: string;
+                                /**
+                                 * @description Blockchain transaction hash for this delivery tranche
+                                 * @example 0xabc...
+                                 */
+                                txHash?: string;
+                                /** Format: date-time */
+                                createdAt: string;
+                                /** Format: date-time */
+                                submittedAt?: string;
+                                /** Format: date-time */
+                                confirmedAt?: string;
+                                /** Format: date-time */
+                                failedAt?: string;
+                            }[];
                             /** Format: date-time */
                             completedAt?: string;
                         }[];
@@ -3214,7 +3538,7 @@ export interface operations {
                     "application/json": {
                         data: {
                             /** @enum {string} */
-                            rail: "ach_push" | "wire_push" | "sepa_push";
+                            rail: "ach_credit" | "wire" | "sepa_credit_transfer";
                             /** @enum {string} */
                             currency: "USD" | "CAD" | "EUR" | "GBP";
                             /** @enum {string} */
@@ -3530,7 +3854,7 @@ export interface operations {
                          */
                         id: string;
                         /** @enum {string} */
-                        status: "awaiting_payment" | "processing" | "completed" | "cancelled" | "refunded" | "in_review";
+                        status: "awaiting_payment" | "processing" | "partially_delivered" | "completed" | "cancelled" | "failed" | "reversed" | "refunded" | "in_review";
                         /** Format: date-time */
                         createdAt: string;
                         input: {
@@ -3542,7 +3866,7 @@ export interface operations {
                             /** @enum {string} */
                             currency: "USD" | "CAD" | "EUR" | "GBP";
                             /** @enum {string} */
-                            rail: "ach_push" | "wire_push" | "sepa_push";
+                            rail: "ach_credit" | "wire" | "sepa_credit_transfer";
                         };
                         fees: {
                             /**
@@ -3558,12 +3882,12 @@ export interface operations {
                         };
                         output?: {
                             /**
-                             * @description Crypto amount received
+                             * @description Total crypto amount expected for this on-ramp
                              * @example 5130.43
                              */
                             amount: string;
                             /**
-                             * @description Token received
+                             * @description Token to be received
                              * @example USDC
                              */
                             token: string;
@@ -3575,11 +3899,60 @@ export interface operations {
                              */
                             address: string;
                             /**
-                             * @description Blockchain transaction hash
+                             * @description Legacy convenience transaction hash for single-delivery payouts
                              * @example 0xabc...
                              */
                             txHash?: string;
                         };
+                        deliverySummary?: {
+                            /**
+                             * @description Crypto amount delivered or submitted so far
+                             * @example 40.00
+                             */
+                            deliveredAmount: string;
+                            /**
+                             * @description Crypto amount confirmed on-chain so far
+                             * @example 25.00
+                             */
+                            confirmedAmount: string;
+                            /**
+                             * @description Crypto amount still remaining to be delivered
+                             * @example 60.00
+                             */
+                            remainingAmount: string;
+                        };
+                        deliveries?: {
+                            /**
+                             * @description Unique delivery identifier
+                             * @example release_abc123
+                             */
+                            id: string;
+                            /** @enum {string} */
+                            status: "queued" | "submitted" | "confirmed" | "failed";
+                            /**
+                             * @description Crypto amount for this delivery tranche
+                             * @example 25.00
+                             */
+                            amount: string;
+                            /**
+                             * @description USD equivalent of this delivery tranche
+                             * @example 25.00
+                             */
+                            amountUsd: string;
+                            /**
+                             * @description Blockchain transaction hash for this delivery tranche
+                             * @example 0xabc...
+                             */
+                            txHash?: string;
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            submittedAt?: string;
+                            /** Format: date-time */
+                            confirmedAt?: string;
+                            /** Format: date-time */
+                            failedAt?: string;
+                        }[];
                         /** Format: date-time */
                         completedAt?: string;
                     };
@@ -3759,7 +4132,7 @@ export interface operations {
                          *       "rtp"
                          *     ]
                          */
-                        supportedRails: ("ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay")[];
+                        supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
                         /**
                          * @description Friendly name for the account
                          * @example Primary Checking
@@ -3770,6 +4143,8 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        fundingSourceId: string | null;
                         /** @constant */
                         type: "us";
                         /** @constant */
@@ -3825,7 +4200,7 @@ export interface operations {
                          *       "rtp"
                          *     ]
                          */
-                        supportedRails: ("ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay")[];
+                        supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
                         /**
                          * @description Friendly name for the account
                          * @example Primary Checking
@@ -3836,6 +4211,8 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        fundingSourceId: string | null;
                         /** @constant */
                         type: "ca";
                         /** @constant */
@@ -3896,7 +4273,7 @@ export interface operations {
                          *       "rtp"
                          *     ]
                          */
-                        supportedRails: ("ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay")[];
+                        supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
                         /**
                          * @description Friendly name for the account
                          * @example Primary Checking
@@ -3907,6 +4284,8 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        fundingSourceId: string | null;
                         /** @constant */
                         type: "uk";
                         /** @constant */
@@ -3957,7 +4336,7 @@ export interface operations {
                          *       "rtp"
                          *     ]
                          */
-                        supportedRails: ("ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay")[];
+                        supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
                         /**
                          * @description Friendly name for the account
                          * @example Primary Checking
@@ -3968,6 +4347,8 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        fundingSourceId: string | null;
                         /** @constant */
                         type: "iban";
                         /**
@@ -4862,7 +5243,7 @@ export interface operations {
                          *       "rtp"
                          *     ]
                          */
-                        supportedRails: ("ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay")[];
+                        supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
                         /**
                          * @description Friendly name for the account
                          * @example Primary Checking
@@ -4873,6 +5254,8 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        fundingSourceId: string | null;
                         /** @constant */
                         type: "us";
                         /** @constant */
@@ -4928,7 +5311,7 @@ export interface operations {
                          *       "rtp"
                          *     ]
                          */
-                        supportedRails: ("ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay")[];
+                        supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
                         /**
                          * @description Friendly name for the account
                          * @example Primary Checking
@@ -4939,6 +5322,8 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        fundingSourceId: string | null;
                         /** @constant */
                         type: "ca";
                         /** @constant */
@@ -4999,7 +5384,7 @@ export interface operations {
                          *       "rtp"
                          *     ]
                          */
-                        supportedRails: ("ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay")[];
+                        supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
                         /**
                          * @description Friendly name for the account
                          * @example Primary Checking
@@ -5010,6 +5395,8 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        fundingSourceId: string | null;
                         /** @constant */
                         type: "uk";
                         /** @constant */
@@ -5060,7 +5447,7 @@ export interface operations {
                          *       "rtp"
                          *     ]
                          */
-                        supportedRails: ("ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay")[];
+                        supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
                         /**
                          * @description Friendly name for the account
                          * @example Primary Checking
@@ -5071,6 +5458,8 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        fundingSourceId: string | null;
                         /** @constant */
                         type: "iban";
                         /**
@@ -5267,7 +5656,7 @@ export interface operations {
                          *       "rtp"
                          *     ]
                          */
-                        supportedRails: ("ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay")[];
+                        supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
                         /**
                          * @description Friendly name for the account
                          * @example Primary Checking
@@ -5278,6 +5667,8 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        fundingSourceId: string | null;
                         /** @constant */
                         type: "us";
                         /** @constant */
@@ -5333,7 +5724,7 @@ export interface operations {
                          *       "rtp"
                          *     ]
                          */
-                        supportedRails: ("ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay")[];
+                        supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
                         /**
                          * @description Friendly name for the account
                          * @example Primary Checking
@@ -5344,6 +5735,8 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        fundingSourceId: string | null;
                         /** @constant */
                         type: "ca";
                         /** @constant */
@@ -5404,7 +5797,7 @@ export interface operations {
                          *       "rtp"
                          *     ]
                          */
-                        supportedRails: ("ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay")[];
+                        supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
                         /**
                          * @description Friendly name for the account
                          * @example Primary Checking
@@ -5415,6 +5808,8 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        fundingSourceId: string | null;
                         /** @constant */
                         type: "uk";
                         /** @constant */
@@ -5465,7 +5860,7 @@ export interface operations {
                          *       "rtp"
                          *     ]
                          */
-                        supportedRails: ("ach_standard" | "rtp" | "wire" | "eft" | "sepa" | "push_to_debit" | "bill_pay")[];
+                        supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
                         /**
                          * @description Friendly name for the account
                          * @example Primary Checking
@@ -5476,6 +5871,8 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        fundingSourceId: string | null;
                         /** @constant */
                         type: "iban";
                         /**
@@ -5877,13 +6274,9 @@ export interface operations {
             };
         };
     };
-    getV1Billers: {
+    "getV1Funding-sources": {
         parameters: {
-            query: {
-                q: string;
-                limit?: number;
-                offset?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -5897,24 +6290,1607 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: {
-                            id: string;
-                            name: string;
-                            industry?: string;
-                            address?: {
-                                line1?: string;
-                                city?: string;
-                                state?: string;
-                                postal_code?: string;
-                            };
-                            account_format?: {
-                                min_length?: number;
-                                max_length?: number;
-                                description?: string;
-                            };
-                        }[];
-                        has_more: boolean;
-                        total: number;
+                        /**
+                         * @description Opaque public identifier for the funding source
+                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        id: string;
+                        /**
+                         * @description Underlying bank account identifier
+                         * @example ba_abc123
+                         */
+                        bankAccountId: string;
+                        /**
+                         * @description Institution name used for funding source display
+                         * @example Plaid Test Bank
+                         * @example null
+                         */
+                        institutionName: string | null;
+                        /**
+                         * @description Last 4 digits of the linked bank account number
+                         * @example 6789
+                         * @example null
+                         */
+                        accountNumberLast4: string | null;
+                        /** @enum {string} */
+                        accountType: "checking" | "savings" | "business" | "unknown";
+                        /** @enum {string} */
+                        status: "pending" | "active" | "review_required" | "ineligible" | "disabled";
+                        /** @description Why the funding source is not active, or null when no reason applies. */
+                        statusReason: ("ownership_mismatch" | "ownership_review_required" | "user_not_verified" | "duplicate_bank_account" | "returned" | "manually_disabled") | null;
+                        /** @description Ownership match result for the linked bank account, or null when unavailable. */
+                        ownershipMatchStatus: ("matched" | "mismatch" | "review_required") | null;
+                        /**
+                         * Format: date-time
+                         * @description When the funding source was created
+                         */
+                        createdAt: string;
+                        /**
+                         * Format: date-time
+                         * @description When the funding source was last updated
+                         */
+                        updatedAt: string;
+                    }[];
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:auth:token-expired
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Token Expired
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         * @example 403
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         * @example Invalid token
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         * @example write:orders
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         * @example account
+                         * @example transaction
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:system:internal-error
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Internal Server Error
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         * @example 401
+                         * @example 404
+                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    "getV1Funding-sourcesByFundingSourceId": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fundingSourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A linked bank account that can be evaluated for inbound funding */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Opaque public identifier for the funding source
+                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        id: string;
+                        /**
+                         * @description Underlying bank account identifier
+                         * @example ba_abc123
+                         */
+                        bankAccountId: string;
+                        /**
+                         * @description Institution name used for funding source display
+                         * @example Plaid Test Bank
+                         * @example null
+                         */
+                        institutionName: string | null;
+                        /**
+                         * @description Last 4 digits of the linked bank account number
+                         * @example 6789
+                         * @example null
+                         */
+                        accountNumberLast4: string | null;
+                        /** @enum {string} */
+                        accountType: "checking" | "savings" | "business" | "unknown";
+                        /** @enum {string} */
+                        status: "pending" | "active" | "review_required" | "ineligible" | "disabled";
+                        /** @description Why the funding source is not active, or null when no reason applies. */
+                        statusReason: ("ownership_mismatch" | "ownership_review_required" | "user_not_verified" | "duplicate_bank_account" | "returned" | "manually_disabled") | null;
+                        /** @description Ownership match result for the linked bank account, or null when unavailable. */
+                        ownershipMatchStatus: ("matched" | "mismatch" | "review_required") | null;
+                        /**
+                         * Format: date-time
+                         * @description When the funding source was created
+                         */
+                        createdAt: string;
+                        /**
+                         * Format: date-time
+                         * @description When the funding source was last updated
+                         */
+                        updatedAt: string;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:auth:token-expired
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Token Expired
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         * @example 403
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         * @example Invalid token
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         * @example write:orders
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         * @example account
+                         * @example transaction
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:system:internal-error
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Internal Server Error
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         * @example 401
+                         * @example 404
+                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    "postV1Deposit-destinationsPrepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Opaque public funding source identifier
+                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    sourceId: string;
+                    /** @constant */
+                    network: "solana";
+                    /** @constant */
+                    asset: "USDC";
+                    /**
+                     * @description Destination wallet address for the selected network
+                     * @example 9xQeWvG816bUx9EPjHmaT23yvVM3qvGqLrL7Kx1YwM9R
+                     */
+                    address: string;
+                    clientContext?: {
+                        clientIp?: string;
+                        userAgent?: string;
+                        sessionId?: string;
+                        deviceId?: string;
+                        platform?: string;
+                        appVersion?: string;
+                    };
+                };
+                "application/x-www-form-urlencoded": {
+                    /**
+                     * @description Opaque public funding source identifier
+                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    sourceId: string;
+                    /** @constant */
+                    network: "solana";
+                    /** @constant */
+                    asset: "USDC";
+                    /**
+                     * @description Destination wallet address for the selected network
+                     * @example 9xQeWvG816bUx9EPjHmaT23yvVM3qvGqLrL7Kx1YwM9R
+                     */
+                    address: string;
+                    clientContext?: {
+                        clientIp?: string;
+                        userAgent?: string;
+                        sessionId?: string;
+                        deviceId?: string;
+                        platform?: string;
+                        appVersion?: string;
+                    };
+                };
+                "multipart/form-data": {
+                    /**
+                     * @description Opaque public funding source identifier
+                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    sourceId: string;
+                    /** @constant */
+                    network: "solana";
+                    /** @constant */
+                    asset: "USDC";
+                    /**
+                     * @description Destination wallet address for the selected network
+                     * @example 9xQeWvG816bUx9EPjHmaT23yvVM3qvGqLrL7Kx1YwM9R
+                     */
+                    address: string;
+                    clientContext?: {
+                        clientIp?: string;
+                        userAgent?: string;
+                        sessionId?: string;
+                        deviceId?: string;
+                        platform?: string;
+                        appVersion?: string;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Opaque public preparation identifier
+                         * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        preparationId: string;
+                        /** @constant */
+                        kind: "destination_bind";
+                        /** Format: date-time */
+                        expiresAt: string;
+                        /** @constant */
+                        messageVersion: "v1";
+                        /** @description Canonical wallet-signable verification message */
+                        message: string;
+                        /**
+                         * @description Canonical asset address or mint address for the selected network and asset
+                         * @example EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+                         */
+                        assetAddress: string;
+                        /** @description Normalized destination address used in the signed message */
+                        normalizedAddress: string;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:auth:token-expired
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Token Expired
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         * @example 403
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         * @example Invalid token
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         * @example write:orders
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         * @example account
+                         * @example transaction
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:system:internal-error
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Internal Server Error
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         * @example 401
+                         * @example 404
+                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    "getV1Deposit-destinations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Opaque public identifier for the deposit destination
+                         * @example dd_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        id: string;
+                        /**
+                         * @description Opaque public funding source identifier
+                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        sourceId: string;
+                        /**
+                         * @description Blockchain network for the bound deposit destination
+                         * @example solana
+                         * @constant
+                         */
+                        network: "solana";
+                        /**
+                         * @description Asset sent to the deposit destination
+                         * @example USDC
+                         * @constant
+                         */
+                        asset: "USDC";
+                        /**
+                         * @description Canonical asset address or mint address for the selected network and asset
+                         * @example EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+                         */
+                        assetAddress: string;
+                        /** @description Bound wallet destination address */
+                        address: string;
+                        /** @enum {string} */
+                        status: "active" | "revoked";
+                        /**
+                         * Format: date-time
+                         * @description When the destination was created
+                         */
+                        createdAt: string;
+                        /**
+                         * Format: date-time
+                         * @description When the destination was last updated
+                         */
+                        updatedAt: string;
+                        /** @description When the destination was revoked, or null when active */
+                        revokedAt: string | null;
+                    }[];
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:auth:token-expired
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Token Expired
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         * @example 403
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         * @example Invalid token
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         * @example write:orders
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         * @example account
+                         * @example transaction
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:system:internal-error
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Internal Server Error
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         * @example 401
+                         * @example 404
+                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    "postV1Deposit-destinations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Opaque public preparation identifier returned by prepare
+                     * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    preparationId: string;
+                    /** @description Ed25519 signature over the exact message text. Base58 is preferred for Solana clients; base64 is also accepted. */
+                    signature: string;
+                    /**
+                     * @description Wallet address that produced the signature
+                     * @example 9xQeWvG816bUx9EPjHmaT23yvVM3qvGqLrL7Kx1YwM9R
+                     */
+                    signerAddress: string;
+                    clientContext?: {
+                        clientIp?: string;
+                        userAgent?: string;
+                        sessionId?: string;
+                        deviceId?: string;
+                        platform?: string;
+                        appVersion?: string;
+                    };
+                };
+                "application/x-www-form-urlencoded": {
+                    /**
+                     * @description Opaque public preparation identifier returned by prepare
+                     * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    preparationId: string;
+                    /** @description Ed25519 signature over the exact message text. Base58 is preferred for Solana clients; base64 is also accepted. */
+                    signature: string;
+                    /**
+                     * @description Wallet address that produced the signature
+                     * @example 9xQeWvG816bUx9EPjHmaT23yvVM3qvGqLrL7Kx1YwM9R
+                     */
+                    signerAddress: string;
+                    clientContext?: {
+                        clientIp?: string;
+                        userAgent?: string;
+                        sessionId?: string;
+                        deviceId?: string;
+                        platform?: string;
+                        appVersion?: string;
+                    };
+                };
+                "multipart/form-data": {
+                    /**
+                     * @description Opaque public preparation identifier returned by prepare
+                     * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    preparationId: string;
+                    /** @description Ed25519 signature over the exact message text. Base58 is preferred for Solana clients; base64 is also accepted. */
+                    signature: string;
+                    /**
+                     * @description Wallet address that produced the signature
+                     * @example 9xQeWvG816bUx9EPjHmaT23yvVM3qvGqLrL7Kx1YwM9R
+                     */
+                    signerAddress: string;
+                    clientContext?: {
+                        clientIp?: string;
+                        userAgent?: string;
+                        sessionId?: string;
+                        deviceId?: string;
+                        platform?: string;
+                        appVersion?: string;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description A wallet destination bound to a funding source for future on-ramp deposits */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Opaque public identifier for the deposit destination
+                         * @example dd_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        id: string;
+                        /**
+                         * @description Opaque public funding source identifier
+                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        sourceId: string;
+                        /**
+                         * @description Blockchain network for the bound deposit destination
+                         * @example solana
+                         * @constant
+                         */
+                        network: "solana";
+                        /**
+                         * @description Asset sent to the deposit destination
+                         * @example USDC
+                         * @constant
+                         */
+                        asset: "USDC";
+                        /**
+                         * @description Canonical asset address or mint address for the selected network and asset
+                         * @example EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+                         */
+                        assetAddress: string;
+                        /** @description Bound wallet destination address */
+                        address: string;
+                        /** @enum {string} */
+                        status: "active" | "revoked";
+                        /**
+                         * Format: date-time
+                         * @description When the destination was created
+                         */
+                        createdAt: string;
+                        /**
+                         * Format: date-time
+                         * @description When the destination was last updated
+                         */
+                        updatedAt: string;
+                        /** @description When the destination was revoked, or null when active */
+                        revokedAt: string | null;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:auth:token-expired
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Token Expired
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         * @example 403
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         * @example Invalid token
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         * @example write:orders
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         * @example account
+                         * @example transaction
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:system:internal-error
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Internal Server Error
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         * @example 401
+                         * @example 404
+                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    postV1DepositsPrepare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Opaque public funding source identifier
+                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    sourceId: string;
+                    /**
+                     * @description Opaque public deposit destination identifier
+                     * @example dd_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    destinationId: string;
+                    /** @enum {string} */
+                    quoteType: "exact_input" | "exact_output";
+                    /**
+                     * @description Requested USD amount as a decimal string
+                     * @example 100.00
+                     */
+                    amountUsd: string;
+                    /** @enum {string} */
+                    priority: "normal" | "high";
+                    feeSubsidy?: {
+                        percentage: number;
+                        maxAmountUsd?: string;
+                    };
+                    clientContext?: {
+                        clientIp?: string;
+                        userAgent?: string;
+                        sessionId?: string;
+                        deviceId?: string;
+                        platform?: string;
+                        appVersion?: string;
+                    };
+                };
+                "application/x-www-form-urlencoded": {
+                    /**
+                     * @description Opaque public funding source identifier
+                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    sourceId: string;
+                    /**
+                     * @description Opaque public deposit destination identifier
+                     * @example dd_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    destinationId: string;
+                    /** @enum {string} */
+                    quoteType: "exact_input" | "exact_output";
+                    /**
+                     * @description Requested USD amount as a decimal string
+                     * @example 100.00
+                     */
+                    amountUsd: string;
+                    /** @enum {string} */
+                    priority: "normal" | "high";
+                    feeSubsidy?: {
+                        percentage: number;
+                        maxAmountUsd?: string;
+                    };
+                    clientContext?: {
+                        clientIp?: string;
+                        userAgent?: string;
+                        sessionId?: string;
+                        deviceId?: string;
+                        platform?: string;
+                        appVersion?: string;
+                    };
+                };
+                "multipart/form-data": {
+                    /**
+                     * @description Opaque public funding source identifier
+                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    sourceId: string;
+                    /**
+                     * @description Opaque public deposit destination identifier
+                     * @example dd_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    destinationId: string;
+                    /** @enum {string} */
+                    quoteType: "exact_input" | "exact_output";
+                    /**
+                     * @description Requested USD amount as a decimal string
+                     * @example 100.00
+                     */
+                    amountUsd: string;
+                    /** @enum {string} */
+                    priority: "normal" | "high";
+                    feeSubsidy?: {
+                        percentage: number;
+                        maxAmountUsd?: string;
+                    };
+                    clientContext?: {
+                        clientIp?: string;
+                        userAgent?: string;
+                        sessionId?: string;
+                        deviceId?: string;
+                        platform?: string;
+                        appVersion?: string;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Opaque public preparation identifier
+                         * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        preparationId: string;
+                        /** @constant */
+                        kind: "deposit_authorization";
+                        /** Format: date-time */
+                        expiresAt: string;
+                        /** @constant */
+                        messageVersion: "v1";
+                        /** @description Canonical ACH authorization message that must be signed */
+                        message: string;
+                        summary: {
+                            /** @enum {string} */
+                            quoteType: "exact_input" | "exact_output";
+                            requestedAmountUsd: string;
+                            /** @enum {string} */
+                            priority: "normal" | "high";
+                            feeRateBps: number;
+                            principalAmountUsd: string;
+                            expectedAssetAmount: string;
+                            grossFeeUsd: string;
+                            feeSubsidyUsd: string;
+                            userFeeUsd: string;
+                            totalDebitAmountUsd: string;
+                            feeSubsidy: {
+                                percentage: number;
+                                percentageBps: number;
+                                maxAmountUsd: string | null;
+                                appliedAmountUsd: string;
+                            } | null;
+                            /** @constant */
+                            network: "solana";
+                            /** @constant */
+                            asset: "USDC";
+                            assetAddress: string;
+                            destinationAddress: string;
+                        };
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:auth:token-expired
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Token Expired
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         * @example 403
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         * @example Invalid token
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         * @example write:orders
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         * @example account
+                         * @example transaction
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:system:internal-error
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Internal Server Error
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         * @example 401
+                         * @example 404
+                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    postV1Deposits: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Opaque public preparation identifier returned by prepare
+                     * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    preparationId: string;
+                    /** @description Ed25519 signature over the exact authorization message text. Base58 is preferred for Solana clients; base64 is also accepted. */
+                    signature: string;
+                    clientContext?: {
+                        clientIp?: string;
+                        userAgent?: string;
+                        sessionId?: string;
+                        deviceId?: string;
+                        platform?: string;
+                        appVersion?: string;
+                    };
+                };
+                "application/x-www-form-urlencoded": {
+                    /**
+                     * @description Opaque public preparation identifier returned by prepare
+                     * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    preparationId: string;
+                    /** @description Ed25519 signature over the exact authorization message text. Base58 is preferred for Solana clients; base64 is also accepted. */
+                    signature: string;
+                    clientContext?: {
+                        clientIp?: string;
+                        userAgent?: string;
+                        sessionId?: string;
+                        deviceId?: string;
+                        platform?: string;
+                        appVersion?: string;
+                    };
+                };
+                "multipart/form-data": {
+                    /**
+                     * @description Opaque public preparation identifier returned by prepare
+                     * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    preparationId: string;
+                    /** @description Ed25519 signature over the exact authorization message text. Base58 is preferred for Solana clients; base64 is also accepted. */
+                    signature: string;
+                    clientContext?: {
+                        clientIp?: string;
+                        userAgent?: string;
+                        sessionId?: string;
+                        deviceId?: string;
+                        platform?: string;
+                        appVersion?: string;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description An ACH debit deposit authorized by the user and processed asynchronously through debit and crypto release lifecycles. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Opaque public deposit identifier
+                         * @example dep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        id: string;
+                        /**
+                         * @description Opaque public funding source identifier
+                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        sourceId: string;
+                        /**
+                         * @description Opaque public deposit destination identifier
+                         * @example dd_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        destinationId: string;
+                        /** @enum {string} */
+                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "failed";
+                        /** @enum {string} */
+                        quoteType: "exact_input" | "exact_output";
+                        /** @enum {string} */
+                        priority: "normal" | "high";
+                        feeRateBps: number;
+                        principalAmountUsd: string;
+                        expectedAssetAmount: string;
+                        grossFeeUsd: string;
+                        feeSubsidyUsd: string;
+                        userFeeUsd: string;
+                        totalDebitAmountUsd: string;
+                        feeSubsidy: {
+                            percentage: number;
+                            percentageBps: number;
+                            maxAmountUsd: string | null;
+                            appliedAmountUsd: string;
+                        } | null;
+                        /**
+                         * @description Blockchain network for the bound deposit destination
+                         * @example solana
+                         * @constant
+                         */
+                        network: "solana";
+                        /**
+                         * @description Asset sent to the deposit destination
+                         * @example USDC
+                         * @constant
+                         */
+                        asset: "USDC";
+                        assetAddress: string;
+                        /** @description Destination wallet address for the crypto release */
+                        address: string;
+                        /** @enum {string} */
+                        debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                        /** @enum {string} */
+                        releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                        /** @enum {string} */
+                        releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                        releasedAmountUsd: string;
+                        confirmedReleasedAmountUsd: string;
+                        exposureAmountUsd: string;
+                        /** Format: date-time */
+                        authorizedAt: string;
+                        /** Format: date-time */
+                        createdAt: string;
+                        /** Format: date-time */
+                        updatedAt: string;
+                        settledAt: string | null;
+                        returnedAt: string | null;
+                        completedAt: string | null;
+                        returnCode: string | null;
+                        returnReason: string | null;
+                        debitFailureCode: string | null;
+                        debitFailureReason: string | null;
+                        releaseFailureCode: string | null;
+                        releaseFailureReason: string | null;
+                        payoutTxHash: string | null;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:auth:token-expired
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Token Expired
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         * @example 403
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         * @example Invalid token
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         * @example write:orders
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         * @example account
+                         * @example transaction
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:system:internal-error
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Internal Server Error
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         * @example 401
+                         * @example 404
+                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    "postV1Bank-accountsLink-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Token to initialize Plaid Link SDK */
+                        linkToken: string;
+                        /** @description Plaid-hosted URL for bank linking. Open in browser or webview. Null if hosted link was not requested. */
+                        hostedLinkUrl: string | null;
+                        expiration: string;
+                        requestId: string;
                     };
                 };
             };
@@ -6006,13 +7982,147 @@ export interface operations {
             };
         };
     };
-    getV1BillersByBillerId: {
+    "postV1Bank-accountsLink-complete": {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                billerId: string;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Public token returned by Plaid Link on success */
+                    publicToken: string;
+                    /** @description IDs of the accounts the user selected in Plaid Link */
+                    accountIds: string[];
+                    institutionId?: string;
+                    institutionName?: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    /** @description Public token returned by Plaid Link on success */
+                    publicToken: string;
+                    /** @description IDs of the accounts the user selected in Plaid Link */
+                    accountIds: string[];
+                    institutionId?: string;
+                    institutionName?: string;
+                };
+                "multipart/form-data": {
+                    /** @description Public token returned by Plaid Link on success */
+                    publicToken: string;
+                    /** @description IDs of the accounts the user selected in Plaid Link */
+                    accountIds: string[];
+                    institutionId?: string;
+                    institutionName?: string;
+                };
             };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        success: true;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:auth:token-expired
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Token Expired
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         * @example 403
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         * @example Invalid token
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         * @example write:orders
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:system:internal-error
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Internal Server Error
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         * @example 401
+                         * @example 404
+                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    getV1Bills: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -6024,21 +8134,89 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        /** @description Unique identifier for the bill */
                         id: string;
+                        /** @enum {string} */
+                        status: "active" | "pending" | "inactive" | "rejected";
+                        /**
+                         * @description Provider bill name or generated fallback label
+                         * @example Chase Sapphire Card
+                         * @example Credit Card ··· 1234
+                         */
                         name: string;
-                        industry?: string;
-                        address?: {
-                            line1?: string;
-                            city?: string;
-                            state?: string;
-                            postal_code?: string;
+                        /** @description Financial institution details */
+                        institution?: {
+                            /**
+                             * @description Name of the financial institution
+                             * @example Chase
+                             */
+                            name: string;
+                            /**
+                             * @description URL to institution logo
+                             * @example https://example.com/chase-logo.png
+                             */
+                            logo?: string;
                         };
-                        account_format?: {
-                            min_length?: number;
-                            max_length?: number;
-                            description?: string;
+                        /** @enum {string} */
+                        type: "auto_loan" | "credit_card" | "loan" | "mobile_phone" | "mortgage" | "student_loan" | "utility" | "unknown";
+                        /**
+                         * @description Last 4 digits of the bill account number
+                         * @example 1234
+                         */
+                        accountNumberLast4?: string;
+                        /** @enum {string} */
+                        currency: "USD" | "CAD" | "EUR" | "GBP";
+                        /** @description Liability data from the bill provider. All fields are optional and amounts are decimal strings. */
+                        liability?: {
+                            /**
+                             * @description Current outstanding balance
+                             * @example 1234.56
+                             */
+                            balance?: string;
+                            /**
+                             * @description Most recent statement balance
+                             * @example 1100.00
+                             */
+                            statementBalance?: string;
+                            /**
+                             * @description Minimum payment due
+                             * @example 25.00
+                             */
+                            minimumPayment?: string;
+                            /**
+                             * @description Amount of the last payment made
+                             * @example 150.00
+                             */
+                            lastPaymentAmount?: string;
+                            /**
+                             * Format: date
+                             * @description Date of the last payment
+                             * @example 2025-03-01
+                             */
+                            lastPaymentDate?: string;
+                            /**
+                             * Format: date
+                             * @description Date the next payment is due
+                             * @example 2025-04-01
+                             */
+                            nextPaymentDueDate?: string;
+                            /**
+                             * @description Amount currently past due
+                             * @example 0.00
+                             */
+                            amountPastDue?: string;
+                            /**
+                             * Format: date-time
+                             * @description When this liability data was last refreshed from the provider
+                             */
+                            updatedAt?: string;
                         };
-                    };
+                        /**
+                         * Format: date-time
+                         * @description When the bill was linked
+                         */
+                        createdAt: string;
+                    }[];
                 };
             };
             /** @description Response for status 401 */
@@ -6121,6 +8299,117 @@ export interface operations {
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
                         resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:system:internal-error
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Internal Server Error
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         * @example 401
+                         * @example 404
+                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    postV1BillsActivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        success: true;
+                        /** @enum {string} */
+                        outcome: "activated" | "already_active";
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:auth:token-expired
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Token Expired
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         * @example 403
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         * @example Invalid token
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         * @example write:orders
+                         */
+                        scope?: string;
                     };
                 };
             };
@@ -6174,22 +8463,22 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /** @description Encrypted card token from Tabapay Browser SDK */
+                    /** @description Encrypted card token from TabaPay SDK */
                     token: string;
-                    /** @description Optional nickname for this card */
-                    nickname?: string;
+                    /** @description Existing bill ID to overwrite with TabaPay */
+                    billId?: string;
                 };
                 "application/x-www-form-urlencoded": {
-                    /** @description Encrypted card token from Tabapay Browser SDK */
+                    /** @description Encrypted card token from TabaPay SDK */
                     token: string;
-                    /** @description Optional nickname for this card */
-                    nickname?: string;
+                    /** @description Existing bill ID to overwrite with TabaPay */
+                    billId?: string;
                 };
                 "multipart/form-data": {
-                    /** @description Encrypted card token from Tabapay Browser SDK */
+                    /** @description Encrypted card token from TabaPay SDK */
                     token: string;
-                    /** @description Optional nickname for this card */
-                    nickname?: string;
+                    /** @description Existing bill ID to overwrite with TabaPay */
+                    billId?: string;
                 };
             };
         };
@@ -6201,22 +8490,9 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description Internal account ID */
-                        id: string;
-                        /** @description Last 4 digits of card */
+                        billId: string;
+                        tabapayAccountId: string;
                         last4: string;
-                        expiry_month?: (string | null) | null;
-                        expiry_year?: (string | null) | null;
-                        nickname?: (string | null) | null;
-                        /** @description Account status */
-                        status: string;
-                        /** Format: date-time */
-                        created_at: string;
-                        tabapay_account_id?: (string | null) | null;
-                        payable_account?: ({
-                            [key: string]: unknown;
-                        } | null) | null;
-                        payable_account_error?: (string | null) | null;
                     };
                 };
             };
@@ -6268,41 +8544,6 @@ export interface operations {
                     };
                 };
             };
-            /** @description Response for status 404 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         */
-                        type: string;
-                        /** @description A short, human-readable summary of the problem type */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 404
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The type of resource that was not found
-                         * @example user
-                         * @example account
-                         * @example transaction
-                         */
-                        resourceType: string;
-                        /** @description The identifier of the resource that was not found */
-                        resourceId: string;
-                    };
-                };
-            };
             /** @description Response for status 500 */
             500: {
                 headers: {
@@ -6338,333 +8579,6 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
-                    };
-                };
-            };
-        };
-    };
-    "postV1BillsLink-token": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Response for status 200 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description Token for widget initialization */
-                        token: string;
-                        /** @description Session ID for the linking session */
-                        session_id: string;
-                        /**
-                         * Format: date-time
-                         * @description Token expiration time (ISO 8601)
-                         */
-                        expires_at: string;
-                    };
-                };
-            };
-            /** @description Response for status 401 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Token Expired
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 401
-                         * @example 403
-                         */
-                        status: number;
-                        /**
-                         * @description A human-readable explanation specific to this occurrence
-                         * @example Bearer token required
-                         * @example Invalid token
-                         */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The authentication realm
-                         * @example API
-                         */
-                        realm?: string;
-                        /**
-                         * @description The required scope for this resource
-                         * @example read:users
-                         * @example write:orders
-                         */
-                        scope?: string;
-                    };
-                };
-            };
-            /** @description Response for status 404 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         */
-                        type: string;
-                        /** @description A short, human-readable summary of the problem type */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 404
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The type of resource that was not found
-                         * @example user
-                         * @example account
-                         * @example transaction
-                         */
-                        resourceType: string;
-                        /** @description The identifier of the resource that was not found */
-                        resourceId: string;
-                    };
-                };
-            };
-            /** @description Response for status 500 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Internal Server Error
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                    };
-                };
-            };
-        };
-    };
-    postV1BillsByBillIdAuthorize: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                billId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Response for status 200 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        authorization_id: string;
-                        bill_id: string;
-                        /** Format: date-time */
-                        authorized_at: string;
-                    };
-                };
-            };
-            /** @description Response for status 401 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Token Expired
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 401
-                         * @example 403
-                         */
-                        status: number;
-                        /**
-                         * @description A human-readable explanation specific to this occurrence
-                         * @example Bearer token required
-                         * @example Invalid token
-                         */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The authentication realm
-                         * @example API
-                         */
-                        realm?: string;
-                        /**
-                         * @description The required scope for this resource
-                         * @example read:users
-                         * @example write:orders
-                         */
-                        scope?: string;
-                    };
-                };
-            };
-            /** @description Response for status 404 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         */
-                        type: string;
-                        /** @description A short, human-readable summary of the problem type */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 404
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The type of resource that was not found
-                         * @example user
-                         * @example account
-                         * @example transaction
-                         */
-                        resourceType: string;
-                        /** @description The identifier of the resource that was not found */
-                        resourceId: string;
-                    };
-                };
-            };
-            /** @description Response for status 500 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Internal Server Error
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                    };
-                };
-            };
-        };
-    };
-    "postV1BillsAdminSync-billers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Response for status 200 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        synced: boolean;
-                        billers_processed: number;
-                        billers_added: number;
-                        billers_updated: number;
-                        aliases_synced: number;
-                        skip_reason: string;
-                        duration_ms: number;
                     };
                 };
             };
@@ -8180,7 +10094,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 69a546e71b2e721f28577f70
+                         * @example 69d896b963684ce65a59ab0c
                          */
                         userId: string;
                         /**
@@ -8196,7 +10110,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-03-02T09:14:31.179Z
+                         * @example 2026-04-10T07:20:41.141Z
                          */
                         expiresAt: string;
                     };
@@ -8353,7 +10267,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 69a546e71b2e721f28577f71
+                         * @example 69d896b963684ce65a59ab0d
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -8560,7 +10474,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 69a546e71b2e721f28577f71
+                         * @example 69d896b963684ce65a59ab0d
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -9072,7 +10986,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-03-02T08:19:31.179Z
+                         * @example 2026-04-10T06:25:41.141Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -9219,7 +11133,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 69a546e71b2e721f28577f73
+                         * @example 69d896b963684ce65a59ab0f
                          */
                         id: string;
                         email: (string | null) | null;
@@ -9227,7 +11141,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-03-02T08:14:31.244Z
+                         * @example 2026-04-10T06:20:41.222Z
                          */
                         signedUpAt: string;
                         timezone: (string | null) | null;
@@ -9273,11 +11187,13 @@ export interface operations {
                         /** @description User's available capabilities and their requirements */
                         capabilities: {
                             /** @enum {string} */
-                            type: "ach_push" | "wire_push" | "sepa_push" | "ach_payout" | "rtp_payout" | "wire_payout" | "push_to_debit" | "ca_eft_payout" | "us_bill_pay" | "crypto_card";
+                            product: "fiat_to_crypto" | "crypto_to_fiat" | "bill_pay" | "crypto_card";
+                            /** @enum {string} */
+                            method?: "ach_credit" | "ach_debit" | "wire" | "sepa_credit_transfer" | "rtp" | "push_to_card" | "canadian_eft";
                             /**
                              * @description Human-readable name for this capability
                              * @example ACH Bank Transfer
-                             * @example Instant Bank Transfer
+                             * @example Bill Pay
                              */
                             name: string;
                             /**
@@ -9285,8 +11201,6 @@ export interface operations {
                              * @example Buy crypto using ACH bank transfer
                              */
                             description: string;
-                            /** @enum {string} */
-                            direction: "fiat_to_crypto" | "crypto_to_fiat";
                             /** @enum {string} */
                             status: "active" | "requirements_needed" | "not_available" | "pending";
                             /** @enum {string} */
@@ -9557,7 +11471,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 69a546e71b2e721f28577f73
+                         * @example 69d896b963684ce65a59ab0f
                          */
                         id: string;
                         email: (string | null) | null;
@@ -9565,7 +11479,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-03-02T08:14:31.244Z
+                         * @example 2026-04-10T06:20:41.222Z
                          */
                         signedUpAt: string;
                         timezone: (string | null) | null;
@@ -9611,11 +11525,13 @@ export interface operations {
                         /** @description User's available capabilities and their requirements */
                         capabilities: {
                             /** @enum {string} */
-                            type: "ach_push" | "wire_push" | "sepa_push" | "ach_payout" | "rtp_payout" | "wire_payout" | "push_to_debit" | "ca_eft_payout" | "us_bill_pay" | "crypto_card";
+                            product: "fiat_to_crypto" | "crypto_to_fiat" | "bill_pay" | "crypto_card";
+                            /** @enum {string} */
+                            method?: "ach_credit" | "ach_debit" | "wire" | "sepa_credit_transfer" | "rtp" | "push_to_card" | "canadian_eft";
                             /**
                              * @description Human-readable name for this capability
                              * @example ACH Bank Transfer
-                             * @example Instant Bank Transfer
+                             * @example Bill Pay
                              */
                             name: string;
                             /**
@@ -9623,8 +11539,6 @@ export interface operations {
                              * @example Buy crypto using ACH bank transfer
                              */
                             description: string;
-                            /** @enum {string} */
-                            direction: "fiat_to_crypto" | "crypto_to_fiat";
                             /** @enum {string} */
                             status: "active" | "requirements_needed" | "not_available" | "pending";
                             /** @enum {string} */
@@ -9902,7 +11816,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "off-ramp-quotes:write")[];
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:write")[];
                     /**
                      * Format: date-time
                      * @description ISO 8601 expiration timestamp
@@ -9911,7 +11825,7 @@ export interface operations {
                     name?: string;
                 };
                 "application/x-www-form-urlencoded": {
-                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "off-ramp-quotes:write")[];
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:write")[];
                     /**
                      * Format: date-time
                      * @description ISO 8601 expiration timestamp
@@ -9920,7 +11834,7 @@ export interface operations {
                     name?: string;
                 };
                 "multipart/form-data": {
-                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "off-ramp-quotes:write")[];
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:write")[];
                     /**
                      * Format: date-time
                      * @description ISO 8601 expiration timestamp
@@ -10140,6 +12054,342 @@ export interface operations {
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
                         resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:system:internal-error
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Internal Server Error
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         * @example 401
+                         * @example 404
+                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    postV1DeviceAuthorize: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    client_id: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    client_id: string;
+                };
+                "multipart/form-data": {
+                    client_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        deviceCode: string;
+                        userCode: string;
+                        verificationUri: string;
+                        verificationUriComplete: string;
+                        expiresIn: number;
+                        interval: number;
+                    };
+                };
+            };
+        };
+    };
+    postV1DeviceToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    device_code: string;
+                    grant_type: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    device_code: string;
+                    grant_type: string;
+                };
+                "multipart/form-data": {
+                    device_code: string;
+                    grant_type: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        apiKey: string;
+                        keyId: string;
+                        permissions: string[];
+                        expiresAt: (string | null) | null;
+                        keyName: (string | null) | null;
+                    };
+                };
+            };
+        };
+    };
+    getV1DeviceInfo: {
+        parameters: {
+            query: {
+                user_code: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        clientId: string;
+                        expiresIn: number;
+                        createdAt: string;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:auth:token-expired
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Token Expired
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         * @example 403
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         * @example Invalid token
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         * @example write:orders
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:system:internal-error
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Internal Server Error
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         * @example 401
+                         * @example 404
+                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    postV1DeviceApprove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    user_code: string;
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:write")[];
+                    /**
+                     * Format: date-time
+                     * @description ISO 8601 expiration timestamp
+                     */
+                    expires_at?: string;
+                    name?: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    user_code: string;
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:write")[];
+                    /**
+                     * Format: date-time
+                     * @description ISO 8601 expiration timestamp
+                     */
+                    expires_at?: string;
+                    name?: string;
+                };
+                "multipart/form-data": {
+                    user_code: string;
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:write")[];
+                    /**
+                     * Format: date-time
+                     * @description ISO 8601 expiration timestamp
+                     */
+                    expires_at?: string;
+                    name?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        approved: boolean;
+                        clientId: string;
+                        permissions: string[];
+                        expiresAt: (string | null) | null;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:auth:token-expired
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Token Expired
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         * @example 403
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         * @example Invalid token
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         * @example write:orders
+                         */
+                        scope?: string;
                     };
                 };
             };
@@ -10557,25 +12807,19 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    tabapay_account_id: string;
+                    account_id: string;
+                    payment_instrument_id: string;
                     amount: string;
-                    memo?: string;
-                    bill_id?: string;
-                    reference_id?: string;
                 };
                 "application/x-www-form-urlencoded": {
-                    tabapay_account_id: string;
+                    account_id: string;
+                    payment_instrument_id: string;
                     amount: string;
-                    memo?: string;
-                    bill_id?: string;
-                    reference_id?: string;
                 };
                 "multipart/form-data": {
-                    tabapay_account_id: string;
+                    account_id: string;
+                    payment_instrument_id: string;
                     amount: string;
-                    memo?: string;
-                    bill_id?: string;
-                    reference_id?: string;
                 };
             };
         };
@@ -10676,140 +12920,6 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
-                    };
-                };
-            };
-        };
-    };
-    "postV1Internal-apiTabapayAccounts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    card_token: string;
-                    owner_first: string;
-                    owner_last: string;
-                    owner_middle?: string;
-                    owner_suffix?: string;
-                    owner_company?: string;
-                    reference_id?: string;
-                    address?: {
-                        line1?: string;
-                        line2?: string;
-                        city?: string;
-                        state?: string;
-                        zipcode?: string;
-                        country?: string;
-                    };
-                    phone?: {
-                        country_code?: string;
-                        number: string;
-                    };
-                };
-                "application/x-www-form-urlencoded": {
-                    card_token: string;
-                    owner_first: string;
-                    owner_last: string;
-                    owner_middle?: string;
-                    owner_suffix?: string;
-                    owner_company?: string;
-                    reference_id?: string;
-                    address?: {
-                        line1?: string;
-                        line2?: string;
-                        city?: string;
-                        state?: string;
-                        zipcode?: string;
-                        country?: string;
-                    };
-                    phone?: {
-                        country_code?: string;
-                        number: string;
-                    };
-                };
-                "multipart/form-data": {
-                    card_token: string;
-                    owner_first: string;
-                    owner_last: string;
-                    owner_middle?: string;
-                    owner_suffix?: string;
-                    owner_company?: string;
-                    reference_id?: string;
-                    address?: {
-                        line1?: string;
-                        line2?: string;
-                        city?: string;
-                        state?: string;
-                        zipcode?: string;
-                        country?: string;
-                    };
-                    phone?: {
-                        country_code?: string;
-                        number: string;
-                    };
-                };
-            };
-        };
-        responses: {
-            /** @description Response for status 200 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        ok: boolean;
-                        tabapay_account_id: string | null;
-                        response: unknown;
-                    };
-                };
-            };
-        };
-    };
-    "postV1Internal-apiTabapayTransactions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    destination_account_id: string;
-                    amount: string;
-                    memo?: string;
-                    reference_id?: string;
-                };
-                "application/x-www-form-urlencoded": {
-                    destination_account_id: string;
-                    amount: string;
-                    memo?: string;
-                    reference_id?: string;
-                };
-                "multipart/form-data": {
-                    destination_account_id: string;
-                    amount: string;
-                    memo?: string;
-                    reference_id?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Response for status 200 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        ok: boolean;
-                        response: unknown;
                     };
                 };
             };

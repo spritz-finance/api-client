@@ -36,6 +36,23 @@ export {
 export { onrampSupportedTokens } from './modules/virtualAccounts/types'
 export type { CreateVirtualAccountInput } from './modules/virtualAccounts/types'
 export type { PaymentLimitsResponse } from './modules/payment/paymentService'
+export type { FundingSource } from './modules/fundingSource/fundingSourceService'
+export type {
+    DepositDestination,
+    PrepareBindRequest,
+    PrepareBindResponse,
+    ConfirmBindRequest,
+} from './modules/depositDestination/depositDestinationService'
+export type {
+    Deposit,
+    PrepareDepositRequest,
+    PrepareDepositResponse,
+    CreateDepositRequest,
+} from './modules/deposit/depositService'
+export type {
+    LinkTokenResponse,
+    CompleteLinkingRequest,
+} from './modules/bankAccount/bankAccountService'
 export type {
     paths as RestApiPaths,
     operations as RestApiOperations,
