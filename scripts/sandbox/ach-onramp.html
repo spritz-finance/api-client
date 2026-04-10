@@ -194,6 +194,12 @@
             <input id="integratorSecret" type="password" placeholder="secret" />
             <label>API Key</label>
             <input id="apiKey" placeholder="ak_..." />
+            <label>Deposit Amount (USD)</label>
+            <input id="depositAmount" value="1.00" placeholder="1.00" />
+            <label>Fee Subsidy % (optional — integrator absorbs this % of the fee)</label>
+            <input id="feeSubsidyPct" placeholder="e.g. 50" />
+            <label>Max Fee Subsidy USD (optional — cap on subsidy per deposit)</label>
+            <input id="feeSubsidyMax" placeholder="e.g. 5.00" />
             <button onclick="startDemo()">Start</button>
         </div>
 
@@ -540,26 +546,51 @@
             }
 
             async function step4_createDeposit() {
-                renderStep(3, 'Create Deposit', 'active', 'Preparing deposit quote ($1.00)...')
+                const amount = document.getElementById('depositAmount').value.trim() || '1.00'
+                const subsidyPct = document.getElementById('feeSubsidyPct').value.trim()
+                const subsidyMax = document.getElementById('feeSubsidyMax').value.trim()
+
+                renderStep(3, 'Create Deposit', 'active', `Preparing deposit quote ($${amount})...`)
                 log('POST /v1/deposits/prepare')
 
-                const prep = await api('POST', '/v1/deposits/prepare', {
+                const body = {
                     sourceId: state.selectedSource.id,
                     destinationId: state.destination.id,
                     quoteType: 'exact_input',
-                    amountUsd: '1.00',
+                    amountUsd: amount,
                     priority: 'normal',
-                })
+                }
+                if (subsidyPct) {
+                    body.feeSubsidy = { percentage: Number(subsidyPct) }
+                    if (subsidyMax) body.feeSubsidy.maxAmountUsd = subsidyMax
+                }
+
+                const prep = await api('POST', '/v1/deposits/prepare', body)
                 state.depositPrep = prep
                 const s = prep.summary
                 log(`Quote: $${s.totalDebitAmountUsd} debit → ${s.expectedAssetAmount} USDC`)
+
+                let feeDetail = `$${s.userFeeUsd} (${s.feeRateBps} bps)`
+                let subsidyDetail = ''
+                if (s.feeSubsidy) {
+                    subsidyDetail =
+                        field(
+                            'Fee Subsidy',
+                            `$${s.feeSubsidy.appliedAmountUsd} (${s.feeSubsidy.percentage}%` +
+                                (s.feeSubsidy.maxAmountUsd
+                                    ? `, max $${s.feeSubsidy.maxAmountUsd}`
+                                    : '') +
+                                ')'
+                        ) + field('Gross Fee', `$${s.grossFeeUsd}`)
+                }
 
                 renderStep(
                     3,
                     'Create Deposit',
                     'active',
                     field('Requested', `$${s.requestedAmountUsd}`) +
-                        field('Fee', `$${s.userFeeUsd} (${s.feeRateBps} bps)`) +
+                        field('User Fee', feeDetail) +
+                        subsidyDetail +
                         field('Total Debit', `$${s.totalDebitAmountUsd}`) +
                         field('Expected USDC', s.expectedAssetAmount) +
                         '<p style="margin-top:0.5rem;font-size:0.7rem">Signing authorization...</p>' +

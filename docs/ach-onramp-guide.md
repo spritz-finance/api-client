@@ -256,18 +256,18 @@ feeSubsidy: {
 
 **Preparation response:**
 
-| Field                         | Type     | Description                       |
-| ----------------------------- | -------- | --------------------------------- |
-| `preparationId`               | `string` | Needed for deposit creation       |
-| `message`                     | `string` | ACH authorization message to sign |
-| `expiresAt`                   | `string` | Submission deadline               |
-| `summary.requestedAmountUsd`  | `string` | What the user asked for           |
+| Field                         | Type     | Description                                   |
+| ----------------------------- | -------- | --------------------------------------------- |
+| `preparationId`               | `string` | Needed for deposit creation                   |
+| `message`                     | `string` | ACH authorization message to sign             |
+| `expiresAt`                   | `string` | Submission deadline                           |
+| `summary.requestedAmountUsd`  | `string` | What the user asked for                       |
 | `summary.principalAmountUsd`  | `string` | USD used to buy USDC (total debit minus fees) |
-| `summary.userFeeUsd`          | `string` | Fee charged to the user           |
-| `summary.totalDebitAmountUsd` | `string` | Total USD debited from bank       |
-| `summary.expectedAssetAmount` | `string` | USDC to be released               |
-| `summary.feeRateBps`          | `number` | Fee rate in basis points          |
-| `summary.destinationAddress`  | `string` | Wallet receiving USDC             |
+| `summary.userFeeUsd`          | `string` | Fee charged to the user                       |
+| `summary.totalDebitAmountUsd` | `string` | Total USD debited from bank                   |
+| `summary.expectedAssetAmount` | `string` | USDC to be released                           |
+| `summary.feeRateBps`          | `number` | Fee rate in basis points                      |
+| `summary.destinationAddress`  | `string` | Wallet receiving USDC                         |
 
 Display the summary to the user for confirmation before signing.
 
