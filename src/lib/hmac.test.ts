@@ -22,15 +22,13 @@ describe('HMAC Request Stamping', () => {
 
         it('sorts params alphabetically by key', () => {
             const url = new URL(
-                'https://api.example.com/v1/on-ramps?token=USDC&limit=20&network=ethereum',
+                'https://api.example.com/v1/on-ramps?token=USDC&limit=20&network=ethereum'
             )
             expect(canonicalizeQueryString(url)).toBe('limit=20&network=ethereum&token=USDC')
         })
 
         it('URL-encodes special characters', () => {
-            const url = new URL(
-                'https://api.example.com/v1/test?filter=a+b&query=hello%26world',
-            )
+            const url = new URL('https://api.example.com/v1/test?filter=a+b&query=hello%26world')
             expect(canonicalizeQueryString(url)).toBe('filter=a%20b&query=hello%26world')
         })
 
@@ -46,10 +44,10 @@ describe('HMAC Request Stamping', () => {
 
         it('produces consistent output regardless of param order', () => {
             const url1 = new URL(
-                'https://api.example.com/v1/on-ramps?network=ethereum&token=USDC&limit=20',
+                'https://api.example.com/v1/on-ramps?network=ethereum&token=USDC&limit=20'
             )
             const url2 = new URL(
-                'https://api.example.com/v1/on-ramps?limit=20&token=USDC&network=ethereum',
+                'https://api.example.com/v1/on-ramps?limit=20&token=USDC&network=ethereum'
             )
             expect(canonicalizeQueryString(url1)).toBe(canonicalizeQueryString(url2))
         })
@@ -63,19 +61,19 @@ describe('HMAC Request Stamping', () => {
 
         it('returns path with canonicalized query', () => {
             const url = new URL(
-                'https://api.example.com/v1/on-ramps?token=USDC&limit=20&network=ethereum',
+                'https://api.example.com/v1/on-ramps?token=USDC&limit=20&network=ethereum'
             )
             expect(buildPathWithQuery(url)).toBe(
-                '/v1/on-ramps?limit=20&network=ethereum&token=USDC',
+                '/v1/on-ramps?limit=20&network=ethereum&token=USDC'
             )
         })
 
         it('produces same output regardless of query param order', () => {
             const url1 = new URL(
-                'https://api.example.com/v1/on-ramps?network=ethereum&token=USDC&limit=20',
+                'https://api.example.com/v1/on-ramps?network=ethereum&token=USDC&limit=20'
             )
             const url2 = new URL(
-                'https://api.example.com/v1/on-ramps?limit=20&token=USDC&network=ethereum',
+                'https://api.example.com/v1/on-ramps?limit=20&token=USDC&network=ethereum'
             )
             expect(buildPathWithQuery(url1)).toBe(buildPathWithQuery(url2))
         })
@@ -144,7 +142,7 @@ describe('HMAC Request Stamping', () => {
         it('includes canonicalized query string in signature', async () => {
             const timestamp = 1700000000000
             const url = new URL(
-                'https://api.example.com/v1/on-ramps?token=USDC&limit=20&network=ethereum',
+                'https://api.example.com/v1/on-ramps?token=USDC&limit=20&network=ethereum'
             )
             const sig = await generateHmacSignature(testSecret, timestamp, {
                 method: 'GET',
@@ -156,10 +154,10 @@ describe('HMAC Request Stamping', () => {
         it('generates same signature regardless of query param order', async () => {
             const timestamp = 1700000000000
             const url1 = new URL(
-                'https://api.example.com/v1/on-ramps?network=ethereum&token=USDC&limit=20',
+                'https://api.example.com/v1/on-ramps?network=ethereum&token=USDC&limit=20'
             )
             const url2 = new URL(
-                'https://api.example.com/v1/on-ramps?limit=20&token=USDC&network=ethereum',
+                'https://api.example.com/v1/on-ramps?limit=20&token=USDC&network=ethereum'
             )
 
             const sig1 = await generateHmacSignature(testSecret, timestamp, {
@@ -195,7 +193,7 @@ describe('HMAC Request Stamping', () => {
                 testSecret,
                 'POST',
                 'https://platform.spritz.finance/v1/transactions',
-                '{"amount":100}',
+                '{"amount":100}'
             )
 
             expect(headers).toHaveProperty('X-Integrator-Key', 'int_abc123')
@@ -211,7 +209,7 @@ describe('HMAC Request Stamping', () => {
                 'int_abc123',
                 testSecret,
                 'GET',
-                'https://platform.spritz.finance/v1/users/me',
+                'https://platform.spritz.finance/v1/users/me'
             )
             const after = Date.now()
             const ts = Number(headers['X-Timestamp'])
@@ -226,13 +224,13 @@ describe('HMAC Request Stamping', () => {
                 'int_abc123',
                 testSecret,
                 'GET',
-                'https://platform.spritz.finance/v1/on-ramps?token=USDC&limit=20',
+                'https://platform.spritz.finance/v1/on-ramps?token=USDC&limit=20'
             )
             const headers2 = await stampRequest(
                 'int_abc123',
                 testSecret,
                 'GET',
-                'https://platform.spritz.finance/v1/on-ramps?limit=20&token=USDC',
+                'https://platform.spritz.finance/v1/on-ramps?limit=20&token=USDC'
             )
 
             expect(headers1['X-Signature']).toBe(headers2['X-Signature'])
@@ -248,13 +246,13 @@ describe('HMAC Request Stamping', () => {
                 testSecret,
                 'GET',
                 'https://platform.spritz.finance/v1/users/me',
-                null,
+                null
             )
             const headers2 = await stampRequest(
                 'int_abc123',
                 testSecret,
                 'GET',
-                'https://platform.spritz.finance/v1/users/me',
+                'https://platform.spritz.finance/v1/users/me'
             )
 
             expect(headers1['X-Signature']).toBe(headers2['X-Signature'])
@@ -275,7 +273,7 @@ describe('HMAC Request Stamping', () => {
                 body: '{"amount":100}',
             })
             expect(sig).toBe(
-                'sha256=12dcf2a7647146ce08a465349ab03f992d8a18542cd576d40a9eb8e2958d4b9f',
+                'sha256=12dcf2a7647146ce08a465349ab03f992d8a18542cd576d40a9eb8e2958d4b9f'
             )
         })
 
@@ -285,20 +283,20 @@ describe('HMAC Request Stamping', () => {
                 path: '/v1/users/me',
             })
             expect(sig).toBe(
-                'sha256=147ecf7209d3d91ca62d3cc190473954120d305b85c007b50976d4fe88551c52',
+                'sha256=147ecf7209d3d91ca62d3cc190473954120d305b85c007b50976d4fe88551c52'
             )
         })
 
         it('matches platform signature for GET with canonicalized query params', async () => {
             const url = new URL(
-                'https://api.example.com/v1/on-ramps?token=USDC&limit=20&network=ethereum',
+                'https://api.example.com/v1/on-ramps?token=USDC&limit=20&network=ethereum'
             )
             const sig = await generateHmacSignature(testSecret, 1700000000000, {
                 method: 'GET',
                 path: buildPathWithQuery(url),
             })
             expect(sig).toBe(
-                'sha256=77cc4cdebcc5256d682fb3974346c15e84b289f6a4bb454adaa7f9495d3bbc55',
+                'sha256=77cc4cdebcc5256d682fb3974346c15e84b289f6a4bb454adaa7f9495d3bbc55'
             )
         })
     })

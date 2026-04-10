@@ -74,7 +74,7 @@ export class SpritzApiClient {
         apiKey?: string,
         integrationKey?: string,
         integratorSecret?: string,
-        dangerouslyAllowBrowser?: boolean,
+        dangerouslyAllowBrowser?: boolean
     ) {
         if (apiKey === undefined && integrationKey === undefined) {
             throw new Error(
@@ -110,7 +110,7 @@ export class SpritzApiClient {
             apiKey,
             integrationKey,
             integratorSecret,
-            dangerouslyAllowBrowser,
+            dangerouslyAllowBrowser
         )
         client.init()
         return client
