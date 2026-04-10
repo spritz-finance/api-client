@@ -14,13 +14,12 @@ Link Bank Account → Funding Source → Bind Wallet → Authorize Deposit → U
 - **Plaid Link SDK** — for bank account linking ([React Native](https://plaid.com/docs/link/react-native/), [Web](https://plaid.com/docs/link/web/), [iOS](https://plaid.com/docs/link/ios/), [Android](https://plaid.com/docs/link/android/))
 - **Ed25519 signing** — the user's Solana wallet must sign authorization messages
 
-### KYC Verification
+### Architecture note
 
-Users must be KYC-verified before they can link a bank account or create deposits. In production, use the Persona verification flow (see the main [README](../README.md#identity-verification)). In sandbox, bypass it programmatically:
+The Spritz SDK runs **server-side** (Node.js). It will throw if instantiated in a browser without `dangerouslyAllowBrowser: true`. In a typical integration:
 
-```typescript
-await client.sandbox.bypassKyc({ country: 'US' })
-```
+- **Server** — SDK calls (create link token, list funding sources, prepare/confirm bind, prepare/create deposit)
+- **Client** — Plaid Link UI, wallet signing (Ed25519), then send signatures back to your server
 
 ### SDK Setup
 
@@ -31,8 +30,16 @@ const client = SpritzApiClient.initialize({
     environment: Environment.Production, // or Environment.Sandbox
     integrationKey: process.env.SPRITZ_INTEGRATION_KEY,
     integratorSecret: process.env.SPRITZ_INTEGRATOR_SECRET,
-    apiKey: userApiKey,
+    apiKey: userApiKey, // from client.user.create() — see README for user creation
 })
+```
+
+### KYC Verification
+
+Users must be KYC-verified before they can link a bank account or create deposits. In production, use the Persona verification flow (see the main [README](../README.md#identity-verification)). In sandbox, bypass it programmatically:
+
+```typescript
+await client.sandbox.bypassKyc({ country: 'US' })
 ```
 
 ---
@@ -59,22 +66,40 @@ const { linkToken, hostedLinkUrl } = await client.bankAccount.createLinkToken()
 
 Use the `linkToken` with the Plaid Link SDK on your frontend. Plaid provides SDKs for [React Native](https://plaid.com/docs/link/react-native/), [Web](https://plaid.com/docs/link/web/), [iOS](https://plaid.com/docs/link/ios/), and [Android](https://plaid.com/docs/link/android/).
 
-**React Native** (using [`react-native-plaid-link-sdk`](https://github.com/plaid/react-native-plaid-link-sdk)):
+**React Native** (using [`react-native-plaid-link-sdk`](https://github.com/plaid/react-native-plaid-link-sdk) v11+):
 
 ```typescript
-import { create, open } from 'react-native-plaid-link-sdk'
+import { create, open, dismissLink } from 'react-native-plaid-link-sdk'
 
-create({ token: linkToken })
-
-open({
-    onSuccess: async ({ publicToken, metadata }) => {
-        await client.bankAccount.completeLinking({
-            publicToken,
-            accountIds: metadata.accounts.map((a) => a.id),
-            institutionId: metadata.institution?.id,
-            institutionName: metadata.institution?.name,
+// Create the link handler with callbacks
+create({
+    token: linkToken,
+    onSuccess: async (success) => {
+        // Exchange the token on your server
+        await yourServer.completePlaidLink({
+            publicToken: success.publicToken,
+            accountIds: success.metadata.accounts.map((a) => a.id),
+            institutionId: success.metadata.institution?.id,
+            institutionName: success.metadata.institution?.name,
         })
     },
+    onExit: (exit) => {
+        if (exit.error) console.error('Plaid error:', exit.error)
+    },
+})
+
+// Open the Plaid Link UI
+open()
+```
+
+On your server, call `completeLinking` with the values from the client:
+
+```typescript
+await client.bankAccount.completeLinking({
+    publicToken,
+    accountIds,
+    institutionId,
+    institutionName,
 })
 ```
 
@@ -87,6 +112,7 @@ const handler = Plaid.create({
         await client.bankAccount.completeLinking({
             publicToken,
             accountIds: metadata.accounts.map((a) => a.id),
+            // Note: Web SDK uses institution_id, RN SDK uses id
             institutionId: metadata.institution?.institution_id,
             institutionName: metadata.institution?.name,
         })
@@ -106,6 +132,11 @@ A funding source represents a linked bank account that has been evaluated for AC
 ```typescript
 const sources = await client.fundingSource.list()
 const source = sources.find((s) => s.status === 'active')
+
+if (!source) {
+    // No active funding source yet — may still be pending after Plaid linking
+    throw new Error('No active funding source available')
+}
 ```
 
 **Funding source fields:**
@@ -147,12 +178,14 @@ Before creating deposits, the user must bind a Solana wallet address to a fundin
 
 ### 3a. Prepare the bind
 
+`walletAddress` is the user's Solana wallet public key (Base58-encoded string), obtained from whatever wallet integration your app uses.
+
 ```typescript
 const preparation = await client.depositDestination.prepareBind({
     sourceId: source.id,
     network: 'solana',
     asset: 'USDC',
-    address: walletAddress,
+    address: walletAddress, // e.g. "9xQeWvG816bUx9EPjHmaT23yvVM..."
 })
 ```
 
@@ -168,16 +201,23 @@ const preparation = await client.depositDestination.prepareBind({
 
 ### 3b. Sign the message
 
-The user signs `preparation.message` with their Solana wallet. The signature must be Ed25519 over the exact UTF-8 bytes.
+The user signs `preparation.message` with their Solana wallet. The signature must be Ed25519 over the exact UTF-8 bytes. Both Base58 and Base64 encoded signatures are accepted; Base58 is conventional for Solana.
 
 ```typescript
-// Using @solana/wallet-adapter-react:
+import bs58 from 'bs58'
+
+// Send preparation.message to the client for signing.
+// The wallet produces an Ed25519 signature over the UTF-8 bytes.
 const messageBytes = new TextEncoder().encode(preparation.message)
-const signatureBytes = await wallet.signMessage(messageBytes)
+const signatureBytes = await wallet.signMessage(messageBytes) // wallet-specific
 const signature = bs58.encode(signatureBytes)
 ```
 
-Both Base58 and Base64 encoded signatures are accepted. Base58 is conventional for Solana.
+How `wallet.signMessage` works depends on your wallet integration:
+
+- **React Native (Mobile Wallet Adapter):** `transact(wallet => wallet.signMessages([messageBytes]))`
+- **Web (`@solana/wallet-adapter-react`):** `const { signMessage } = useWallet()`
+- **Embedded keypair:** `nacl.sign.detached(messageBytes, keypair.secretKey)`
 
 ### 3c. Confirm the bind
 
@@ -272,6 +312,8 @@ feeSubsidy: {
 Display the summary to the user for confirmation before signing.
 
 ### 4b. Sign the authorization
+
+Same signing approach as step 3b — send `preparation.message` to the client for Ed25519 signing:
 
 ```typescript
 const messageBytes = new TextEncoder().encode(preparation.message)

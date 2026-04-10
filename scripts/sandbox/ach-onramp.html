@@ -1,3 +1,14 @@
+<!--
+  ACH Onramp — Spritz Sandbox Demo
+
+  Serve this file over HTTP (not file://):
+    npx serve scripts/sandbox
+    # or: python3 -m http.server -d scripts/sandbox
+
+  Prerequisites:
+    - A sandbox user with KYC bypassed (run: ./scripts/sandbox/run.sh setup-user)
+    - Plaid sandbox credentials: user_good / pass_good
+-->
 <!doctype html>
 <html lang="en">
     <head>
@@ -188,6 +199,9 @@
         <p class="subtitle">Spritz Finance — Sandbox Environment</p>
 
         <div class="config">
+            <p style="color: var(--yellow); font-size: 0.75rem; margin-bottom: 0.75rem">
+                Sandbox only — this demo runs in the browser. Never enter production credentials.
+            </p>
             <label>Integration Key</label>
             <input id="integrationKey" placeholder="ik_..." />
             <label>Integrator Secret</label>
@@ -292,8 +306,20 @@
                     Authorization: `Bearer ${cfg.apiKey}`,
                     ...hmacHeaders,
                 }
-                const res = await fetch(url, { method, headers, body: bodyStr })
-                const json = await res.json()
+                let res
+                try {
+                    res = await fetch(url, { method, headers, body: bodyStr })
+                } catch (e) {
+                    throw new Error(
+                        `Network error — if running from file://, serve over HTTP instead (npx serve scripts/sandbox). Details: ${e.message}`
+                    )
+                }
+                let json
+                try {
+                    json = await res.json()
+                } catch {
+                    throw new Error(`HTTP ${res.status} (non-JSON response)`)
+                }
                 if (!res.ok) throw new Error(json.detail || json.title || `HTTP ${res.status}`)
                 return json
             }
@@ -308,7 +334,14 @@
 
             // --- Ed25519 wallet ---
             async function generateWallet() {
-                const keyPair = await crypto.subtle.generateKey('Ed25519', true, ['sign', 'verify'])
+                let keyPair
+                try {
+                    keyPair = await crypto.subtle.generateKey('Ed25519', true, ['sign', 'verify'])
+                } catch {
+                    throw new Error(
+                        'Ed25519 not supported in this browser. Use Chrome 113+ or Safari 17+.'
+                    )
+                }
                 const pubRaw = new Uint8Array(
                     await crypto.subtle.exportKey('raw', keyPair.publicKey)
                 )
@@ -365,6 +398,19 @@
 
             // --- Demo flow ---
             let state = {}
+            let activeStep = 0
+
+            function failActiveStep(error) {
+                log(`Error: ${error.message}`, 'error')
+                if (steps[activeStep]) {
+                    renderStep(
+                        activeStep,
+                        steps[activeStep].querySelector('.step-title')?.textContent || 'Error',
+                        'error',
+                        `<span style="color:var(--red)">${error.message}</span>`
+                    )
+                }
+            }
 
             async function startDemo() {
                 const cfg = getConfig()
@@ -375,11 +421,12 @@
                 document.getElementById('steps').innerHTML = ''
                 document.getElementById('log').innerHTML = ''
                 steps = []
+                activeStep = 0
 
                 try {
                     await step1_checkFundingSources()
                 } catch (e) {
-                    log(`Error: ${e.message}`, 'error')
+                    failActiveStep(e)
                 }
             }
 
@@ -483,6 +530,7 @@
             }
 
             async function step2_generateWallet() {
+                activeStep = 1
                 renderStep(1, 'Generate Solana Wallet', 'active', 'Generating Ed25519 keypair...')
 
                 state.wallet = await generateWallet()
@@ -500,6 +548,7 @@
             }
 
             async function step3_bindDestination() {
+                activeStep = 2
                 renderStep(2, 'Bind Deposit Destination', 'active', 'Preparing bind message...')
                 log('POST /v1/deposit-destinations/prepare')
 
@@ -546,6 +595,7 @@
             }
 
             async function step4_createDeposit() {
+                activeStep = 3
                 const amount = document.getElementById('depositAmount').value.trim() || '1.00'
                 const subsidyPct = document.getElementById('feeSubsidyPct').value.trim()
                 const subsidyMax = document.getElementById('feeSubsidyMax').value.trim()
