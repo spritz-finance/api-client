@@ -272,6 +272,43 @@ const deposit = await client.deposit.create({
 
 ---
 
+## Step 5: Track Deposit Status
+
+Once a deposit is authorized, an **on-ramp record** is created and is the canonical place to observe its state going forward — listing or fetching the deposit by ID directly is not exposed. The on-ramp model unifies all fiat→crypto transactions (ACH, wire, SEPA), so the same APIs work for any rail.
+
+```typescript
+// List the user's recent on-ramps (newest first by default)
+const { data, hasMore, nextCursor } = await client.onrampPayment.list({
+    network: 'solana',
+    token: 'USDC',
+    limit: 20,
+})
+
+// Fetch a single on-ramp by ID
+const onRamp = await client.onrampPayment.get('onramp_xyz789')
+```
+
+**Selected on-ramp fields:**
+
+| Field                               | Type                | Description                                                                                                                      |
+| ----------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                                | `string`            | On-ramp ID (`onramp_...`)                                                                                                        |
+| `status`                            | `string`            | `awaiting_payment`, `processing`, `partially_delivered`, `completed`, `failed`, `cancelled`, `reversed`, `refunded`, `in_review` |
+| `createdAt`                         | `string`            | ISO 8601                                                                                                                         |
+| `input.amount` / `input.currency`   | `string` / `string` | Fiat sent (after fees) and currency                                                                                              |
+| `input.rail`                        | `string`            | `ach_credit`, `wire`, `sepa_credit_transfer` — for ACH onramp this is `ach_credit`                                               |
+| `output.amount` / `output.token`    | `string` / `string` | Crypto amount and token to be delivered                                                                                          |
+| `output.network` / `output.address` | `string` / `string` | Destination network and wallet                                                                                                   |
+| `deliverySummary`                   | `object?`           | `deliveredAmount`, `confirmedAmount`, `remainingAmount` — useful for partial-release deposits                                    |
+| `deliveries`                        | `object[]?`         | Per-tranche delivery records with `status`, `amount`, `txHash`, timestamps                                                       |
+| `completedAt`                       | `string?`           | ISO 8601 when fully delivered                                                                                                    |
+
+The on-ramp ID is also surfaced on ACH return records (`achDebitReturn.onRampId`), so you can pivot from a return to the originating on-ramp/deposit.
+
+> **In production, prefer webhooks over polling** — register for on-ramp status events so you only fetch when state actually changes. See [Webhooks](#webhooks) below.
+
+---
+
 ## Deposit Lifecycle
 
 A deposit moves through two parallel lifecycles: the ACH debit and the crypto release.
@@ -499,6 +536,8 @@ This endpoint returns 403 in production. The 200 response shape is the same as `
 | `GET`  | `/v1/funding-sources/{id}`                    | `client.fundingSource.get(id)`                | Get funding source                                       |
 | `POST` | `/v1/deposits/direct/prepare`                 | `client.deposit.prepare(...)`                 | Prepare deposit quote                                    |
 | `POST` | `/v1/deposits/direct`                         | `client.deposit.create(...)`                  | Create deposit                                           |
+| `GET`  | `/v1/on-ramps/`                               | `client.onrampPayment.list(...)`              | List on-ramps (canonical deposit lookup)                 |
+| `GET`  | `/v1/on-ramps/{onRampId}`                     | `client.onrampPayment.get(id)`                | Get a single on-ramp                                     |
 | `GET`  | `/v1/integrator/ach-debit/returns`            | `client.achDebitReturn.list(...)`             | List ACH debit returns                                   |
 | `GET`  | `/v1/integrator/ach-debit/returns/{returnId}` | `client.achDebitReturn.get(id)`               | Get a single return                                      |
 | `POST` | `/v1/sandbox/deposits/direct`                 | `client.sandbox.createDepositWithReturn(...)` | Sandbox-only — create a deposit with an armed ACH return |

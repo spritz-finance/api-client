@@ -61,6 +61,7 @@ export type {
     OnRamp,
     OnRampListResponse,
     OnRampListQuery,
+    OnRampDetail,
 } from './modules/onrampPayment/onrampPaymentService'
 export type {
     paths as RestApiPaths,

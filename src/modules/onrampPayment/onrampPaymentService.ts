@@ -10,6 +10,7 @@ import type { PathResponse, PathQuery } from '../../rest/types'
 export type OnRampListResponse = PathResponse<'/v1/on-ramps/', 'get'>
 export type OnRamp = OnRampListResponse['data'][number]
 export type OnRampListQuery = PathQuery<'/v1/on-ramps/', 'get'>
+export type OnRampDetail = PathResponse<'/v1/on-ramps/{onRampId}', 'get'>
 
 export class OnrampPaymentService {
     private client: SpritzClient
@@ -36,6 +37,13 @@ export class OnrampPaymentService {
             method: 'get',
             path: '/v1/on-ramps/',
             query: query as Record<string, string | number | boolean | undefined>,
+        })
+    }
+
+    public async get(onRampId: string) {
+        return this.client.restApi<OnRampDetail>({
+            method: 'get',
+            path: `/v1/on-ramps/${encodeURIComponent(onRampId)}`,
         })
     }
 }
