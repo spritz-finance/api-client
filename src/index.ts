@@ -38,17 +38,16 @@ export type { CreateVirtualAccountInput } from './modules/virtualAccounts/types'
 export type { PaymentLimitsResponse } from './modules/payment/paymentService'
 export type { FundingSource } from './modules/fundingSource/fundingSourceService'
 export type {
-    DepositDestination,
-    PrepareBindRequest,
-    PrepareBindResponse,
-    ConfirmBindRequest,
-} from './modules/depositDestination/depositDestinationService'
-export type {
     Deposit,
     PrepareDepositRequest,
     PrepareDepositResponse,
     CreateDepositRequest,
 } from './modules/deposit/depositService'
+export type {
+    AchDebitReturn,
+    AchDebitReturnListResponse,
+    AchDebitReturnListQuery,
+} from './modules/achDebitReturn/achDebitReturnService'
 export type {
     LinkTokenResponse,
     CompleteLinkingRequest,

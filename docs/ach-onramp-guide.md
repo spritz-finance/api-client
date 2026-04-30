@@ -1,25 +1,27 @@
 # ACH Onramp Integration Guide
 
-ACH onramp lets your users convert USD from their bank account into USDC delivered to a Solana wallet. The user links a bank account via Plaid, binds a wallet address, then authorizes ACH debits that settle as USDC.
+ACH onramp lets your users convert USD from their bank account into USDC delivered to a Solana wallet. The user links a bank account via Plaid, then authorizes ACH debits that settle as USDC at a wallet address you supply.
 
 ```
-Link Bank Account → Funding Source → Bind Wallet → Authorize Deposit → USDC Released
-      (Plaid)        (automatic)    (Ed25519 sig)   (Ed25519 sig)      (async)
+Link Bank Account → Funding Source → Prepare Deposit → Create Deposit → USDC Released
+      (Plaid)        (automatic)       (quote + auth)   (no signature)    (async)
 ```
+
+Authorization is derived from the verified ACH funding source — no wallet signature is required.
 
 ## Prerequisites
 
 - **Integration credentials** — integration key and HMAC secret (provided by Spritz)
 - **User API key** — the authenticated user must have completed KYC
 - **Plaid Link SDK** — for bank account linking ([React Native](https://plaid.com/docs/link/react-native/), [Web](https://plaid.com/docs/link/web/), [iOS](https://plaid.com/docs/link/ios/), [Android](https://plaid.com/docs/link/android/))
-- **Ed25519 signing** — the user's Solana wallet must sign authorization messages
+- **A Solana wallet address** for the user — Base58-encoded public key
 
 ### Architecture note
 
 The Spritz SDK runs **server-side** (Node.js). It will throw if instantiated in a browser without `dangerouslyAllowBrowser: true`. In a typical integration:
 
-- **Server** — SDK calls (create link token, list funding sources, prepare/confirm bind, prepare/create deposit)
-- **Client** — Plaid Link UI, wallet signing (Ed25519), then send signatures back to your server
+- **Server** — SDK calls (create link token, list funding sources, prepare/create deposit)
+- **Client** — Plaid Link UI
 
 ### SDK Setup
 
@@ -172,92 +174,16 @@ const source = await client.fundingSource.get('fs_01JV7...')
 
 ---
 
-## Step 3: Bind Deposit Destination
+## Step 3: Prepare Deposit
 
-Before creating deposits, the user must bind a Solana wallet address to a funding source. This proves wallet ownership via an Ed25519 signature and establishes where USDC will be delivered.
-
-### 3a. Prepare the bind
-
-`walletAddress` is the user's Solana wallet public key (Base58-encoded string), obtained from whatever wallet integration your app uses.
-
-```typescript
-const preparation = await client.depositDestination.prepareBind({
-    sourceId: source.id,
-    network: 'solana',
-    asset: 'USDC',
-    address: walletAddress, // e.g. "9xQeWvG816bUx9EPjHmaT23yvVM..."
-})
-```
-
-**Response:**
-
-| Field               | Type     | Description                                   |
-| ------------------- | -------- | --------------------------------------------- |
-| `preparationId`     | `string` | Opaque ID — needed for confirmation           |
-| `message`           | `string` | Canonical message the wallet must sign        |
-| `expiresAt`         | `string` | Signature must be submitted before this time  |
-| `assetAddress`      | `string` | USDC mint address on Solana                   |
-| `normalizedAddress` | `string` | Normalized wallet address used in the message |
-
-### 3b. Sign the message
-
-The user signs `preparation.message` with their Solana wallet. The signature must be Ed25519 over the exact UTF-8 bytes. Both Base58 and Base64 encoded signatures are accepted; Base58 is conventional for Solana.
-
-```typescript
-import bs58 from 'bs58'
-
-// Send preparation.message to the client for signing.
-// The wallet produces an Ed25519 signature over the UTF-8 bytes.
-const messageBytes = new TextEncoder().encode(preparation.message)
-const signatureBytes = await wallet.signMessage(messageBytes) // wallet-specific
-const signature = bs58.encode(signatureBytes)
-```
-
-How `wallet.signMessage` works depends on your wallet integration:
-
-- **React Native (Mobile Wallet Adapter):** `transact(wallet => wallet.signMessages([messageBytes]))`
-- **Web (`@solana/wallet-adapter-react`):** `const { signMessage } = useWallet()`
-- **Embedded keypair:** `nacl.sign.detached(messageBytes, keypair.secretKey)`
-
-### 3c. Confirm the bind
-
-```typescript
-const destination = await client.depositDestination.confirmBind({
-    preparationId: preparation.preparationId,
-    signature,
-    signerAddress: walletAddress,
-})
-```
-
-**Response:**
-
-| Field      | Type       | Description                       |
-| ---------- | ---------- | --------------------------------- |
-| `id`       | `string`   | Deposit destination ID (`dd_...`) |
-| `sourceId` | `string`   | Funding source it's bound to      |
-| `network`  | `"solana"` |                                   |
-| `asset`    | `"USDC"`   |                                   |
-| `address`  | `string`   | Bound wallet address              |
-| `status`   | `string`   | `active` or `revoked`             |
-
-A deposit destination is persistent. You only need to bind once per wallet + funding source pair. To list existing bindings:
-
-```typescript
-const destinations = await client.depositDestination.list()
-```
-
----
-
-## Step 4: Create Deposit
-
-A deposit initiates an ACH debit from the user's bank account and releases USDC to their wallet. This also requires an Ed25519 signature authorizing the specific amount.
-
-### 4a. Prepare the deposit
+A deposit initiates an ACH debit from the user's bank account and releases USDC to a Solana wallet you specify. Preparation returns a quote and a display-ready ACH authorization message.
 
 ```typescript
 const preparation = await client.deposit.prepare({
     sourceId: source.id,
-    destinationId: destination.id,
+    address: walletAddress, // user's Solana wallet, e.g. "9xQeWvG816bUx9EPjHmaT23yvVM..."
+    network: 'solana',
+    asset: 'USDC',
     quoteType: 'exact_input',
     amountUsd: '100.00',
     priority: 'normal',
@@ -266,14 +192,16 @@ const preparation = await client.deposit.prepare({
 
 **Request parameters:**
 
-| Field           | Type      | Description                     |
-| --------------- | --------- | ------------------------------- |
-| `sourceId`      | `string`  | Funding source ID               |
-| `destinationId` | `string`  | Deposit destination ID          |
-| `quoteType`     | `string`  | `exact_input` or `exact_output` |
-| `amountUsd`     | `string`  | USD amount as decimal string    |
-| `priority`      | `string`  | `normal` or `high`              |
-| `feeSubsidy`    | `object?` | Optional integrator fee subsidy |
+| Field        | Type      | Description                                   |
+| ------------ | --------- | --------------------------------------------- |
+| `sourceId`   | `string`  | Funding source ID                             |
+| `address`    | `string`  | Destination Solana wallet (Base58 public key) |
+| `network`    | `string`  | `solana`                                      |
+| `asset`      | `string`  | `USDC`                                        |
+| `quoteType`  | `string`  | `exact_input` or `exact_output`               |
+| `amountUsd`  | `string`  | USD amount as decimal string                  |
+| `priority`   | `string`  | `normal` or `high`                            |
+| `feeSubsidy` | `object?` | Optional integrator fee subsidy               |
 
 **Quote types:**
 
@@ -299,7 +227,7 @@ feeSubsidy: {
 | Field                         | Type     | Description                                   |
 | ----------------------------- | -------- | --------------------------------------------- |
 | `preparationId`               | `string` | Needed for deposit creation                   |
-| `message`                     | `string` | ACH authorization message to sign             |
+| `message`                     | `string` | Display-ready ACH authorization message       |
 | `expiresAt`                   | `string` | Submission deadline                           |
 | `summary.requestedAmountUsd`  | `string` | What the user asked for                       |
 | `summary.principalAmountUsd`  | `string` | USD used to buy USDC (total debit minus fees) |
@@ -309,24 +237,17 @@ feeSubsidy: {
 | `summary.feeRateBps`          | `number` | Fee rate in basis points                      |
 | `summary.destinationAddress`  | `string` | Wallet receiving USDC                         |
 
-Display the summary to the user for confirmation before signing.
+Display the summary and `message` to the user for review before proceeding.
 
-### 4b. Sign the authorization
+---
 
-Same signing approach as step 3b — send `preparation.message` to the client for Ed25519 signing:
+## Step 4: Create Deposit
 
-```typescript
-const messageBytes = new TextEncoder().encode(preparation.message)
-const signatureBytes = await wallet.signMessage(messageBytes)
-const signature = bs58.encode(signatureBytes)
-```
-
-### 4c. Create the deposit
+Once the user has reviewed the quote and authorization, submit the preparation ID to create the deposit. No signature is required — authorization is derived from the verified ACH funding source.
 
 ```typescript
 const deposit = await client.deposit.create({
     preparationId: preparation.preparationId,
-    signature,
 })
 ```
 
@@ -360,7 +281,7 @@ authorized → processing → completed
 
 | Status               | Description                                   |
 | -------------------- | --------------------------------------------- |
-| `authorized`         | User signed, ACH debit not yet submitted      |
+| `authorized`         | User authorized, ACH debit not yet submitted  |
 | `processing`         | ACH debit in flight, crypto release may begin |
 | `completed`          | USDC fully released to wallet                 |
 | `partially_released` | Partial USDC released, remainder pending      |
@@ -386,6 +307,70 @@ authorized → processing → completed
 ### Return handling
 
 If an ACH debit is returned by the bank, the deposit moves to `returned`. The `returnCode` and `returnReason` fields describe why (e.g. insufficient funds, account closed). Use webhooks to monitor for returns.
+
+---
+
+## ACH Debit Returns (Integrator)
+
+Returns are also queryable via integrator-scoped endpoints, which surface every ACH return across all of your users along with loss accounting and the user/funding-source state at the time of the return.
+
+### List returns
+
+```typescript
+const { data, hasMore, nextCursor } = await client.achDebitReturn.list({
+    limit: 50,
+    occurredAfter: '2026-01-01T00:00:00Z',
+    returnBucket: 'unauthorized', // optional — 'unauthorized' | 'administrative' | 'other'
+    lossOnly: 'true', // optional — only returns where Spritz/integrator absorbed loss
+})
+
+if (hasMore) {
+    const next = await client.achDebitReturn.list({ cursor: nextCursor })
+}
+```
+
+**Query parameters:**
+
+| Field                 | Type                                                                          | Description                                                   |
+| --------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `limit`               | `number`                                                                      | Page size                                                     |
+| `cursor`              | `string`                                                                      | Cursor from a previous `nextCursor`                           |
+| `userId` / `userIds`  | `string`                                                                      | Filter to a single user (or comma-separated list)             |
+| `search`              | `string`                                                                      | Free-text search                                              |
+| `returnCode`          | `string`                                                                      | Specific NACHA return code (e.g. `R01`)                       |
+| `returnBucket`        | `'unauthorized' \| 'administrative' \| 'other'`                               | Reporting bucket                                              |
+| `cryptoStateAtReturn` | `'not_released' \| 'in_flight' \| 'partially_confirmed' \| 'fully_confirmed'` | What stage the crypto release was in when the return hit      |
+| `lossOnly`            | `'true' \| 'false'`                                                           | Only returns where USDC had already left (i.e. unrecoverable) |
+| `userAction`          | `'none' \| 'review_required' \| 'disabled'`                                   | Filter by automated user action taken                         |
+| `occurredAfter`       | `string`                                                                      | ISO 8601 lower bound                                          |
+| `occurredBefore`      | `string`                                                                      | ISO 8601 upper bound                                          |
+
+**Return fields:**
+
+| Field                 | Type             | Description                                                         |
+| --------------------- | ---------------- | ------------------------------------------------------------------- |
+| `id`                  | `string`         | ACH return ID (`dr_...`)                                            |
+| `depositId`           | `string`         | Originating deposit                                                 |
+| `userId`              | `string`         | Spritz user ID                                                      |
+| `sourceId`            | `string`         | Funding source the debit pulled from                                |
+| `onRampId`            | `string \| null` | Linked on-ramp, if any                                              |
+| `amountUsd`           | `string`         | Returned amount                                                     |
+| `currency`            | `string`         | Always `USD` for ACH                                                |
+| `returnCode`          | `string \| null` | NACHA return code                                                   |
+| `returnReason`        | `string \| null` | Human-readable reason                                               |
+| `occurredAt`          | `string`         | ISO 8601                                                            |
+| `cryptoStateAtReturn` | `string`         | Crypto release state when the return arrived                        |
+| `lossAmountUsd`       | `string`         | USDC already released and unrecoverable                             |
+| `atRiskAmountUsd`     | `string`         | USDC in flight at return time                                       |
+| `sourceAction`        | `string`         | Action taken on the funding source — `disabled`                     |
+| `userAction`          | `string`         | Action taken on the user — `none`, `review_required`, or `disabled` |
+| `reportingBucket`     | `string`         | `unauthorized`, `administrative`, or `other`                        |
+
+### Get a single return
+
+```typescript
+const ret = await client.achDebitReturn.get('dr_01JV7...')
+```
 
 ---
 
@@ -415,14 +400,13 @@ All endpoints return [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) p
 
 Common error scenarios:
 
-| Scenario                      | Status  | Problem type                         |
-| ----------------------------- | ------- | ------------------------------------ |
-| Missing/invalid bearer token  | 401     | `urn:problem-type:auth:unauthorized` |
-| Feature not enabled           | 403     | `urn:problem-type:auth:forbidden`    |
-| Funding source not found      | 404     | Resource not found                   |
-| Preparation expired           | 400/409 | Expired preparation ID               |
-| Signature verification failed | 400     | Invalid signature                    |
-| Funding source not active     | 400/409 | Source not eligible                  |
+| Scenario                     | Status  | Problem type                         |
+| ---------------------------- | ------- | ------------------------------------ |
+| Missing/invalid bearer token | 401     | `urn:problem-type:auth:unauthorized` |
+| Feature not enabled          | 403     | `urn:problem-type:auth:forbidden`    |
+| Funding source not found     | 404     | Resource not found                   |
+| Preparation expired          | 400/409 | Expired preparation ID               |
+| Funding source not active    | 400/409 | Source not eligible                  |
 
 ---
 
@@ -442,7 +426,7 @@ Use `Environment.Sandbox` for testing. The sandbox base URL is `https://sandbox.
     ```bash
     open scripts/sandbox/ach-onramp.html
     ```
-    Enter your credentials and walk through the full flow. The demo generates an ephemeral Solana keypair and handles all signing in-browser.
+    Enter your credentials and walk through the full flow.
 
 ### Plaid sandbox credentials
 
@@ -457,16 +441,15 @@ Select any checking account to complete linking.
 
 ## API Reference
 
-| Method | Endpoint                           | SDK Method                                   | Description             |
-| ------ | ---------------------------------- | -------------------------------------------- | ----------------------- |
-| `POST` | `/v1/bank-accounts/link-token`     | `client.bankAccount.createLinkToken()`       | Create Plaid link token |
-| `POST` | `/v1/bank-accounts/link-complete`  | `client.bankAccount.completeLinking(...)`    | Complete Plaid linking  |
-| `GET`  | `/v1/funding-sources/`             | `client.fundingSource.list()`                | List funding sources    |
-| `GET`  | `/v1/funding-sources/{id}`         | `client.fundingSource.get(id)`               | Get funding source      |
-| `POST` | `/v1/deposit-destinations/prepare` | `client.depositDestination.prepareBind(...)` | Prepare wallet bind     |
-| `POST` | `/v1/deposit-destinations/`        | `client.depositDestination.confirmBind(...)` | Confirm wallet bind     |
-| `GET`  | `/v1/deposit-destinations/`        | `client.depositDestination.list()`           | List bound destinations |
-| `POST` | `/v1/deposits/prepare`             | `client.deposit.prepare(...)`                | Prepare deposit quote   |
-| `POST` | `/v1/deposits/`                    | `client.deposit.create(...)`                 | Create deposit          |
+| Method | Endpoint                                      | SDK Method                                | Description             |
+| ------ | --------------------------------------------- | ----------------------------------------- | ----------------------- |
+| `POST` | `/v1/bank-accounts/link-token`                | `client.bankAccount.createLinkToken()`    | Create Plaid link token |
+| `POST` | `/v1/bank-accounts/link-complete`             | `client.bankAccount.completeLinking(...)` | Complete Plaid linking  |
+| `GET`  | `/v1/funding-sources/`                        | `client.fundingSource.list()`             | List funding sources    |
+| `GET`  | `/v1/funding-sources/{id}`                    | `client.fundingSource.get(id)`            | Get funding source      |
+| `POST` | `/v1/deposits/direct/prepare`                 | `client.deposit.prepare(...)`             | Prepare deposit quote   |
+| `POST` | `/v1/deposits/direct`                         | `client.deposit.create(...)`              | Create deposit          |
+| `GET`  | `/v1/integrator/ach-debit/returns`            | `client.achDebitReturn.list(...)`         | List ACH debit returns  |
+| `GET`  | `/v1/integrator/ach-debit/returns/{returnId}` | `client.achDebitReturn.get(id)`           | Get a single return     |
 
 All endpoints require a Bearer token (`apiKey`). Integrator requests are additionally signed with HMAC — the SDK handles this automatically when `integratorSecret` is provided.
