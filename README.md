@@ -820,8 +820,10 @@ const accounts = await client.virtualAccounts.list()
 ACH onramp lets users convert USD from their bank account into USDC delivered to a Solana wallet. The flow is:
 
 1. **Link bank account** via Plaid → funding source created automatically
-2. **Bind wallet** — user signs a message proving wallet ownership
-3. **Create deposit** — user authorizes an ACH debit, USDC released to wallet
+2. **Prepare deposit** — quote and ACH authorization message for the user to review
+3. **Create deposit** — confirm to debit the bank and release USDC to the wallet
+
+Authorization is derived from the verified ACH funding source — no wallet signature is required.
 
 For a complete walkthrough with code examples, request/response schemas, and deposit lifecycle documentation, see the **[ACH Onramp Integration Guide](docs/ach-onramp-guide.md)**.
 

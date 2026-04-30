@@ -208,6 +208,8 @@
             <input id="integratorSecret" type="password" placeholder="secret" />
             <label>API Key</label>
             <input id="apiKey" placeholder="ak_..." />
+            <label>Destination Wallet (Solana, Base58)</label>
+            <input id="walletAddress" placeholder="9xQeWvG816bUx9EPjHmaT23yvVMb..." />
             <label>Deposit Amount (USD)</label>
             <input id="depositAmount" value="1.00" placeholder="1.00" />
             <label>Fee Subsidy % (optional — integrator absorbs this % of the fee)</label>
@@ -222,28 +224,6 @@
 
         <script>
             const BASE = 'https://sandbox.spritz.finance'
-
-            // --- Base58 encoder/decoder ---
-            const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-            function base58Encode(bytes) {
-                const digits = [0]
-                for (const byte of bytes) {
-                    let carry = byte
-                    for (let j = 0; j < digits.length; j++) {
-                        carry += digits[j] << 8
-                        digits[j] = carry % 58
-                        carry = (carry / 58) | 0
-                    }
-                    while (carry > 0) {
-                        digits.push(carry % 58)
-                        carry = (carry / 58) | 0
-                    }
-                }
-                let str = ''
-                for (let i = 0; i < bytes.length && bytes[i] === 0; i++) str += ALPHABET[0]
-                for (let i = digits.length - 1; i >= 0; i--) str += ALPHABET[digits[i]]
-                return str
-            }
 
             // --- HMAC signing (mirrors src/lib/hmac.ts) ---
             function hexEncode(buf) {
@@ -332,31 +312,6 @@
                 }
             }
 
-            // --- Ed25519 wallet ---
-            async function generateWallet() {
-                let keyPair
-                try {
-                    keyPair = await crypto.subtle.generateKey('Ed25519', true, ['sign', 'verify'])
-                } catch {
-                    throw new Error(
-                        'Ed25519 not supported in this browser. Use Chrome 113+ or Safari 17+.'
-                    )
-                }
-                const pubRaw = new Uint8Array(
-                    await crypto.subtle.exportKey('raw', keyPair.publicKey)
-                )
-                return { keyPair, address: base58Encode(pubRaw) }
-            }
-
-            async function signMessage(keyPair, message) {
-                const sig = await crypto.subtle.sign(
-                    'Ed25519',
-                    keyPair.privateKey,
-                    new TextEncoder().encode(message)
-                )
-                return base58Encode(new Uint8Array(sig))
-            }
-
             // --- UI ---
             let steps = []
             function log(msg, type) {
@@ -414,10 +369,16 @@
 
             async function startDemo() {
                 const cfg = getConfig()
+                const wallet = document.getElementById('walletAddress').value.trim()
                 if (!cfg.integrationKey || !cfg.integratorSecret || !cfg.apiKey) {
                     alert('Fill in all credentials')
                     return
                 }
+                if (!wallet) {
+                    alert('Enter a destination Solana wallet address')
+                    return
+                }
+                state = { walletAddress: wallet }
                 document.getElementById('steps').innerHTML = ''
                 document.getElementById('log').innerHTML = ''
                 steps = []
@@ -465,7 +426,7 @@
                             field('Status', active.status)
                     )
                     log(`Using funding source: ${active.id}`, 'success')
-                    await step2_generateWallet()
+                    await step2_createDeposit()
                 } else {
                     const first = sources[0]
                     renderStep(
@@ -529,83 +490,25 @@
                 handler.open()
             }
 
-            async function step2_generateWallet() {
+            async function step2_createDeposit() {
                 activeStep = 1
-                renderStep(1, 'Generate Solana Wallet', 'active', 'Generating Ed25519 keypair...')
-
-                state.wallet = await generateWallet()
-                log(`Wallet: ${state.wallet.address}`, 'success')
-
-                renderStep(
-                    1,
-                    'Solana Wallet',
-                    'done',
-                    field('Address', state.wallet.address) +
-                        '<p style="margin-top:0.25rem;font-size:0.7rem;color:var(--yellow)">Ephemeral keypair — for demo only</p>'
-                )
-
-                await step3_bindDestination()
-            }
-
-            async function step3_bindDestination() {
-                activeStep = 2
-                renderStep(2, 'Bind Deposit Destination', 'active', 'Preparing bind message...')
-                log('POST /v1/deposit-destinations/prepare')
-
-                const prep = await api('POST', '/v1/deposit-destinations/prepare', {
-                    sourceId: state.selectedSource.id,
-                    network: 'solana',
-                    asset: 'USDC',
-                    address: state.wallet.address,
-                })
-                state.bindPrep = prep
-                log(`Preparation: ${prep.preparationId}`)
-
-                renderStep(
-                    2,
-                    'Bind Deposit Destination',
-                    'active',
-                    'Signing message...' + `<pre>${prep.message}</pre>`
-                )
-                const signature = await signMessage(state.wallet.keyPair, prep.message)
-                log(`Signed bind message`)
-
-                renderStep(2, 'Bind Deposit Destination', 'active', 'Confirming bind...')
-                log('POST /v1/deposit-destinations/')
-
-                const dest = await api('POST', '/v1/deposit-destinations/', {
-                    preparationId: prep.preparationId,
-                    signature,
-                    signerAddress: state.wallet.address,
-                })
-                state.destination = dest
-                log(`Destination bound: ${dest.id}`, 'success')
-
-                renderStep(
-                    2,
-                    'Deposit Destination',
-                    'done',
-                    field('ID', dest.id) +
-                        field('Network / Asset', `${dest.network} / ${dest.asset}`) +
-                        field('Address', dest.address) +
-                        field('Status', dest.status)
-                )
-
-                await step4_createDeposit()
-            }
-
-            async function step4_createDeposit() {
-                activeStep = 3
                 const amount = document.getElementById('depositAmount').value.trim() || '1.00'
                 const subsidyPct = document.getElementById('feeSubsidyPct').value.trim()
                 const subsidyMax = document.getElementById('feeSubsidyMax').value.trim()
 
-                renderStep(3, 'Create Deposit', 'active', `Preparing deposit quote ($${amount})...`)
-                log('POST /v1/deposits/prepare')
+                renderStep(
+                    1,
+                    'Prepare Deposit',
+                    'active',
+                    `Preparing deposit quote ($${amount})...`
+                )
+                log('POST /v1/deposits/direct/prepare')
 
                 const body = {
                     sourceId: state.selectedSource.id,
-                    destinationId: state.destination.id,
+                    address: state.walletAddress,
+                    network: 'solana',
+                    asset: 'USDC',
                     quoteType: 'exact_input',
                     amountUsd: amount,
                     priority: 'normal',
@@ -615,7 +518,7 @@
                     if (subsidyMax) body.feeSubsidy.maxAmountUsd = subsidyMax
                 }
 
-                const prep = await api('POST', '/v1/deposits/prepare', body)
+                const prep = await api('POST', '/v1/deposits/direct/prepare', body)
                 state.depositPrep = prep
                 const s = prep.summary
                 log(`Quote: $${s.totalDebitAmountUsd} debit → ${s.expectedAssetAmount} USDC`)
@@ -635,31 +538,29 @@
                 }
 
                 renderStep(
-                    3,
-                    'Create Deposit',
+                    1,
+                    'Prepare Deposit',
                     'active',
                     field('Requested', `$${s.requestedAmountUsd}`) +
                         field('User Fee', feeDetail) +
                         subsidyDetail +
                         field('Total Debit', `$${s.totalDebitAmountUsd}`) +
                         field('Expected USDC', s.expectedAssetAmount) +
-                        '<p style="margin-top:0.5rem;font-size:0.7rem">Signing authorization...</p>' +
-                        `<pre>${prep.message}</pre>`
+                        field('Destination', s.destinationAddress) +
+                        '<p style="margin-top:0.5rem;font-size:0.7rem">Authorization message:</p>' +
+                        `<pre>${prep.message}</pre>` +
+                        '<p style="margin-top:0.5rem;font-size:0.7rem">Submitting deposit...</p>'
                 )
 
-                const signature = await signMessage(state.wallet.keyPair, prep.message)
-                log('Signed deposit authorization')
-                log('POST /v1/deposits/')
-
-                const deposit = await api('POST', '/v1/deposits/', {
+                log('POST /v1/deposits/direct')
+                const deposit = await api('POST', '/v1/deposits/direct', {
                     preparationId: prep.preparationId,
-                    signature,
                 })
                 state.deposit = deposit
                 log(`Deposit created: ${deposit.id} [${deposit.status}]`, 'success')
 
                 renderStep(
-                    3,
+                    1,
                     'Deposit Created',
                     'done',
                     field('ID', deposit.id) +
@@ -673,14 +574,13 @@
                 )
 
                 renderStep(
-                    4,
+                    2,
                     'Done',
                     'done',
                     '<p style="color:var(--green)">ACH onramp flow complete.</p>' +
                         field('Funding Source', state.selectedSource.id) +
-                        field('Deposit Destination', state.destination.id) +
                         field('Deposit', deposit.id) +
-                        field('Wallet', state.wallet.address)
+                        field('Wallet', state.walletAddress)
                 )
             }
         </script>

@@ -22,7 +22,7 @@
 - `yarn changeset` - Create a release note for a releasable change
 - `yarn changeset --empty` - Record an internal-only change so PR checks still pass
 - **Never run `yarn version-packages`** — this is handled by CI. Running it locally consumes the changesets and breaks the release pipeline.
-- Merging a PR with `.changeset/*.md` files triggers the Release workflow, which opens a "Version Packages" PR automatically. Merging *that* PR triggers the Publish workflow (runs in the `production` environment).
+- Merging a PR with `.changeset/*.md` files triggers the Release workflow, which opens a "Version Packages" PR automatically. Merging _that_ PR triggers the Publish workflow (runs in the `production` environment).
 - The repo's enterprise policy keeps `GITHUB_TOKEN` read-only. Set `CHANGESETS_GITHUB_TOKEN` in repo secrets so the release workflow can open the automated release PR.
 
 ## Testing
