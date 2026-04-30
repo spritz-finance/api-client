@@ -1,13 +1,16 @@
 # ACH Onramp Integration Guide
 
-ACH onramp lets your users convert USD from their bank account into USDC delivered to a Solana wallet. The user links a bank account via Plaid, then authorizes ACH debits that settle as USDC at a wallet address you supply.
+ACH onramp lets your users convert USD from their bank account into USDC delivered to a Solana wallet. The user links a bank account via Plaid, then authorizes ACH debits that settle as USDC at a wallet address you supply. Authorization is derived from the verified ACH funding source — no wallet signature is required.
 
 ```
 Link Bank Account → Funding Source → Prepare Deposit → Create Deposit → USDC Released
-      (Plaid)        (automatic)       (quote + auth)   (no signature)    (async)
+      (Plaid)        (automatic)        (quote)         (authorize)       (async)
 ```
 
-Authorization is derived from the verified ACH funding source — no wallet signature is required.
+> **The SDK is server-side only.** It throws if instantiated in a browser without `dangerouslyAllowBrowser: true`. The integrator key and HMAC secret must never reach the client. The split is:
+>
+> - **Server** — every SDK call in this guide (link token, funding sources, prepare/create deposit, returns)
+> - **Client** — Plaid Link UI only
 
 ## Prerequisites
 
@@ -15,13 +18,6 @@ Authorization is derived from the verified ACH funding source — no wallet sign
 - **User API key** — the authenticated user must have completed KYC
 - **Plaid Link SDK** — for bank account linking ([React Native](https://plaid.com/docs/link/react-native/), [Web](https://plaid.com/docs/link/web/), [iOS](https://plaid.com/docs/link/ios/), [Android](https://plaid.com/docs/link/android/))
 - **A Solana wallet address** for the user — Base58-encoded public key
-
-### Architecture note
-
-The Spritz SDK runs **server-side** (Node.js). It will throw if instantiated in a browser without `dangerouslyAllowBrowser: true`. In a typical integration:
-
-- **Server** — SDK calls (create link token, list funding sources, prepare/create deposit)
-- **Client** — Plaid Link UI
 
 ### SDK Setup
 
@@ -239,6 +235,8 @@ feeSubsidy: {
 
 Display the summary and `message` to the user for review before proceeding.
 
+> **Compliance — display the authorization message verbatim.** `preparation.message` is the NACHA consent text that authorizes the ACH debit. It must be shown to the user as-is, unmodified, before they confirm. Paraphrasing, truncating, or styling away parts of the message is a NACHA compliance violation and will invalidate the authorization. Wrap it in a `<pre>` or equivalent so whitespace and line breaks are preserved.
+
 ---
 
 ## Step 4: Create Deposit
@@ -251,18 +249,63 @@ const deposit = await client.deposit.create({
 })
 ```
 
-**Deposit response:**
+**Deposit response (selected fields):**
 
-| Field                 | Type     | Description              |
-| --------------------- | -------- | ------------------------ |
-| `id`                  | `string` | Deposit ID (`dep_...`)   |
-| `status`              | `string` | Overall deposit status   |
-| `debitStatus`         | `string` | ACH debit lifecycle      |
-| `releaseStatus`       | `string` | Crypto release lifecycle |
-| `totalDebitAmountUsd` | `string` | USD debited              |
-| `expectedAssetAmount` | `string` | USDC to release          |
-| `address`             | `string` | Destination wallet       |
-| `authorizedAt`        | `string` | When the user authorized |
+| Field                 | Type             | Description                                        |
+| --------------------- | ---------------- | -------------------------------------------------- |
+| `id`                  | `string`         | Deposit ID (`dep_...`)                             |
+| `status`              | `string`         | Overall deposit status                             |
+| `debitStatus`         | `string`         | ACH debit lifecycle                                |
+| `releaseStatus`       | `string`         | Crypto release lifecycle                           |
+| `releaseDecisionMode` | `string`         | `after_settlement`, `early_full`, `early_partial`  |
+| `totalDebitAmountUsd` | `string`         | USD debited                                        |
+| `expectedAssetAmount` | `string`         | USDC to release                                    |
+| `releasedAmountUsd`   | `string`         | USDC released so far (USD-denominated)             |
+| `address`             | `string`         | Destination wallet                                 |
+| `authorizedAt`        | `string`         | ISO 8601 — when the user authorized                |
+| `settledAt`           | `string \| null` | ISO 8601 — when the ACH debit settled              |
+| `returnedAt`          | `string \| null` | ISO 8601 — when the ACH debit was returned, if any |
+| `completedAt`         | `string \| null` | ISO 8601 — when USDC release fully completed       |
+| `returnCode`          | `string \| null` | NACHA return code, populated when `returned`       |
+| `returnReason`        | `string \| null` | Human-readable return reason                       |
+| `payoutTxHash`        | `string \| null` | Solana tx hash of the USDC release                 |
+
+---
+
+## Step 5: Track Deposit Status
+
+Once a deposit is authorized, an **on-ramp record** is created and is the canonical place to observe its state going forward — listing or fetching the deposit by ID directly is not exposed. The on-ramp model unifies all fiat→crypto transactions (ACH, wire, SEPA), so the same APIs work for any rail.
+
+```typescript
+// List the user's recent on-ramps (newest first by default)
+const { data, hasMore, nextCursor } = await client.onrampPayment.list({
+    network: 'solana',
+    token: 'USDC',
+    limit: 20,
+})
+
+// Fetch a single on-ramp by ID
+const onRamp = await client.onrampPayment.get('onramp_xyz789')
+```
+
+**Selected on-ramp fields:**
+
+| Field                               | Type                | Description                                                                                                                      |
+| ----------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                                | `string`            | On-ramp ID (`onramp_...`)                                                                                                        |
+| `status`                            | `string`            | `awaiting_payment`, `processing`, `partially_delivered`, `completed`, `failed`, `cancelled`, `reversed`, `refunded`, `in_review` |
+| `createdAt`                         | `string`            | ISO 8601                                                                                                                         |
+| `input.amount` / `input.currency`   | `string` / `string` | Fiat sent (after fees) and currency                                                                                              |
+| `input.rail`                        | `string`            | `ach_credit`, `wire`, `sepa_credit_transfer` — for ACH onramp this is `ach_credit`                                               |
+| `output.amount` / `output.token`    | `string` / `string` | Crypto amount and token to be delivered                                                                                          |
+| `output.network` / `output.address` | `string` / `string` | Destination network and wallet                                                                                                   |
+| `deliverySummary`                   | `object?`           | `deliveredAmount`, `confirmedAmount`, `remainingAmount` — useful for partial-release deposits                                    |
+| `deliveries`                        | `object[]?`         | Per-tranche delivery records with `status`, `amount`, `txHash`, timestamps                                                       |
+| `completedAt`                       | `string?`           | ISO 8601 when fully delivered                                                                                                    |
+
+The on-ramp ID is also surfaced on ACH return records (`achDebitReturn.onRampId`), so you can pivot from a return to the originating on-ramp/deposit.
+
+> **In production, prefer webhooks over polling** — register for on-ramp status events so you only fetch when state actually changes. See [Webhooks](#webhooks) below.
 
 ---
 
@@ -422,10 +465,13 @@ Use `Environment.Sandbox` for testing. The sandbox base URL is `https://sandbox.
     ./scripts/sandbox/run.sh setup-user
     ```
 
-2. Open the interactive demo:
+2. Serve the interactive demo over HTTP and open it (the demo will not work from `file://` because Plaid Link requires an `http(s)` origin):
+
     ```bash
-    open scripts/sandbox/ach-onramp.html
+    npx serve scripts/sandbox
+    # then open http://localhost:3000/ach-onramp.html
     ```
+
     Enter your credentials and walk through the full flow.
 
 ### Plaid sandbox credentials
@@ -437,19 +483,63 @@ When prompted by Plaid Link, use:
 
 Select any checking account to complete linking.
 
+### Simulating an ACH return
+
+Sandbox lets you create a deposit whose ACH debit is pre-armed to return with a specific NACHA code. The deposit moves through the normal lifecycle and lands in `returned` so you can exercise downstream handling end-to-end (webhooks, the integrator returns API, your reconciliation logic).
+
+```typescript
+// 1. Prepare as normal
+const preparation = await client.deposit.prepare({
+    sourceId: source.id,
+    address: walletAddress,
+    network: 'solana',
+    asset: 'USDC',
+    quoteType: 'exact_input',
+    amountUsd: '10.00',
+    priority: 'normal',
+})
+
+// 2. Use the sandbox creator instead of client.deposit.create
+const deposit = await client.sandbox.createDepositWithReturn({
+    preparationId: preparation.preparationId,
+    returnSimulation: { code: 'R01' }, // NACHA return code to arm
+})
+
+// deposit.status will move through authorized → processing → returned
+// deposit.returnCode === 'R01', and a matching ACH debit return record
+// will appear in client.achDebitReturn.list()
+```
+
+**Common NACHA codes for testing:**
+
+| Code  | Reason                            | Bucket           |
+| ----- | --------------------------------- | ---------------- |
+| `R01` | Insufficient funds                | `administrative` |
+| `R02` | Account closed                    | `administrative` |
+| `R03` | No account / unable to locate     | `administrative` |
+| `R10` | Customer advises unauthorized     | `unauthorized`   |
+| `R29` | Corporate customer not authorized | `unauthorized`   |
+
+`R10`/`R29` are the most useful for exercising the unauthorized-return user-action path (`userAction: 'review_required'` or `'disabled'`); `R01` exercises the simpler administrative-loss path.
+
+This endpoint returns 403 in production. The 200 response shape is the same as `client.deposit.create`.
+
 ---
 
 ## API Reference
 
-| Method | Endpoint                                      | SDK Method                                | Description             |
-| ------ | --------------------------------------------- | ----------------------------------------- | ----------------------- |
-| `POST` | `/v1/bank-accounts/link-token`                | `client.bankAccount.createLinkToken()`    | Create Plaid link token |
-| `POST` | `/v1/bank-accounts/link-complete`             | `client.bankAccount.completeLinking(...)` | Complete Plaid linking  |
-| `GET`  | `/v1/funding-sources/`                        | `client.fundingSource.list()`             | List funding sources    |
-| `GET`  | `/v1/funding-sources/{id}`                    | `client.fundingSource.get(id)`            | Get funding source      |
-| `POST` | `/v1/deposits/direct/prepare`                 | `client.deposit.prepare(...)`             | Prepare deposit quote   |
-| `POST` | `/v1/deposits/direct`                         | `client.deposit.create(...)`              | Create deposit          |
-| `GET`  | `/v1/integrator/ach-debit/returns`            | `client.achDebitReturn.list(...)`         | List ACH debit returns  |
-| `GET`  | `/v1/integrator/ach-debit/returns/{returnId}` | `client.achDebitReturn.get(id)`           | Get a single return     |
+| Method | Endpoint                                      | SDK Method                                    | Description                                              |
+| ------ | --------------------------------------------- | --------------------------------------------- | -------------------------------------------------------- |
+| `POST` | `/v1/bank-accounts/link-token`                | `client.bankAccount.createLinkToken()`        | Create Plaid link token                                  |
+| `POST` | `/v1/bank-accounts/link-complete`             | `client.bankAccount.completeLinking(...)`     | Complete Plaid linking                                   |
+| `GET`  | `/v1/funding-sources/`                        | `client.fundingSource.list()`                 | List funding sources                                     |
+| `GET`  | `/v1/funding-sources/{id}`                    | `client.fundingSource.get(id)`                | Get funding source                                       |
+| `POST` | `/v1/deposits/direct/prepare`                 | `client.deposit.prepare(...)`                 | Prepare deposit quote                                    |
+| `POST` | `/v1/deposits/direct`                         | `client.deposit.create(...)`                  | Create deposit                                           |
+| `GET`  | `/v1/on-ramps/`                               | `client.onrampPayment.list(...)`              | List on-ramps (canonical deposit lookup)                 |
+| `GET`  | `/v1/on-ramps/{onRampId}`                     | `client.onrampPayment.get(id)`                | Get a single on-ramp                                     |
+| `GET`  | `/v1/integrator/ach-debit/returns`            | `client.achDebitReturn.list(...)`             | List ACH debit returns                                   |
+| `GET`  | `/v1/integrator/ach-debit/returns/{returnId}` | `client.achDebitReturn.get(id)`               | Get a single return                                      |
+| `POST` | `/v1/sandbox/deposits/direct`                 | `client.sandbox.createDepositWithReturn(...)` | Sandbox-only — create a deposit with an armed ACH return |
 
 All endpoints require a Bearer token (`apiKey`). Integrator requests are additionally signed with HMAC — the SDK handles this automatically when `integratorSecret` is provided.
