@@ -52,7 +52,11 @@ export type {
     LinkTokenResponse,
     CompleteLinkingRequest,
 } from './modules/bankAccount/bankAccountService'
-export type { BypassKycRequest } from './modules/sandbox/sandboxService'
+export type {
+    BypassKycRequest,
+    CreateDepositWithReturnRequest,
+    CreateDepositWithReturnResponse,
+} from './modules/sandbox/sandboxService'
 export type {
     OnRamp,
     OnRampListResponse,
