@@ -53,81 +53,109 @@ Partner-facing SDK surface:
 
 Open scope questions:
 
-- What exact product behavior should medium-risk Signal produce: allow, review, delayed release, or block?
+- What exact Signal fixture should represent partner-facing "medium risk": a Plaid ruleset `review` outcome, or an accepted score below Spritz's local block threshold?
+
+Confirmed product behavior:
+
+- Plaid Signal runs during `client.deposit.create(...)`, after the user confirms the ACH authorization and before Spritz initiates the ACH pull.
+- A blocked/rerouted Signal result must return a clean 409 error and must not create or submit an ACH debit.
+- Signal `review` maps to `risk_review_required`; `reject`, `reroute`, and local-threshold blocks map to `risk_rejected`; unavailable/insufficient data maps to `risk_evaluation_unavailable`.
+- A blocked create attempt consumes the preparation. The partner must prepare a new quote after resolving the issue, not retry the same `preparationId`.
 
 Known API gaps to resolve before sign-off:
 
-- The generated webhook event enum currently does not expose explicit ACH deposit, on-ramp, or ACH return event names. Confirm whether existing generic events are the intended subscription mechanism, or update the backend/OpenAPI contract before E2E webhook certification.
+- Signal simulation is partner-release scope and should use the sandbox `signal` selector. The SDK/OpenAPI contract in this worktree must be refreshed or extended so `client.sandbox.createDepositWithReturn(...)` accepts it with strong types.
+- The generated webhook event enum currently exposes legacy account/payment/capability events only. Platform emits internal ACH events such as `deposit.created`, `deposit.updated`, `deposit-return.created`, and `deposit-return.updated`, but this repo does not show a public webhook subscription/delivery contract for those ACH events. Confirm whether legacy `payment.*` events are the intended public mapping, or update the backend/OpenAPI contract before E2E webhook certification.
+
+## Backend Contract Check
+
+Verified against `~/dev/spritz/platform` on 2026-05-06.
+
+Create order:
+
+1. `client.deposit.create(...)` calls the direct create path.
+2. Backend claims and marks the preparation used.
+3. Backend evaluates Plaid Signal with `clientTransactionId = depositId`.
+4. Backend persists the risk evaluation.
+5. If Signal outcome is not `created`, backend returns 409 and no deposit row is inserted.
+6. If Signal outcome is `created`, backend inserts the deposit with `debitStatus = authorized`.
+7. Backend publishes `deposit.created`; async workers handle ACH submission and on-ramp sync.
+
+Sandbox reality:
+
+- `/v1/sandbox/deposits` and `/v1/sandbox/deposits/direct` support `returnSimulation.code`.
+- Signal simulation should be exposed as `signal` on the sandbox create payload.
+- The current generated SDK types only show `returnSimulation`, so SDK contract work is still required before sign-off.
 
 ## QC Matrix
 
-| Area             | Scenario                                    | Expected SDK/API Behavior                                                                                  | Required Evidence                    |
-| ---------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| Client setup     | Missing `apiKey` and `integrationKey`       | Constructor throws clear credential error                                                                  | Unit test                            |
-| Client setup     | `integratorSecret` without `integrationKey` | Constructor throws clear HMAC config error                                                                 | Unit test                            |
-| Client setup     | Browser without `dangerouslyAllowBrowser`   | Constructor blocks secret exposure                                                                         | Unit test                            |
-| Bank linking     | Create Plaid link token                     | Calls `POST /v1/bank-accounts/link-token`; returns `linkToken`, `hostedLinkUrl`, `expiration`              | Contract test                        |
-| Bank linking     | Complete Plaid Link                         | Calls `POST /v1/bank-accounts/link-complete`; sends `publicToken`, `accountIds`, institution metadata      | Contract test + sandbox run          |
-| Funding source   | List empty sources                          | Returns empty array; docs tell partner to link bank                                                        | Contract test                        |
-| Funding source   | Pending source                              | SDK surfaces `pending`; partner should retry/poll                                                          | Contract test + docs                 |
-| Funding source   | Active source                               | SDK surfaces source usable for prepare                                                                     | Contract test + sandbox run          |
-| Funding source   | Ineligible/review/disabled source           | Prepare/create does not proceed; error is clear                                                            | Contract test + sandbox/error test   |
-| Funding source   | Get by ID with unsafe chars                 | ID is URL encoded                                                                                          | Contract test                        |
-| Funding source   | Get deposit limits                          | Calls `GET /v1/funding-sources/{id}/deposit-limits`; exposes transaction, daily, monthly, unsettled limits | Contract test + sandbox run          |
-| Deposit prepare  | Exact input quote                           | Sends expected body; returns `preparationId`, `message`, `summary`                                         | Contract test                        |
-| Deposit prepare  | Exact output quote                          | Sends expected body; amount semantics documented                                                           | Contract test                        |
-| Deposit prepare  | Fee subsidy                                 | Sends `feeSubsidy`; response exposes gross/user/subsidy fields                                             | Contract test                        |
-| Deposit prepare  | Client context                              | Sends `clientContext` unchanged                                                                            | Contract test                        |
-| Deposit prepare  | Invalid wallet                              | Throws clean validation/problem error                                                                      | Error test + sandbox/API check       |
-| Deposit prepare  | Inactive funding source                     | Throws clean state/eligibility error                                                                       | Error test                           |
-| Authorization    | ACH authorization message                   | Partner must display `message` verbatim before create                                                      | Docs review + sandbox screenshot     |
-| Deposit create   | Happy path                                  | Calls `POST /v1/deposits/direct`; returns deposit lifecycle fields                                         | Contract test + sandbox run          |
-| Deposit create   | Expired preparation                         | Throws clean expired preparation error                                                                     | Error test                           |
-| Deposit create   | Reused preparation                          | Throws clean conflict/idempotency error                                                                    | Error test                           |
-| Deposit create   | High-risk Signal                            | No ACH debit is initiated; SDK error is actionable                                                         | Signal simulation + sandbox evidence |
-| On-ramp tracking | List on-ramps                               | Query params serialize correctly; pagination fields exposed                                                | Contract test + sandbox run          |
-| On-ramp tracking | Get on-ramp                                 | ID is URL encoded; lifecycle fields documented                                                             | Contract test                        |
-| Returns          | Simulate `R01`                              | Deposit reaches returned path; return record exists                                                        | Sandbox run                          |
-| Returns          | Simulate `R10`                              | Unauthorized bucket/user action path covered                                                               | Sandbox run                          |
-| Returns          | Simulate `R29`                              | Corporate unauthorized path covered                                                                        | Sandbox run                          |
-| Returns          | List filters                                | `returnCode`, `returnBucket`, `lossOnly`, `userAction`, date bounds, pagination serialize correctly        | Contract test + sandbox run          |
-| Returns          | Get return by ID                            | ID is URL encoded; return fields exposed                                                                   | Contract test                        |
-| Webhooks         | Create webhook                              | Webhook can be registered for ACH-relevant events against a real HTTPS receiver                            | Contract test + sandbox run          |
-| Webhooks         | Configure secret                            | Webhook secret is configured before event testing                                                          | Contract test + sandbox run          |
-| Webhooks         | Verify signature                            | Receiver validates HMAC signature using raw request body                                                   | Local receiver test + sandbox run    |
-| Webhooks         | Receive deposit event                       | Deposit lifecycle event is delivered after sandbox deposit creation                                        | Sandbox run                          |
-| Webhooks         | Receive return event                        | Return-related event is delivered after sandbox return simulation                                          | Sandbox run                          |
-| Webhooks         | List/delete webhook                         | Webhook appears in list and can be deleted during cleanup                                                  | Contract test + sandbox run          |
-| Auth             | Bad bearer token                            | Throws `AuthenticationError` with clear message and IDs                                                    | Error test                           |
-| Auth             | Missing/invalid HMAC                        | Throws clean auth/permission error                                                                         | Error test                           |
-| Auth             | Feature disabled                            | Throws `PermissionDeniedError` with clear message                                                          | Error test                           |
-| Reliability      | Timeout                                     | Throws `APIConnectionTimeoutError`                                                                         | Unit test                            |
-| Reliability      | Network failure                             | Throws `APIConnectionError` with cause                                                                     | Unit test                            |
-| Reliability      | 429                                         | Throws `RateLimitError` with clean retry context if provided                                               | Error test                           |
-| Reliability      | 500                                         | Throws `InternalServerError`; request/trace IDs preserved                                                  | Error test                           |
+| Area             | Scenario                                    | Expected SDK/API Behavior                                                                                  | Required Evidence                                                  |
+| ---------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Client setup     | Missing `apiKey` and `integrationKey`       | Constructor throws clear credential error                                                                  | Unit test                                                          |
+| Client setup     | `integratorSecret` without `integrationKey` | Constructor throws clear HMAC config error                                                                 | Unit test                                                          |
+| Client setup     | Browser without `dangerouslyAllowBrowser`   | Constructor blocks secret exposure                                                                         | Unit test                                                          |
+| Bank linking     | Create Plaid link token                     | Calls `POST /v1/bank-accounts/link-token`; returns `linkToken`, `hostedLinkUrl`, `expiration`              | Contract test                                                      |
+| Bank linking     | Complete Plaid Link                         | Calls `POST /v1/bank-accounts/link-complete`; sends `publicToken`, `accountIds`, institution metadata      | Contract test + sandbox run                                        |
+| Funding source   | List empty sources                          | Returns empty array; docs tell partner to link bank                                                        | Contract test                                                      |
+| Funding source   | Pending source                              | SDK surfaces `pending`; partner should retry/poll                                                          | Contract test + docs                                               |
+| Funding source   | Active source                               | SDK surfaces source usable for prepare                                                                     | Contract test + sandbox run                                        |
+| Funding source   | Ineligible/review/disabled source           | Prepare/create does not proceed; error is clear                                                            | Contract test + sandbox/error test                                 |
+| Funding source   | Get by ID with unsafe chars                 | ID is URL encoded                                                                                          | Contract test                                                      |
+| Funding source   | Get deposit limits                          | Calls `GET /v1/funding-sources/{id}/deposit-limits`; exposes transaction, daily, monthly, unsettled limits | Contract test + sandbox run                                        |
+| Deposit prepare  | Exact input quote                           | Sends expected body; returns `preparationId`, `message`, `summary`                                         | Contract test                                                      |
+| Deposit prepare  | Exact output quote                          | Sends expected body; amount semantics documented                                                           | Contract test                                                      |
+| Deposit prepare  | Fee subsidy                                 | Sends `feeSubsidy`; response exposes gross/user/subsidy fields                                             | Contract test                                                      |
+| Deposit prepare  | Client context                              | Sends `clientContext` unchanged                                                                            | Contract test                                                      |
+| Deposit prepare  | Invalid wallet                              | Throws clean validation/problem error                                                                      | Error test + sandbox/API check                                     |
+| Deposit prepare  | Inactive funding source                     | Throws clean state/eligibility error                                                                       | Error test                                                         |
+| Authorization    | ACH authorization message                   | Partner must display `message` verbatim before create                                                      | Docs review + sandbox screenshot                                   |
+| Deposit create   | Happy path                                  | Calls `POST /v1/deposits/direct`; returns deposit lifecycle fields                                         | Contract test + sandbox run                                        |
+| Deposit create   | Expired preparation                         | Throws clean expired preparation error                                                                     | Error test                                                         |
+| Deposit create   | Reused preparation                          | Throws clean conflict/idempotency error                                                                    | Error test                                                         |
+| Deposit create   | High-risk Signal                            | No ACH debit is initiated; SDK error is actionable                                                         | Signal simulation or documented backend fixture + sandbox evidence |
+| On-ramp tracking | List on-ramps                               | Query params serialize correctly; pagination fields exposed                                                | Contract test + sandbox run                                        |
+| On-ramp tracking | Get on-ramp                                 | ID is URL encoded; lifecycle fields documented                                                             | Contract test                                                      |
+| Returns          | Simulate `R01`                              | Deposit reaches returned path; return record exists                                                        | Sandbox run                                                        |
+| Returns          | Simulate `R10`                              | Unauthorized bucket/user action path covered                                                               | Sandbox run                                                        |
+| Returns          | Simulate `R29`                              | Corporate unauthorized path covered                                                                        | Sandbox run                                                        |
+| Returns          | List filters                                | `returnCode`, `returnBucket`, `lossOnly`, `userAction`, date bounds, pagination serialize correctly        | Contract test + sandbox run                                        |
+| Returns          | Get return by ID                            | ID is URL encoded; return fields exposed                                                                   | Contract test                                                      |
+| Webhooks         | Create webhook                              | Webhook can be registered for ACH-relevant public event names against a real HTTPS receiver                | Contract test + sandbox run                                        |
+| Webhooks         | Configure secret                            | Webhook secret is configured before event testing                                                          | Contract test + sandbox run                                        |
+| Webhooks         | Verify signature                            | Receiver validates HMAC signature using raw request body                                                   | Local receiver test + sandbox run                                  |
+| Webhooks         | Receive deposit event                       | Public webhook event for the ACH/on-ramp lifecycle is delivered after sandbox deposit creation             | Sandbox run                                                        |
+| Webhooks         | Receive return event                        | Public webhook event for ACH return handling is delivered after sandbox return simulation                  | Sandbox run                                                        |
+| Webhooks         | List/delete webhook                         | Webhook appears in list and can be deleted during cleanup                                                  | Contract test + sandbox run                                        |
+| Auth             | Bad bearer token                            | Throws `AuthenticationError` with clear message and IDs                                                    | Error test                                                         |
+| Auth             | Missing/invalid HMAC                        | Throws clean auth/permission error                                                                         | Error test                                                         |
+| Auth             | Feature disabled                            | Throws `PermissionDeniedError` with clear message                                                          | Error test                                                         |
+| Reliability      | Timeout                                     | Throws `APIConnectionTimeoutError`                                                                         | Unit test                                                          |
+| Reliability      | Network failure                             | Throws `APIConnectionError` with cause                                                                     | Unit test                                                          |
+| Reliability      | 429                                         | Throws `RateLimitError` with clean retry context if provided                                               | Error test                                                         |
+| Reliability      | 500                                         | Throws `InternalServerError`; request/trace IDs preserved                                                  | Error test                                                         |
 
 ## Plaid Signal QC
 
-Signal must be evaluated before ACH debit initiation. A blocked or rerouted Signal result must not create or submit a debit.
+Signal is evaluated during deposit creation after user confirmation and before ACH debit initiation. A blocked or rerouted Signal result must not create or submit a debit.
 
 Required behavior matrix:
 
-| Signal Scenario                | Expected Product Behavior                                   | Required Evidence        |
-| ------------------------------ | ----------------------------------------------------------- | ------------------------ |
-| Low risk                       | Deposit can be created normally                             | Simulation + sandbox run |
-| Medium risk                    | Behavior matches product policy exactly                     | Simulation + sandbox run |
-| High risk / reroute            | Deposit creation is blocked before ACH initiation           | Simulation + sandbox run |
-| Signal timeout                 | Deterministic fallback; no ambiguous partial initiation     | Error/simulation test    |
-| Signal unavailable             | Deterministic fallback; clean operational error if blocking | Error/simulation test    |
-| Null score / insufficient data | Deterministic fallback; partner-visible reason is clear     | Error/simulation test    |
-| Ruleset misconfigured          | Clean configuration error                                   | Error/simulation test    |
+| Signal Scenario                | Expected Product Behavior                                | Required Evidence             |
+| ------------------------------ | -------------------------------------------------------- | ----------------------------- |
+| Low risk                       | Deposit can be created normally                          | Simulation + sandbox run      |
+| Medium risk                    | Behavior matches product policy exactly                  | Simulation + sandbox run      |
+| High risk / reroute            | Deposit creation is blocked before ACH initiation        | Simulation or backend fixture |
+| Signal timeout                 | Deterministic fallback; no ambiguous partial initiation  | Error/simulation test         |
+| Signal unavailable             | 409 `risk_evaluation_unavailable`; no debit is initiated | Error/simulation test         |
+| Null score / insufficient data | 409 `risk_evaluation_unavailable`; no debit is initiated | Error/simulation test         |
+| Ruleset misconfigured          | Clean configuration error or unavailable-path response   | Error/simulation test         |
 
 Recommended sandbox API design:
 
 ```typescript
-await client.sandbox.createDepositWithSignalSimulation({
+await client.sandbox.createDepositWithReturn({
     preparationId,
-    signalSimulation: { outcome: 'reroute' },
+    signal: { outcome: 'reroute' },
 })
 ```
 
@@ -138,7 +166,7 @@ If combined simulations are needed for end-to-end cases, make the ordering expli
 ```typescript
 await client.sandbox.createDepositWithReturn({
     preparationId,
-    signalSimulation: { outcome: 'accept' },
+    signal: { outcome: 'accept' },
     returnSimulation: { code: 'R01' },
 })
 ```
@@ -262,18 +290,18 @@ Docs must clearly state:
 
 Complete this section when executing the plan.
 
-| Gate                          | Status  | Evidence |
-| ----------------------------- | ------- | -------- |
-| Automated checks              | Pending |          |
-| ACH contract tests            | Pending |          |
-| Error surfacing tests         | Pending |          |
-| Funding source deposit limits | Pending |          |
-| Signal simulations            | Pending |          |
-| Webhook E2E                   | Pending |          |
-| Live sandbox happy path       | Pending |          |
-| Live sandbox return paths     | Pending |          |
-| Docs review                   | Pending |          |
-| API gaps resolved/excluded    | Pending |          |
+| Gate                          | Status  | Evidence                                                           |
+| ----------------------------- | ------- | ------------------------------------------------------------------ |
+| Automated checks              | Pending |                                                                    |
+| ACH contract tests            | Pending |                                                                    |
+| Error surfacing tests         | Pending |                                                                    |
+| Funding source deposit limits | Pending |                                                                    |
+| Signal simulations            | Pending | Wire/verify sandbox `signal` selector in SDK contract              |
+| Webhook E2E                   | Blocked | Public ACH webhook event mapping not confirmed in platform/OpenAPI |
+| Live sandbox happy path       | Pending |                                                                    |
+| Live sandbox return paths     | Pending |                                                                    |
+| Docs review                   | Pending |                                                                    |
+| API gaps resolved/excluded    | Pending |                                                                    |
 
 Final release decision:
 
