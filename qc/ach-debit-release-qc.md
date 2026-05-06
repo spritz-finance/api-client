@@ -55,6 +55,10 @@ Open scope questions:
 
 - What exact product behavior should medium-risk Signal produce: allow, review, delayed release, or block?
 
+Known API gaps to resolve before sign-off:
+
+- The generated webhook event enum currently does not expose explicit ACH deposit, on-ramp, or ACH return event names. Confirm whether existing generic events are the intended subscription mechanism, or update the backend/OpenAPI contract before E2E webhook certification.
+
 ## QC Matrix
 
 | Area             | Scenario                                    | Expected SDK/API Behavior                                                                                  | Required Evidence                    |

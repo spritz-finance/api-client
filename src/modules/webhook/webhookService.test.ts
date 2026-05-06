@@ -8,7 +8,7 @@ describe('WebhookService', () => {
 
     beforeEach(() => {
         mockClient = {
-            request: vi.fn(),
+            restApi: vi.fn(),
         } as unknown as SpritzClient
 
         webhookService = new WebhookService(mockClient)
@@ -18,45 +18,69 @@ describe('WebhookService', () => {
         it('should create a webhook', async () => {
             const mockWebhook = {
                 id: 'webhook-123',
-                integratorId: 'integrator-123',
                 failureCount: 0,
                 events: ['payment.created', 'payment.completed'],
                 url: 'https://example.com/webhook',
-                createdAt: '2024-01-01T00:00:00Z',
+                disabled: false,
             }
 
-            vi.mocked(mockClient.request).mockResolvedValue(mockWebhook)
+            vi.mocked(mockClient.restApi).mockResolvedValue(mockWebhook)
 
             const result = await webhookService.create({
                 url: 'https://example.com/webhook',
                 events: ['payment.created', 'payment.completed'],
             })
 
-            expect(mockClient.request).toHaveBeenCalledWith({
+            expect(mockClient.restApi).toHaveBeenCalledWith({
                 method: 'post',
-                path: '/users/integrators/webhooks',
+                path: '/v1/integrator/webhooks',
                 body: {
                     url: 'https://example.com/webhook',
                     events: ['payment.created', 'payment.completed'],
                 },
             })
+            expect(result).toEqual({
+                ...mockWebhook,
+                integratorId: '',
+                createdAt: '',
+            })
+        })
+
+        it('should preserve legacy webhook fields when the API includes them', async () => {
+            const mockWebhook = {
+                id: 'webhook-123',
+                integratorId: 'integrator-123',
+                failureCount: 0,
+                events: ['payment.created'],
+                url: 'https://example.com/webhook',
+                createdAt: '2024-01-01T00:00:00Z',
+                disabled: false,
+            }
+
+            vi.mocked(mockClient.restApi).mockResolvedValue(mockWebhook)
+
+            const result = await webhookService.create({
+                url: 'https://example.com/webhook',
+                events: ['payment.created'],
+            })
+
             expect(result).toEqual(mockWebhook)
         })
     })
 
     describe('updateWebhookSecret', () => {
         it('should update webhook secret', async () => {
-            const mockResponse = { success: true }
-            vi.mocked(mockClient.request).mockResolvedValue(mockResponse)
+            const mockResponse = { secretConfigured: true }
+            vi.mocked(mockClient.restApi).mockResolvedValue(mockResponse)
 
             const result = await webhookService.updateWebhookSecret('new-secret')
 
-            expect(mockClient.request).toHaveBeenCalledWith({
+            expect(mockClient.restApi).toHaveBeenCalledWith({
                 method: 'post',
-                path: '/users/integrators/webhook-secret',
+                path: '/v1/integrator/webhook-secret',
                 body: { secret: 'new-secret' },
             })
-            expect(result).toEqual(mockResponse)
+            expect(result).toEqual({ success: true })
         })
     })
 
@@ -65,53 +89,75 @@ describe('WebhookService', () => {
             const mockWebhooks = [
                 {
                     id: 'webhook-1',
-                    integratorId: 'integrator-123',
                     failureCount: 0,
                     events: ['payment.created'],
                     url: 'https://example.com/webhook1',
-                    createdAt: '2024-01-01T00:00:00Z',
+                    disabled: false,
                 },
                 {
                     id: 'webhook-2',
-                    integratorId: 'integrator-123',
                     failureCount: 2,
                     events: ['account.created', 'account.updated'],
                     url: 'https://example.com/webhook2',
-                    createdAt: '2024-01-02T00:00:00Z',
+                    disabled: true,
                 },
             ]
 
-            vi.mocked(mockClient.request).mockResolvedValue(mockWebhooks)
+            vi.mocked(mockClient.restApi).mockResolvedValue(mockWebhooks)
 
             const result = await webhookService.list()
 
-            expect(mockClient.request).toHaveBeenCalledWith({
+            expect(mockClient.restApi).toHaveBeenCalledWith({
                 method: 'get',
-                path: '/users/integrators/webhooks',
+                path: '/v1/integrator/webhooks',
             })
-            expect(result).toEqual(mockWebhooks)
+            expect(result).toEqual([
+                {
+                    ...mockWebhooks[0],
+                    integratorId: '',
+                    createdAt: '',
+                },
+                {
+                    ...mockWebhooks[1],
+                    integratorId: '',
+                    createdAt: '',
+                },
+            ])
         })
     })
 
     describe('delete', () => {
         it('should delete a webhook by id', async () => {
-            const mockDeletedWebhook = {
-                id: 'webhook-123',
-                integratorId: 'integrator-123',
+            const existingWebhook = {
+                id: 'webhook/123',
                 failureCount: 0,
-                events: ['payment.created', 'payment.completed'],
+                events: ['payment.completed'],
                 url: 'https://example.com/webhook',
-                createdAt: '2024-01-01T00:00:00Z',
+                disabled: false,
             }
-            vi.mocked(mockClient.request).mockResolvedValue(mockDeletedWebhook)
+            const mockDeletedWebhook = {
+                id: 'webhook/123',
+                deleted: true,
+            }
+            vi.mocked(mockClient.restApi)
+                .mockResolvedValueOnce([existingWebhook])
+                .mockResolvedValueOnce(mockDeletedWebhook)
 
-            const result = await webhookService.delete('webhook-123')
+            const result = await webhookService.delete('webhook/123')
 
-            expect(mockClient.request).toHaveBeenCalledWith({
-                method: 'delete',
-                path: '/users/integrators/webhooks/webhook-123',
+            expect(mockClient.restApi).toHaveBeenNthCalledWith(1, {
+                method: 'get',
+                path: '/v1/integrator/webhooks',
             })
-            expect(result).toEqual(mockDeletedWebhook)
+            expect(mockClient.restApi).toHaveBeenNthCalledWith(2, {
+                method: 'delete',
+                path: '/v1/integrator/webhooks/webhook%2F123',
+            })
+            expect(result).toEqual({
+                ...existingWebhook,
+                integratorId: '',
+                createdAt: '',
+            })
         })
     })
 })

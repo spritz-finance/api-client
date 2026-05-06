@@ -71,3 +71,9 @@ export type {
     operations as RestApiOperations,
 } from './rest/__generated__/api'
 export type { PathResponse, PathRequestBody, PathQuery, PathParams } from './rest/types'
+export type {
+    CreateWebhookParams,
+    IntegratorWebhook,
+    UpdateWebhookSecretResponse,
+    WebhookEvent,
+} from './modules/webhook/webhookService'
