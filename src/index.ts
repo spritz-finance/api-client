@@ -36,7 +36,10 @@ export {
 export { onrampSupportedTokens } from './modules/virtualAccounts/types'
 export type { CreateVirtualAccountInput } from './modules/virtualAccounts/types'
 export type { PaymentLimitsResponse } from './modules/payment/paymentService'
-export type { FundingSource } from './modules/fundingSource/fundingSourceService'
+export type {
+    FundingSource,
+    FundingSourceDepositLimits,
+} from './modules/fundingSource/fundingSourceService'
 export type {
     Deposit,
     PrepareDepositRequest,
