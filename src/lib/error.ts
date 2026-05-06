@@ -14,6 +14,19 @@ function stringifyError(value: unknown): string {
     }
 }
 
+function getStringField(error: unknown, field: string): string | undefined {
+    if (!error || typeof error !== 'object' || !(field in error)) {
+        return undefined
+    }
+
+    const value = (error as Record<string, unknown>)[field]
+    if (typeof value === 'string' && value.length > 0) {
+        return value
+    }
+
+    return undefined
+}
+
 export class SpritzApiError extends Error {
     readonly timestamp: string
     readonly headers: Headers
@@ -45,10 +58,14 @@ export class APIError extends Error {
     }
 
     private static makeMessage(error: unknown, message: string | undefined) {
-        if (error && typeof error === 'object' && 'message' in error) {
-            const errorMessage = error.message
-            return typeof errorMessage === 'string' ? errorMessage : stringifyError(errorMessage)
-        }
+        const problemDetail = getStringField(error, 'detail')
+        if (problemDetail) return problemDetail
+
+        const problemTitle = getStringField(error, 'title')
+        if (problemTitle) return problemTitle
+
+        const errorMessage = getStringField(error, 'message')
+        if (errorMessage) return errorMessage
 
         if (error !== undefined) {
             return stringifyError(error)
