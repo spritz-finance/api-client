@@ -817,17 +817,23 @@ const accounts = await client.virtualAccounts.list()
 
 ## ACH Onramp (Direct Debit)
 
-ACH onramp lets users convert USD from their bank account into USDC delivered to a Solana wallet. The flow is:
+ACH onramp lets users convert USD from their bank account into USDC delivered to a Solana wallet. The integration is a short server-side flow with one client-side Plaid step:
 
-1. **Link bank account** via Plaid → funding source created automatically
-2. **Prepare deposit** — quote and ACH authorization message for the user to review
-3. **Create deposit** — confirm to debit the bank and release USDC to the wallet
+1. **Server:** create a Plaid link token with `client.bankAccount.createLinkToken()`
+2. **Client:** run Plaid Link and send the public token/account IDs back to your server
+3. **Server:** complete linking with `client.bankAccount.completeLinking(...)`
+4. **Server:** find an active funding source and fetch limits with `client.fundingSource.getDepositLimits(id)`
+5. **Server:** prepare a quote with `client.deposit.prepare(...)`
+6. **Client:** show the quote and ACH authorization message to the user
+7. **Server:** create the deposit with `client.deposit.create(...)`; Spritz runs risk checks before initiating the ACH pull
 
 Authorization is derived from the verified ACH funding source — no wallet signature is required.
 
+If risk checks block the create step, the API returns 409 before any ACH debit is pulled. Prepare a new quote before retrying; blocked create attempts consume the original `preparationId`.
+
 For a complete walkthrough with code examples, request/response schemas, and deposit lifecycle documentation, see the **[ACH Onramp Integration Guide](docs/ach-onramp-guide.md)**.
 
-A standalone sandbox demo is available at `scripts/sandbox/ach-onramp.html` — open it in a browser to walk through the full flow interactively.
+A standalone sandbox demo is available at `scripts/sandbox/ach-onramp.html`. Run `yarn build && node scripts/sandbox/evidence-server.mjs`, then open `http://localhost:3001/ach-onramp.html` to test the SDK-backed flow and save redacted QC evidence.
 
 ## Sandbox
 
@@ -875,12 +881,31 @@ This endpoint returns 403 in production.
 
 - `capabilities.updated` — user capabilities changed
 
+#### On-Ramp Events
+
+- `onramp.created` — on-ramp record created after a deposit is authorized
+- `onramp.updated` — on-ramp status, delivery, or reversal details updated
+- `onramp.completed` — on-ramp delivery completed
+
+#### ACH Debit Return Events
+
+- `achDebitReturn.created` — ACH debit return recorded
+- `achDebitReturn.updated` — ACH debit return details updated
+
+Use `'*'` to subscribe a webhook endpoint to all current and future webhook events.
+
 ### Setup
 
 ```typescript
 const webhook = await client.webhook.create({
     url: 'https://my.webhook.url/spritz',
-    events: ['account.created', 'account.updated', 'payment.completed'],
+    events: ['onramp.created', 'onramp.updated', 'achDebitReturn.created'],
+})
+
+// Subscribe to all events
+await client.webhook.create({
+    url: 'https://my.webhook.url/spritz/all',
+    events: ['*'],
 })
 ```
 
@@ -900,13 +925,18 @@ Webhook payloads have the following shape:
 // List all webhooks
 const webhooks = await client.webhook.list()
 
+// Update a webhook's event subscriptions
+await client.webhook.update('webhook-id', {
+    events: ['onramp.updated', 'achDebitReturn.created', 'achDebitReturn.updated'],
+})
+
 // Delete a webhook
 await client.webhook.delete('webhook-id')
 ```
 
 ### Security and Signing
 
-Webhook requests are signed with HMAC SHA256 using your webhook secret. The signature is sent in the `Signature` HTTP header.
+Webhook requests are signed with HMAC SHA256 using your webhook secret. The signature is sent in the `Signature` HTTP header. Verify the signature against the raw request body before parsing JSON.
 
 #### Setting a Webhook Secret
 
@@ -917,11 +947,19 @@ await client.webhook.updateWebhookSecret('your-secret')
 #### Verifying Signatures
 
 ```typescript
-import { createHmac } from 'crypto'
+import { createHmac, timingSafeEqual } from 'node:crypto'
 
-const expected = createHmac('sha256', WEBHOOK_SECRET).update(JSON.stringify(payload)).digest('hex')
+function verifySpritzWebhook(rawBody: string, signature: string, secret: string) {
+    const expected = createHmac('sha256', secret).update(rawBody).digest('hex')
+    const expectedBuffer = Buffer.from(expected, 'utf8')
+    const signatureBuffer = Buffer.from(signature, 'utf8')
 
-if (expected !== request.headers['signature']) {
+    if (expectedBuffer.length !== signatureBuffer.length) return false
+    return timingSafeEqual(expectedBuffer, signatureBuffer)
+}
+
+const signature = request.headers['signature']
+if (!signature || !verifySpritzWebhook(rawBody, signature, WEBHOOK_SECRET)) {
     throw new Error('Invalid webhook signature')
 }
 ```

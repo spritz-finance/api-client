@@ -1,6 +1,21 @@
 export { SpritzApiClient } from './spritzApiClient'
 export type { ClientOptions } from './spritzApiClient'
 export * from './env'
+export {
+    APIConnectionError,
+    APIConnectionTimeoutError,
+    APIError,
+    APIUserAbortError,
+    AuthenticationError,
+    BadRequestError,
+    ConflictError,
+    InternalServerError,
+    NotFoundError,
+    PermissionDeniedError,
+    RateLimitError,
+    SpritzApiError,
+    UnprocessableEntityError,
+} from './lib/error'
 export type {
     CreateDirectPaymentInput,
     BankAccountInput,
@@ -36,7 +51,10 @@ export {
 export { onrampSupportedTokens } from './modules/virtualAccounts/types'
 export type { CreateVirtualAccountInput } from './modules/virtualAccounts/types'
 export type { PaymentLimitsResponse } from './modules/payment/paymentService'
-export type { FundingSource } from './modules/fundingSource/fundingSourceService'
+export type {
+    FundingSource,
+    FundingSourceDepositLimits,
+} from './modules/fundingSource/fundingSourceService'
 export type {
     Deposit,
     PrepareDepositRequest,
@@ -68,3 +86,10 @@ export type {
     operations as RestApiOperations,
 } from './rest/__generated__/api'
 export type { PathResponse, PathRequestBody, PathQuery, PathParams } from './rest/types'
+export type {
+    CreateWebhookParams,
+    IntegratorWebhook,
+    UpdateWebhookParams,
+    UpdateWebhookSecretResponse,
+    WebhookEvent,
+} from './modules/webhook/webhookService'

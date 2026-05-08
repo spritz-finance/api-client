@@ -1,16 +1,55 @@
 # ACH Onramp Integration Guide
 
-ACH onramp lets your users convert USD from their bank account into USDC delivered to a Solana wallet. The user links a bank account via Plaid, then authorizes ACH debits that settle as USDC at a wallet address you supply. Authorization is derived from the verified ACH funding source — no wallet signature is required.
+ACH onramp lets your users convert USD from their bank account into USDC delivered to a Solana wallet. The integration is intentionally small: link a bank account with Plaid, choose an active funding source, check its limits, prepare a quote, show the ACH authorization text, then create the deposit.
+
+Authorization is derived from the verified ACH funding source — no wallet signature is required.
 
 ```
-Link Bank Account → Funding Source → Prepare Deposit → Create Deposit → USDC Released
-      (Plaid)        (automatic)        (quote)         (authorize)       (async)
+Plaid Link → Funding Source → Limits → Prepare Quote → User Confirms → Create Deposit → ACH Pull
+ (client)      (server)       (server)      (server)        (client)          (server)       (async)
 ```
 
 > **The SDK is server-side only.** It throws if instantiated in a browser without `dangerouslyAllowBrowser: true`. The integrator key and HMAC secret must never reach the client. The split is:
 >
 > - **Server** — every SDK call in this guide (link token, funding sources, prepare/create deposit, returns)
 > - **Client** — Plaid Link UI only
+
+## Minimal Server Flow
+
+Once your frontend has completed Plaid Link, the ACH flow is:
+
+```typescript
+await client.bankAccount.completeLinking({
+    publicToken,
+    accountIds,
+    institutionId,
+    institutionName,
+})
+
+const sources = await client.fundingSource.list()
+const source = sources.find((s) => s.status === 'active')
+if (!source) throw new Error('No active funding source available')
+
+const limits = await client.fundingSource.getDepositLimits(source.id)
+
+const preparation = await client.deposit.prepare({
+    sourceId: source.id,
+    address: walletAddress,
+    network: 'solana',
+    asset: 'USDC',
+    quoteType: 'exact_input',
+    amountUsd: '100.00',
+    priority: 'normal',
+})
+
+// Show preparation.summary and preparation.message to the user first.
+// The ACH pull is not started until create passes risk checks.
+const deposit = await client.deposit.create({
+    preparationId: preparation.preparationId,
+})
+```
+
+Use `limits` to keep your UI inside the user's current ACH capacity before preparing a quote. Use webhooks to track the deposit after creation; `onrampPayment` and `achDebitReturn` are the read APIs for reconciliation.
 
 ## Prerequisites
 
@@ -107,7 +146,7 @@ await client.bankAccount.completeLinking({
 const handler = Plaid.create({
     token: linkToken,
     onSuccess: async (publicToken, metadata) => {
-        await client.bankAccount.completeLinking({
+        await yourServer.completePlaidLink({
             publicToken,
             accountIds: metadata.accounts.map((a) => a.id),
             // Note: Web SDK uses institution_id, RN SDK uses id
@@ -123,7 +162,7 @@ The `completeLinking` call exchanges the Plaid public token and stores the linke
 
 ---
 
-## Step 2: Get Funding Source
+## Step 2: Get Funding Source And Limits
 
 A funding source represents a linked bank account that has been evaluated for ACH eligibility. After Plaid linking, query for available sources:
 
@@ -168,11 +207,36 @@ To fetch a specific source:
 const source = await client.fundingSource.get('fs_01JV7...')
 ```
 
+Before showing deposit amounts to the user, fetch the source's current ACH debit limits:
+
+```typescript
+const limits = await client.fundingSource.getDepositLimits(source.id)
+
+if (Number(limits.dailyRemainingUsd) <= 0) {
+    throw new Error('No remaining ACH deposit capacity today')
+}
+```
+
+**Deposit limit fields:**
+
+| Field                       | Type     | Description                                            |
+| --------------------------- | -------- | ------------------------------------------------------ |
+| `minimumDepositAmountUsd`   | `string` | Minimum deposit principal amount before fees           |
+| `transactionLimitUsd`       | `string` | Maximum ACH debit amount per deposit                   |
+| `dailyLimitUsd`             | `string` | Maximum daily ACH debit volume                         |
+| `dailyRemainingUsd`         | `string` | Remaining daily ACH debit volume                       |
+| `monthlyLimitUsd`           | `string` | Maximum monthly ACH debit volume                       |
+| `monthlyRemainingUsd`       | `string` | Remaining monthly ACH debit volume                     |
+| `unsettledDepositLimit`     | `number` | Maximum number of unsettled ACH debit deposits allowed |
+| `unsettledDepositRemaining` | `number` | Remaining unsettled deposit capacity                   |
+
+Limits are a pre-check for user experience. The API still validates limits and funding-source state again when you prepare and create the deposit.
+
 ---
 
 ## Step 3: Prepare Deposit
 
-A deposit initiates an ACH debit from the user's bank account and releases USDC to a Solana wallet you specify. Preparation returns a quote and a display-ready ACH authorization message.
+Preparation creates a quote and a display-ready ACH authorization message. It does not start the ACH pull. The pull is only initiated after the user confirms and `client.deposit.create(...)` passes risk checks.
 
 ```typescript
 const preparation = await client.deposit.prepare({
@@ -233,7 +297,7 @@ feeSubsidy: {
 | `summary.feeRateBps`          | `number` | Fee rate in basis points                      |
 | `summary.destinationAddress`  | `string` | Wallet receiving USDC                         |
 
-Display the summary and `message` to the user for review before proceeding.
+Display `summary` and `message` to the user for review before proceeding. The user-facing confirm button should call your server, and your server should then call `client.deposit.create(...)`.
 
 > **Compliance — display the authorization message verbatim.** `preparation.message` is the NACHA consent text that authorizes the ACH debit. It must be shown to the user as-is, unmodified, before they confirm. Paraphrasing, truncating, or styling away parts of the message is a NACHA compliance violation and will invalidate the authorization. Wrap it in a `<pre>` or equivalent so whitespace and line breaks are preserved.
 
@@ -242,6 +306,10 @@ Display the summary and `message` to the user for review before proceeding.
 ## Step 4: Create Deposit
 
 Once the user has reviewed the quote and authorization, submit the preparation ID to create the deposit. No signature is required — authorization is derived from the verified ACH funding source.
+
+When you call `create`, Spritz runs Plaid Signal/risk checks after the user has confirmed but before the ACH pull is initiated. If the risk result blocks the transaction, the API returns 409 and no ACH debit is pulled.
+
+Blocked create attempts consume the `preparationId`. After a blocked or expired attempt, prepare a new quote instead of retrying the same preparation.
 
 ```typescript
 const deposit = await client.deposit.create({
@@ -274,7 +342,7 @@ const deposit = await client.deposit.create({
 
 ## Step 5: Track Deposit Status
 
-Once a deposit is authorized, an **on-ramp record** is created and is the canonical place to observe its state going forward — listing or fetching the deposit by ID directly is not exposed. The on-ramp model unifies all fiat→crypto transactions (ACH, wire, SEPA), so the same APIs work for any rail.
+Once a deposit is authorized, an **on-ramp record** is created and is the canonical place to observe its state going forward. Listing or fetching the deposit by ID directly is not exposed. The on-ramp model unifies all fiat→crypto transactions (ACH, wire, SEPA), so the same APIs work for any rail.
 
 ```typescript
 // List the user's recent on-ramps (newest first by default)
@@ -419,12 +487,48 @@ const ret = await client.achDebitReturn.get('dr_01JV7...')
 
 ## Webhooks
 
-Register a webhook to receive real-time notifications for deposit status changes. See the [webhook documentation](https://docs.spritz.finance/webhooks) for setup details.
+Register a webhook before launching ACH debit so your backend is notified when deposit state changes. Polling `onrampPayment` and `achDebitReturn` is useful for reconciliation, but webhooks should drive production updates.
+
+```typescript
+await client.webhook.updateWebhookSecret(process.env.SPRITZ_WEBHOOK_SECRET!)
+
+const webhook = await client.webhook.create({
+    url: 'https://api.example.com/spritz/webhooks',
+    events: ['onramp.created', 'onramp.updated', 'achDebitReturn.created'],
+})
+```
 
 Key events to handle:
 
-- **Deposit status change** — debit submitted, settled, returned, failed
-- **Release status change** — USDC queued, released, failed
+- `onramp.created` — on-ramp record created after the ACH deposit is authorized
+- `onramp.updated` — on-ramp status, delivery, or reversal details updated
+- `onramp.completed` — on-ramp delivery completed
+- `achDebitReturn.created` — ACH debit return recorded
+- `achDebitReturn.updated` — ACH debit return details updated
+
+To subscribe an endpoint to every current and future event, use `events: ['*']`.
+To change an existing webhook's event subscriptions:
+
+```typescript
+await client.webhook.update(webhook.id, {
+    events: ['onramp.updated', 'achDebitReturn.created', 'achDebitReturn.updated'],
+})
+```
+
+Webhook requests are signed with HMAC SHA256 using your webhook secret. Verify the signature against the **raw request body** before parsing JSON:
+
+```typescript
+import { createHmac, timingSafeEqual } from 'node:crypto'
+
+function verifySpritzWebhook(rawBody: string, signature: string, secret: string) {
+    const expected = createHmac('sha256', secret).update(rawBody).digest('hex')
+    const expectedBuffer = Buffer.from(expected, 'utf8')
+    const signatureBuffer = Buffer.from(signature, 'utf8')
+
+    if (expectedBuffer.length !== signatureBuffer.length) return false
+    return timingSafeEqual(expectedBuffer, signatureBuffer)
+}
+```
 
 ---
 
@@ -441,6 +545,24 @@ All endpoints return [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) p
 }
 ```
 
+The SDK throws typed errors with the status, message, response IDs, and parsed problem payload:
+
+```typescript
+import { PermissionDeniedError } from '@spritz-finance/api-client'
+
+try {
+    await client.bankAccount.createLinkToken()
+} catch (error) {
+    if (error instanceof PermissionDeniedError) {
+        console.error(error.status) // 403
+        console.error(error.message) // human-readable detail
+        console.error(error.error?.requirement) // identity verification requirement, if returned
+        console.error(error.headers?.requestId)
+    }
+    throw error
+}
+```
+
 Common error scenarios:
 
 | Scenario                     | Status  | Problem type                         |
@@ -450,6 +572,9 @@ Common error scenarios:
 | Funding source not found     | 404     | Resource not found                   |
 | Preparation expired          | 400/409 | Expired preparation ID               |
 | Funding source not active    | 400/409 | Source not eligible                  |
+| Risk review required         | 409     | `risk_review_required`               |
+| Risk rejected                | 409     | `risk_rejected`                      |
+| Risk evaluation unavailable  | 409     | `risk_evaluation_unavailable`        |
 
 ---
 
@@ -465,14 +590,15 @@ Use `Environment.Sandbox` for testing. The sandbox base URL is `https://sandbox.
     ./scripts/sandbox/run.sh setup-user
     ```
 
-2. Serve the interactive demo over HTTP and open it (the demo will not work from `file://` because Plaid Link requires an `http(s)` origin):
+2. Build the SDK bundle and start the interactive demo/evidence server:
 
     ```bash
-    npx serve scripts/sandbox
-    # then open http://localhost:3000/ach-onramp.html
+    yarn build
+    node scripts/sandbox/evidence-server.mjs
     ```
 
-    Enter your credentials and walk through the full flow.
+    Open `http://localhost:3001/ach-onramp.html`, enter your credentials, and walk through the full flow. The demo saves redacted QC evidence under `qc/evidence/`.
+    The evidence server binds to `127.0.0.1` by default. If you intentionally need a non-local browser to access it, run with `EVIDENCE_HOST=0.0.0.0`.
 
 ### Plaid sandbox credentials
 
@@ -487,6 +613,17 @@ Select any checking account to complete linking.
 
 Sandbox lets you create a deposit whose ACH debit is pre-armed to return with a specific NACHA code. The deposit moves through the normal lifecycle and lands in `returned` so you can exercise downstream handling end-to-end (webhooks, the integrator returns API, your reconciliation logic).
 
+Plaid Signal runs during deposit creation. In sandbox, Plaid supports amount-based Signal fixtures. Use the normal generated SDK fields and set the prepared deposit amount to exercise Signal behavior; do not send a `signal` request field.
+
+Useful Signal amount fixtures:
+
+| Amount  | Plaid Signal score | Expected Spritz behavior                           |
+| ------- | ------------------ | -------------------------------------------------- |
+| `12.17` | `60`               | Medium score, expected allow under local threshold |
+| `27.53` | `90`               | High score, expected pre-debit risk block          |
+
+`3.53` maps to score `10`, but it is below the current ACH minimum in this sandbox.
+
 ```typescript
 // 1. Prepare as normal
 const preparation = await client.deposit.prepare({
@@ -495,7 +632,7 @@ const preparation = await client.deposit.prepare({
     network: 'solana',
     asset: 'USDC',
     quoteType: 'exact_input',
-    amountUsd: '10.00',
+    amountUsd: '12.17',
     priority: 'normal',
 })
 
@@ -534,6 +671,7 @@ This endpoint returns 403 in production. The 200 response shape is the same as `
 | `POST` | `/v1/bank-accounts/link-complete`             | `client.bankAccount.completeLinking(...)`     | Complete Plaid linking                                   |
 | `GET`  | `/v1/funding-sources/`                        | `client.fundingSource.list()`                 | List funding sources                                     |
 | `GET`  | `/v1/funding-sources/{id}`                    | `client.fundingSource.get(id)`                | Get funding source                                       |
+| `GET`  | `/v1/funding-sources/{id}/deposit-limits`     | `client.fundingSource.getDepositLimits(id)`   | Get current ACH debit limits                             |
 | `POST` | `/v1/deposits/direct/prepare`                 | `client.deposit.prepare(...)`                 | Prepare deposit quote                                    |
 | `POST` | `/v1/deposits/direct`                         | `client.deposit.create(...)`                  | Create deposit                                           |
 | `GET`  | `/v1/on-ramps/`                               | `client.onrampPayment.list(...)`              | List on-ramps (canonical deposit lookup)                 |

@@ -9,3 +9,4 @@ src/.DS_Store
 demo.ts
 coverage/
 .claude/
+qc/evidence/*.json

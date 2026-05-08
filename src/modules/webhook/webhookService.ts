@@ -1,28 +1,57 @@
 import { SpritzClient } from '../../lib/client'
+import type { PathRequestBody, PathResponse } from '../../rest/types'
 
-export type WebhookEvent =
-    | 'account.created'
-    | 'account.updated'
-    | 'account.deleted'
-    | 'payment.created'
-    | 'payment.updated'
-    | 'payment.completed'
-    | 'payment.refunded'
-    | 'verification.status.updated'
-    | 'capabilities.updated'
+type RestCreateWebhookRequest = PathRequestBody<'/v1/integrator/webhooks', 'post'>
+type RestIntegratorWebhook = PathResponse<'/v1/integrator/webhooks', 'post'>
+type RestIntegratorWebhookList = PathResponse<'/v1/integrator/webhooks', 'get'>
+type RestDeletedIntegratorWebhook = PathResponse<'/v1/integrator/webhooks/{webhookId}', 'delete'>
+type RestUpdateWebhookRequest = PathRequestBody<'/v1/integrator/webhooks/{webhookId}', 'patch'>
+type RestUpdatedIntegratorWebhook = PathResponse<'/v1/integrator/webhooks/{webhookId}', 'patch'>
+type RestUpdateWebhookSecretRequest = PathRequestBody<'/v1/integrator/webhook-secret', 'post'>
+type RestUpdateWebhookSecretResponse = PathResponse<'/v1/integrator/webhook-secret', 'post'>
+
+export type WebhookEvent = NonNullable<RestCreateWebhookRequest['events']>[number]
 
 export type IntegratorWebhook = {
     id: string
     integratorId: string
     failureCount: number
-    events: string[]
+    events: WebhookEvent[]
     url: string
     createdAt: string
+    disabled?: boolean
 }
 
-type CreateWebhookParams = {
+export type CreateWebhookParams = {
     url: string
     events: WebhookEvent[]
+}
+
+export type UpdateWebhookParams = {
+    events: WebhookEvent[]
+}
+
+export type UpdateWebhookSecretResponse = {
+    success: boolean
+}
+
+function normalizeWebhook(
+    webhook:
+        | RestIntegratorWebhook
+        | RestUpdatedIntegratorWebhook
+        | RestIntegratorWebhookList[number]
+) {
+    const maybeLegacyWebhook = webhook as RestIntegratorWebhook & Partial<IntegratorWebhook>
+
+    return {
+        id: webhook.id,
+        integratorId: maybeLegacyWebhook.integratorId ?? '',
+        failureCount: webhook.failureCount,
+        events: webhook.events,
+        url: webhook.url,
+        createdAt: maybeLegacyWebhook.createdAt ?? '',
+        disabled: webhook.disabled,
+    }
 }
 
 export class WebhookService {
@@ -33,32 +62,70 @@ export class WebhookService {
     }
 
     public async create(args: CreateWebhookParams) {
-        return this.client.request<IntegratorWebhook, CreateWebhookParams>({
+        const webhook = await this.client.restApi<RestIntegratorWebhook, RestCreateWebhookRequest>({
             method: 'post',
-            path: '/users/integrators/webhooks',
+            path: '/v1/integrator/webhooks',
             body: args,
         })
+
+        return normalizeWebhook(webhook)
+    }
+
+    public async update(webhookId: string, args: UpdateWebhookParams) {
+        const webhook = await this.client.restApi<
+            RestUpdatedIntegratorWebhook,
+            RestUpdateWebhookRequest
+        >({
+            method: 'patch',
+            path: `/v1/integrator/webhooks/${encodeURIComponent(webhookId)}`,
+            body: args,
+        })
+
+        return normalizeWebhook(webhook)
     }
 
     public async updateWebhookSecret(secret: string) {
-        return this.client.request<{ success: boolean }, { secret: string }>({
+        const response = await this.client.restApi<
+            RestUpdateWebhookSecretResponse,
+            RestUpdateWebhookSecretRequest
+        >({
             method: 'post',
-            path: '/users/integrators/webhook-secret',
+            path: '/v1/integrator/webhook-secret',
             body: { secret },
         })
+
+        return { success: response.secretConfigured }
     }
 
     public async list() {
-        return this.client.request<IntegratorWebhook[]>({
+        const webhooks = await this.client.restApi<RestIntegratorWebhookList>({
             method: 'get',
-            path: '/users/integrators/webhooks',
+            path: '/v1/integrator/webhooks',
         })
+
+        return webhooks.map(normalizeWebhook)
     }
 
     public async delete(webhookId: string) {
-        return this.client.request<IntegratorWebhook>({
+        const existingWebhook = await this.list()
+            .then((webhooks) => webhooks.find((webhook) => webhook.id === webhookId))
+            .catch(() => undefined)
+
+        await this.client.restApi<RestDeletedIntegratorWebhook>({
             method: 'delete',
-            path: `/users/integrators/webhooks/${webhookId}`,
+            path: `/v1/integrator/webhooks/${encodeURIComponent(webhookId)}`,
         })
+
+        return (
+            existingWebhook ?? {
+                id: webhookId,
+                integratorId: '',
+                failureCount: 0,
+                events: [],
+                url: '',
+                createdAt: '',
+                disabled: true,
+            }
+        )
     }
 }
