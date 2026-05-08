@@ -494,14 +494,26 @@ await client.webhook.updateWebhookSecret(process.env.SPRITZ_WEBHOOK_SECRET!)
 
 const webhook = await client.webhook.create({
     url: 'https://api.example.com/spritz/webhooks',
-    events: ['payment.created', 'payment.updated', 'payment.completed'],
+    events: ['onramp.created', 'onramp.updated', 'achDebitReturn.created'],
 })
 ```
 
 Key events to handle:
 
-- **Deposit status change** — debit submitted, settled, returned, failed
-- **Release status change** — USDC queued, released, failed
+- `onramp.created` — on-ramp record created after the ACH deposit is authorized
+- `onramp.updated` — on-ramp status, delivery, or reversal details updated
+- `onramp.completed` — on-ramp delivery completed
+- `achDebitReturn.created` — ACH debit return recorded
+- `achDebitReturn.updated` — ACH debit return details updated
+
+To subscribe an endpoint to every current and future event, use `events: ['*']`.
+To change an existing webhook's event subscriptions:
+
+```typescript
+await client.webhook.update(webhook.id, {
+    events: ['onramp.updated', 'achDebitReturn.created', 'achDebitReturn.updated'],
+})
+```
 
 Webhook requests are signed with HMAC SHA256 using your webhook secret. Verify the signature against the **raw request body** before parsing JSON:
 
@@ -528,6 +540,24 @@ All endpoints return [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) p
     "title": "Invalid Input",
     "status": 400,
     "detail": "amountUsd must be a positive decimal string"
+}
+```
+
+The SDK throws typed errors with the status, message, response IDs, and parsed problem payload:
+
+```typescript
+import { PermissionDeniedError } from '@spritz-finance/api-client'
+
+try {
+    await client.bankAccount.createLinkToken()
+} catch (error) {
+    if (error instanceof PermissionDeniedError) {
+        console.error(error.status) // 403
+        console.error(error.message) // human-readable detail
+        console.error(error.error?.requirement) // identity verification requirement, if returned
+        console.error(error.headers?.requestId)
+    }
+    throw error
 }
 ```
 
@@ -558,14 +588,14 @@ Use `Environment.Sandbox` for testing. The sandbox base URL is `https://sandbox.
     ./scripts/sandbox/run.sh setup-user
     ```
 
-2. Serve the interactive demo over HTTP and open it (the demo will not work from `file://` because Plaid Link requires an `http(s)` origin):
+2. Build the SDK bundle and start the interactive demo/evidence server:
 
     ```bash
-    npx serve scripts/sandbox
-    # then open http://localhost:3000/ach-onramp.html
+    yarn build
+    node scripts/sandbox/evidence-server.mjs
     ```
 
-    Enter your credentials and walk through the full flow.
+    Open `http://localhost:3001/ach-onramp.html`, enter your credentials, and walk through the full flow. The demo saves redacted QC evidence under `qc/evidence/`.
 
 ### Plaid sandbox credentials
 
@@ -580,7 +610,16 @@ Select any checking account to complete linking.
 
 Sandbox lets you create a deposit whose ACH debit is pre-armed to return with a specific NACHA code. The deposit moves through the normal lifecycle and lands in `returned` so you can exercise downstream handling end-to-end (webhooks, the integrator returns API, your reconciliation logic).
 
-Signal simulation happens before ACH initiation. Use the sandbox `signal` selector to force risk outcomes such as accepted, review, or reroute/rejected paths. When `signal` blocks the deposit, no ACH debit is pulled and no return simulation can run.
+Plaid Signal runs during deposit creation. In sandbox, Plaid supports amount-based Signal fixtures. Use the normal generated SDK fields and set the prepared deposit amount to exercise Signal behavior; do not send a `signal` request field.
+
+Useful Signal amount fixtures:
+
+| Amount  | Plaid Signal score | Expected Spritz behavior                           |
+| ------- | ------------------ | -------------------------------------------------- |
+| `12.17` | `60`               | Medium score, expected allow under local threshold |
+| `27.53` | `90`               | High score, expected pre-debit risk block          |
+
+`3.53` maps to score `10`, but it is below the current ACH minimum in this sandbox.
 
 ```typescript
 // 1. Prepare as normal
@@ -590,14 +629,13 @@ const preparation = await client.deposit.prepare({
     network: 'solana',
     asset: 'USDC',
     quoteType: 'exact_input',
-    amountUsd: '10.00',
+    amountUsd: '12.17',
     priority: 'normal',
 })
 
 // 2. Use the sandbox creator instead of client.deposit.create
 const deposit = await client.sandbox.createDepositWithReturn({
     preparationId: preparation.preparationId,
-    signal: { outcome: 'accept' },
     returnSimulation: { code: 'R01' }, // NACHA return code to arm
 })
 

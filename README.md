@@ -833,7 +833,7 @@ If risk checks block the create step, the API returns 409 before any ACH debit i
 
 For a complete walkthrough with code examples, request/response schemas, and deposit lifecycle documentation, see the **[ACH Onramp Integration Guide](docs/ach-onramp-guide.md)**.
 
-A standalone sandbox demo is available at `scripts/sandbox/ach-onramp.html` — open it in a browser to walk through the full flow interactively.
+A standalone sandbox demo is available at `scripts/sandbox/ach-onramp.html`. Run `yarn build && node scripts/sandbox/evidence-server.mjs`, then open `http://localhost:3001/ach-onramp.html` to test the SDK-backed flow and save redacted QC evidence.
 
 ## Sandbox
 
@@ -881,12 +881,31 @@ This endpoint returns 403 in production.
 
 - `capabilities.updated` — user capabilities changed
 
+#### On-Ramp Events
+
+- `onramp.created` — on-ramp record created after a deposit is authorized
+- `onramp.updated` — on-ramp status, delivery, or reversal details updated
+- `onramp.completed` — on-ramp delivery completed
+
+#### ACH Debit Return Events
+
+- `achDebitReturn.created` — ACH debit return recorded
+- `achDebitReturn.updated` — ACH debit return details updated
+
+Use `'*'` to subscribe a webhook endpoint to all current and future webhook events.
+
 ### Setup
 
 ```typescript
 const webhook = await client.webhook.create({
     url: 'https://my.webhook.url/spritz',
-    events: ['account.created', 'account.updated', 'payment.completed'],
+    events: ['onramp.created', 'onramp.updated', 'achDebitReturn.created'],
+})
+
+// Subscribe to all events
+await client.webhook.create({
+    url: 'https://my.webhook.url/spritz/all',
+    events: ['*'],
 })
 ```
 
@@ -905,6 +924,11 @@ Webhook payloads have the following shape:
 ```typescript
 // List all webhooks
 const webhooks = await client.webhook.list()
+
+// Update a webhook's event subscriptions
+await client.webhook.update('webhook-id', {
+    events: ['onramp.updated', 'achDebitReturn.created', 'achDebitReturn.updated'],
+})
 
 // Delete a webhook
 await client.webhook.delete('webhook-id')

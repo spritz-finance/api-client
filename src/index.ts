@@ -1,6 +1,21 @@
 export { SpritzApiClient } from './spritzApiClient'
 export type { ClientOptions } from './spritzApiClient'
 export * from './env'
+export {
+    APIConnectionError,
+    APIConnectionTimeoutError,
+    APIError,
+    APIUserAbortError,
+    AuthenticationError,
+    BadRequestError,
+    ConflictError,
+    InternalServerError,
+    NotFoundError,
+    PermissionDeniedError,
+    RateLimitError,
+    SpritzApiError,
+    UnprocessableEntityError,
+} from './lib/error'
 export type {
     CreateDirectPaymentInput,
     BankAccountInput,
@@ -74,6 +89,7 @@ export type { PathResponse, PathRequestBody, PathQuery, PathParams } from './res
 export type {
     CreateWebhookParams,
     IntegratorWebhook,
+    UpdateWebhookParams,
     UpdateWebhookSecretResponse,
     WebhookEvent,
 } from './modules/webhook/webhookService'

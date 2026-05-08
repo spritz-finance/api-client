@@ -19,7 +19,7 @@ describe('WebhookService', () => {
             const mockWebhook = {
                 id: 'webhook-123',
                 failureCount: 0,
-                events: ['payment.created', 'payment.completed'],
+                events: ['onramp.created', 'onramp.updated'],
                 url: 'https://example.com/webhook',
                 disabled: false,
             }
@@ -28,7 +28,7 @@ describe('WebhookService', () => {
 
             const result = await webhookService.create({
                 url: 'https://example.com/webhook',
-                events: ['payment.created', 'payment.completed'],
+                events: ['onramp.created', 'onramp.updated'],
             })
 
             expect(mockClient.restApi).toHaveBeenCalledWith({
@@ -36,7 +36,7 @@ describe('WebhookService', () => {
                 path: '/v1/integrator/webhooks',
                 body: {
                     url: 'https://example.com/webhook',
-                    events: ['payment.created', 'payment.completed'],
+                    events: ['onramp.created', 'onramp.updated'],
                 },
             })
             expect(result).toEqual({
@@ -65,6 +65,62 @@ describe('WebhookService', () => {
             })
 
             expect(result).toEqual(mockWebhook)
+        })
+    })
+
+    describe('update', () => {
+        it('should update webhook event subscriptions', async () => {
+            const mockWebhook = {
+                id: 'webhook/123',
+                failureCount: 0,
+                events: ['achDebitReturn.created', 'achDebitReturn.updated'],
+                url: 'https://example.com/webhook',
+                disabled: false,
+            }
+
+            vi.mocked(mockClient.restApi).mockResolvedValue(mockWebhook)
+
+            const result = await webhookService.update('webhook/123', {
+                events: ['achDebitReturn.created', 'achDebitReturn.updated'],
+            })
+
+            expect(mockClient.restApi).toHaveBeenCalledWith({
+                method: 'patch',
+                path: '/v1/integrator/webhooks/webhook%2F123',
+                body: {
+                    events: ['achDebitReturn.created', 'achDebitReturn.updated'],
+                },
+            })
+            expect(result).toEqual({
+                ...mockWebhook,
+                integratorId: '',
+                createdAt: '',
+            })
+        })
+
+        it('should support subscribing to all webhook events', async () => {
+            const mockWebhook = {
+                id: 'webhook-123',
+                failureCount: 0,
+                events: ['*'],
+                url: 'https://example.com/webhook',
+                disabled: false,
+            }
+
+            vi.mocked(mockClient.restApi).mockResolvedValue(mockWebhook)
+
+            const result = await webhookService.update('webhook-123', {
+                events: ['*'],
+            })
+
+            expect(mockClient.restApi).toHaveBeenCalledWith({
+                method: 'patch',
+                path: '/v1/integrator/webhooks/webhook-123',
+                body: {
+                    events: ['*'],
+                },
+            })
+            expect(result.events).toEqual(['*'])
         })
     })
 

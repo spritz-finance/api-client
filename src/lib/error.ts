@@ -42,6 +42,7 @@ export class SpritzApiError extends Error {
 
 export class APIError extends Error {
     readonly status: number | undefined
+    readonly error: APIErrorPayload | undefined
     readonly headers: Headers | undefined
     readonly timestamp: string
 
@@ -53,6 +54,7 @@ export class APIError extends Error {
     ) {
         super(APIError.makeMessage(error, message))
         this.status = status
+        this.error = error
         this.headers = headers
         this.timestamp = new Date().toISOString()
     }

@@ -70,4 +70,31 @@ describe('SandboxService', () => {
         })
         expect(result).toEqual(response)
     })
+
+    it('passes through additional generated sandbox return fields without inventing Signal fields', async () => {
+        const input = {
+            preparationId: 'prep_123',
+            clientContext: {
+                sessionId: 'session_123',
+            },
+            returnSimulation: {
+                code: 'R10',
+            },
+        }
+        const response = {
+            id: 'dep_123',
+            status: 'authorized',
+        }
+
+        vi.mocked(mockClient.restApi).mockResolvedValue(response)
+
+        const result = await sandboxService.createDepositWithReturn(input)
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'post',
+            path: '/v1/sandbox/deposits/direct',
+            body: input,
+        })
+        expect(result).toEqual(response)
+    })
 })

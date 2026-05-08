@@ -17,23 +17,50 @@ describe('APIError', () => {
     }
 
     it('uses RFC 7807 detail as the partner-facing message', () => {
-        const error = APIError.generate(
-            400,
-            {
-                type: 'urn:problem-type:validation:invalid-input',
-                title: 'Invalid Input',
-                status: 400,
-                detail: 'amountUsd must be a positive decimal string',
-            },
-            undefined,
-            headers
-        )
+        const problem = {
+            type: 'urn:problem-type:validation:invalid-input',
+            title: 'Invalid Input',
+            status: 400,
+            detail: 'amountUsd must be a positive decimal string',
+        }
+        const error = APIError.generate(400, problem, undefined, headers)
 
         expect(error).toBeInstanceOf(BadRequestError)
         expect(error.name).toBe('BadRequestError')
         expect(error.status).toBe(400)
         expect(error.message).toBe('amountUsd must be a positive decimal string')
+        expect(error.error).toEqual(problem)
         expect(error.headers).toEqual(headers)
+    })
+
+    it('preserves RFC 7807 requirement payload for SDK consumers', () => {
+        const error = APIError.generate(
+            403,
+            {
+                type: 'urn:problem-type:forbidden',
+                title: 'Identity Verification Required',
+                status: 403,
+                detail: 'You must complete identity verification to access this feature.',
+                requirement: {
+                    type: 'identity_verification',
+                    description: 'Verify your identity to unlock platform features',
+                    status: 'not_started',
+                },
+            },
+            undefined,
+            headers
+        )
+
+        expect(error).toBeInstanceOf(PermissionDeniedError)
+        expect(error.status).toBe(403)
+        expect(error.message).toBe(
+            'You must complete identity verification to access this feature.'
+        )
+        expect(error.error?.requirement).toEqual({
+            type: 'identity_verification',
+            description: 'Verify your identity to unlock platform features',
+            status: 'not_started',
+        })
     })
 
     it('falls back to RFC 7807 title when detail is absent', () => {

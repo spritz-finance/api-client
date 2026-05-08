@@ -5,6 +5,8 @@ type RestCreateWebhookRequest = PathRequestBody<'/v1/integrator/webhooks', 'post
 type RestIntegratorWebhook = PathResponse<'/v1/integrator/webhooks', 'post'>
 type RestIntegratorWebhookList = PathResponse<'/v1/integrator/webhooks', 'get'>
 type RestDeletedIntegratorWebhook = PathResponse<'/v1/integrator/webhooks/{webhookId}', 'delete'>
+type RestUpdateWebhookRequest = PathRequestBody<'/v1/integrator/webhooks/{webhookId}', 'patch'>
+type RestUpdatedIntegratorWebhook = PathResponse<'/v1/integrator/webhooks/{webhookId}', 'patch'>
 type RestUpdateWebhookSecretRequest = PathRequestBody<'/v1/integrator/webhook-secret', 'post'>
 type RestUpdateWebhookSecretResponse = PathResponse<'/v1/integrator/webhook-secret', 'post'>
 
@@ -25,11 +27,20 @@ export type CreateWebhookParams = {
     events: WebhookEvent[]
 }
 
+export type UpdateWebhookParams = {
+    events: WebhookEvent[]
+}
+
 export type UpdateWebhookSecretResponse = {
     success: boolean
 }
 
-function normalizeWebhook(webhook: RestIntegratorWebhook | RestIntegratorWebhookList[number]) {
+function normalizeWebhook(
+    webhook:
+        | RestIntegratorWebhook
+        | RestUpdatedIntegratorWebhook
+        | RestIntegratorWebhookList[number]
+) {
     const maybeLegacyWebhook = webhook as RestIntegratorWebhook & Partial<IntegratorWebhook>
 
     return {
@@ -54,6 +65,19 @@ export class WebhookService {
         const webhook = await this.client.restApi<RestIntegratorWebhook, RestCreateWebhookRequest>({
             method: 'post',
             path: '/v1/integrator/webhooks',
+            body: args,
+        })
+
+        return normalizeWebhook(webhook)
+    }
+
+    public async update(webhookId: string, args: UpdateWebhookParams) {
+        const webhook = await this.client.restApi<
+            RestUpdatedIntegratorWebhook,
+            RestUpdateWebhookRequest
+        >({
+            method: 'patch',
+            path: `/v1/integrator/webhooks/${encodeURIComponent(webhookId)}`,
             body: args,
         })
 

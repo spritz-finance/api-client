@@ -2,8 +2,7 @@
   ACH Onramp — Spritz Sandbox Demo
 
   Serve this file over HTTP (not file://):
-    npx serve scripts/sandbox
-    # or: python3 -m http.server -d scripts/sandbox
+    node scripts/sandbox/evidence-server.mjs
 
   Prerequisites:
     - A sandbox user with KYC bypassed (run: ./scripts/sandbox/run.sh setup-user)
@@ -140,6 +139,19 @@
                 opacity: 0.4;
                 cursor: not-allowed;
             }
+            button.secondary {
+                background: var(--border);
+                color: var(--text);
+            }
+            .button-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                margin-top: 0.75rem;
+            }
+            .button-row button {
+                margin-top: 0;
+            }
             pre {
                 background: var(--bg);
                 border: 1px solid var(--border);
@@ -181,6 +193,11 @@
                 font-size: 0.8rem;
                 word-break: break-all;
             }
+            .evidence-note {
+                color: var(--muted);
+                font-size: 0.7rem;
+                margin-top: 0.75rem;
+            }
             select {
                 width: 100%;
                 background: var(--bg);
@@ -196,7 +213,10 @@
     </head>
     <body>
         <h1>ACH Onramp Demo</h1>
-        <p class="subtitle">Spritz Finance — Sandbox Environment</p>
+        <p class="subtitle">
+            Spritz Finance — Sandbox Environment — SDK QC build
+            <span id="appVersionLabel"></span>
+        </p>
 
         <div class="config">
             <p style="color: var(--yellow); font-size: 0.75rem; margin-bottom: 0.75rem">
@@ -206,17 +226,60 @@
             <input id="integrationKey" placeholder="ik_..." />
             <label>Integrator Secret</label>
             <input id="integratorSecret" type="password" placeholder="secret" />
+            <label>Sandbox User Email (optional)</label>
+            <input id="sandboxUserEmail" placeholder="ach-qc+timestamp@spritz.finance" />
             <label>API Key</label>
             <input id="apiKey" placeholder="ak_..." />
             <label>Destination Wallet (Solana, Base58)</label>
             <input id="walletAddress" placeholder="9xQeWvG816bUx9EPjHmaT23yvVMb..." />
             <label>Deposit Amount (USD)</label>
-            <input id="depositAmount" value="1.00" placeholder="1.00" />
+            <input id="depositAmount" value="12.17" placeholder="12.17" />
             <label>Fee Subsidy % (optional — integrator absorbs this % of the fee)</label>
             <input id="feeSubsidyPct" placeholder="e.g. 50" />
             <label>Max Fee Subsidy USD (optional — cap on subsidy per deposit)</label>
             <input id="feeSubsidyMax" placeholder="e.g. 5.00" />
-            <button onclick="startDemo()">Start</button>
+            <label>Plaid Signal Sandbox Amount Profile</label>
+            <select id="signalProfile">
+                <option value="score60">
+                    score 60 — $12.17, expected allow under local threshold
+                </option>
+                <option value="score90">score 90 — $27.53, expected risk block</option>
+                <option value="custom">custom amount — no hardcoded Signal score</option>
+            </select>
+            <label>Sandbox Return Code (optional)</label>
+            <input id="returnSimulationCode" placeholder="R01, R10, R29" />
+            <div class="button-row">
+                <button class="secondary" onclick="generateFreshUser()">Generate Fresh User</button>
+                <button class="secondary" onclick="bypassCurrentUserKyc()">Bypass KYC (US)</button>
+                <button class="secondary" onclick="runKycGateQc()">Full SDK KYC Gate QC</button>
+                <button onclick="startDemo()">Start</button>
+                <button
+                    class="secondary"
+                    id="downloadEvidenceBtn"
+                    onclick="downloadEvidence()"
+                    disabled
+                >
+                    Download Evidence
+                </button>
+                <button
+                    class="secondary"
+                    id="saveEvidenceBtn"
+                    onclick="saveEvidenceToWorkspace()"
+                    disabled
+                >
+                    Save Evidence to Workspace
+                </button>
+                <button class="secondary" id="copyEvidenceBtn" onclick="copyEvidence()" disabled>
+                    Copy Evidence
+                </button>
+                <button class="secondary" onclick="clearEvidence()">Clear Evidence</button>
+                <button class="secondary" onclick="clearSavedForm()">Clear Saved Form</button>
+            </div>
+            <p class="evidence-note">
+                Evidence export redacts credentials, HMAC signatures, Plaid public tokens, and link
+                tokens. Workspace saves go to <code>qc/evidence/</code> when the local receiver is
+                running. Sandbox form values are saved in this browser.
+            </p>
         </div>
 
         <div id="steps"></div>
@@ -224,84 +287,440 @@
 
         <script>
             const BASE = 'https://sandbox.spritz.finance'
+            const APP_VERSION = 'sdk-qc-2026-05-06-3'
+            const SIGNAL_DATA_READY_DELAY_MS = 20000
+            const SIGNAL_AMOUNT_PROFILES = {
+                score60: {
+                    amountUsd: '12.17',
+                    label: 'Plaid sandbox Signal score 60',
+                    expected: 'expected allow under local threshold',
+                },
+                score90: {
+                    amountUsd: '27.53',
+                    label: 'Plaid sandbox Signal score 90',
+                    expected: 'expected pre-debit risk block',
+                },
+                custom: {
+                    amountUsd: null,
+                    label: 'custom amount',
+                    expected: 'no hardcoded Signal score',
+                },
+            }
+            const EVIDENCE_STORAGE_KEY = 'spritz-ach-onramp-evidence'
+            const FORM_STORAGE_KEY = 'spritz-ach-onramp-form'
+            const EVIDENCE_RECEIVER = `${window.location.origin}/evidence`
+            const FORM_FIELD_IDS = [
+                'integrationKey',
+                'integratorSecret',
+                'sandboxUserEmail',
+                'apiKey',
+                'walletAddress',
+                'depositAmount',
+                'feeSubsidyPct',
+                'feeSubsidyMax',
+                'signalProfile',
+                'returnSimulationCode',
+            ]
 
-            // --- HMAC signing (mirrors src/lib/hmac.ts) ---
-            function hexEncode(buf) {
-                return Array.from(new Uint8Array(buf))
-                    .map((b) => b.toString(16).padStart(2, '0'))
-                    .join('')
-            }
-            async function sha256Hex(data) {
-                const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data))
-                return hexEncode(hash)
-            }
-            async function hmacSha256Hex(secret, data) {
-                const enc = new TextEncoder()
-                const key = await crypto.subtle.importKey(
-                    'raw',
-                    enc.encode(secret),
-                    { name: 'HMAC', hash: 'SHA-256' },
-                    false,
-                    ['sign']
-                )
-                const sig = await crypto.subtle.sign('HMAC', key, enc.encode(data))
-                return hexEncode(sig)
-            }
-            async function stampRequest(integratorKey, integratorSecret, method, url, body) {
-                const parsed = new URL(url)
-                const params = [...parsed.searchParams.keys()].sort()
-                const qs = params
-                    .map(
-                        (k) =>
-                            `${encodeURIComponent(k)}=${encodeURIComponent(parsed.searchParams.get(k))}`
-                    )
-                    .join('&')
-                const path = qs ? `${parsed.pathname}?${qs}` : parsed.pathname
-                const timestamp = Date.now()
-                const bodyHash = body ? await sha256Hex(body) : ''
-                const payload = `${timestamp}.${method.toUpperCase()}.${path}.${bodyHash}`
-                const signature = `sha256=${await hmacSha256Hex(integratorSecret, payload)}`
-                return {
-                    'X-Integrator-Key': integratorKey,
-                    'X-Signature': signature,
-                    'X-Timestamp': String(timestamp),
-                }
+            // --- Evidence capture ---
+            let evidence = null
+
+            function nowIso() {
+                return new Date().toISOString()
             }
 
-            // --- API client ---
-            async function api(method, path, body) {
-                const url = `${BASE}${path}`
-                const bodyStr = body ? JSON.stringify(body) : null
-                const cfg = getConfig()
-                const hmacHeaders = await stampRequest(
-                    cfg.integrationKey,
-                    cfg.integratorSecret,
-                    method,
-                    url,
-                    bodyStr
-                )
-                const headers = {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${cfg.apiKey}`,
-                    ...hmacHeaders,
-                }
-                let res
-                try {
-                    res = await fetch(url, { method, headers, body: bodyStr })
-                } catch (e) {
-                    throw new Error(
-                        `Network error — if running from file://, serve over HTTP instead (npx serve scripts/sandbox). Details: ${e.message}`
+            function redactString(value) {
+                if (value == null) return value
+                if (typeof value !== 'string' || value.length <= 8) return '[redacted]'
+                return `${value.slice(0, 4)}...${value.slice(-4)} [redacted]`
+            }
+
+            function shouldRedactKey(key) {
+                const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, '')
+                return [
+                    'apikey',
+                    'authorization',
+                    'integrationkey',
+                    'integratorkey',
+                    'integratorsecret',
+                    'secret',
+                    'signature',
+                    'linktoken',
+                    'publictoken',
+                    'rawkey',
+                    'accesstoken',
+                    'refreshtoken',
+                    'password',
+                ].some((sensitiveKey) => normalized === sensitiveKey)
+            }
+
+            function sanitizeEvidence(value, key = '') {
+                if (shouldRedactKey(key)) return redactString(value)
+                if (Array.isArray(value)) return value.map((item) => sanitizeEvidence(item))
+                if (value && typeof value === 'object') {
+                    return Object.fromEntries(
+                        Object.entries(value).map(([childKey, childValue]) => [
+                            childKey,
+                            sanitizeEvidence(childValue, childKey),
+                        ])
                     )
                 }
-                let json
+                return value
+            }
+
+            function getFormField(id) {
+                return document.getElementById(id)
+            }
+
+            function collectFormValues() {
+                return Object.fromEntries(
+                    FORM_FIELD_IDS.map((id) => [id, getFormField(id)?.value ?? ''])
+                )
+            }
+
+            function saveFormValues() {
+                localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(collectFormValues()))
+            }
+
+            function restoreFormValues() {
+                const raw = localStorage.getItem(FORM_STORAGE_KEY)
+                if (!raw) return
+
                 try {
-                    json = await res.json()
+                    const values = JSON.parse(raw)
+                    for (const id of FORM_FIELD_IDS) {
+                        const field = getFormField(id)
+                        if (field && typeof values[id] === 'string') field.value = values[id]
+                    }
                 } catch {
-                    throw new Error(`HTTP ${res.status} (non-JSON response)`)
+                    localStorage.removeItem(FORM_STORAGE_KEY)
                 }
-                if (!res.ok) throw new Error(json.detail || json.title || `HTTP ${res.status}`)
+            }
+
+            function bindFormPersistence() {
+                for (const id of FORM_FIELD_IDS) {
+                    const field = getFormField(id)
+                    if (!field) continue
+                    field.addEventListener('input', saveFormValues)
+                    field.addEventListener('change', saveFormValues)
+                }
+                getFormField('signalProfile')?.addEventListener('change', applySignalProfileAmount)
+            }
+
+            function clearSavedForm() {
+                localStorage.removeItem(FORM_STORAGE_KEY)
+                for (const id of FORM_FIELD_IDS) {
+                    const field = getFormField(id)
+                    if (!field) continue
+                    if (id === 'depositAmount') {
+                        field.value = SIGNAL_AMOUNT_PROFILES.score60.amountUsd
+                    } else if (id === 'signalProfile') {
+                        field.value = 'score60'
+                    } else {
+                        field.value = ''
+                    }
+                }
+                log('Saved form cleared')
+            }
+
+            function getRunInputs() {
+                return {
+                    integrationKey: document.getElementById('integrationKey').value.trim(),
+                    apiKey: document.getElementById('apiKey').value.trim(),
+                    sandboxUserEmail: document.getElementById('sandboxUserEmail').value.trim(),
+                    walletAddress: document.getElementById('walletAddress').value.trim(),
+                    depositAmount: document.getElementById('depositAmount').value.trim(),
+                    feeSubsidyPct: document.getElementById('feeSubsidyPct').value.trim(),
+                    feeSubsidyMax: document.getElementById('feeSubsidyMax').value.trim(),
+                    signalProfile: document.getElementById('signalProfile').value.trim(),
+                    returnSimulationCode: document
+                        .getElementById('returnSimulationCode')
+                        .value.trim(),
+                }
+            }
+
+            function initEvidence() {
+                const runId = `ach-qc-${new Date().toISOString().replace(/[:.]/g, '-')}`
+                evidence = {
+                    schemaVersion: 1,
+                    runId,
+                    app: 'scripts/sandbox/ach-onramp.html',
+                    appVersion: APP_VERSION,
+                    environment: 'sandbox',
+                    baseUrl: BASE,
+                    startedAt: nowIso(),
+                    browser: {
+                        userAgent: navigator.userAgent,
+                        language: navigator.language,
+                        platform: navigator.platform,
+                    },
+                    inputs: sanitizeEvidence(getRunInputs()),
+                    events: [],
+                }
+                persistEvidence()
+                updateEvidenceButtons()
+                recordEvidence('run.started', { inputs: getRunInputs() })
+            }
+
+            function persistEvidence() {
+                if (!evidence) return
+                localStorage.setItem(EVIDENCE_STORAGE_KEY, JSON.stringify(evidence))
+                updateEvidenceButtons()
+            }
+
+            function loadEvidence() {
+                const raw = localStorage.getItem(EVIDENCE_STORAGE_KEY)
+                if (!raw) return
+                try {
+                    evidence = JSON.parse(raw)
+                    updateEvidenceButtons()
+                } catch {
+                    localStorage.removeItem(EVIDENCE_STORAGE_KEY)
+                }
+            }
+
+            function updateEvidenceButtons() {
+                const hasEvidence = Boolean(evidence?.events?.length)
+                document.getElementById('downloadEvidenceBtn').disabled = !hasEvidence
+                document.getElementById('saveEvidenceBtn').disabled = !hasEvidence
+                document.getElementById('copyEvidenceBtn').disabled = !hasEvidence
+            }
+
+            function recordEvidence(type, data = {}) {
+                if (!evidence) return null
+                const event = {
+                    seq: evidence.events.length + 1,
+                    type,
+                    at: nowIso(),
+                    data: sanitizeEvidence(data),
+                }
+                evidence.events.push(event)
+                persistEvidence()
+                return event
+            }
+
+            function evidencePayload() {
+                return JSON.stringify(evidence, null, 2)
+            }
+
+            function downloadEvidence() {
+                if (!evidence) return
+                const blob = new Blob([evidencePayload()], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const link = document.createElement('a')
+                link.href = url
+                link.download = `${evidence.runId}.json`
+                document.body.appendChild(link)
+                link.click()
+                link.remove()
+                URL.revokeObjectURL(url)
+            }
+
+            async function postEvidenceToWorkspace() {
+                const res = await fetch(EVIDENCE_RECEIVER, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: evidencePayload(),
+                })
+                const json = await res.json().catch(() => ({}))
+                if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
                 return json
+            }
+
+            async function saveEvidenceToWorkspace(options = {}) {
+                if (!evidence) return null
+                const silent = Boolean(options.silent)
+                recordEvidence('evidence.save_requested', { receiver: EVIDENCE_RECEIVER })
+
+                try {
+                    let result = await postEvidenceToWorkspace()
+                    recordEvidence('evidence.saved_to_workspace', {
+                        path: result.path,
+                        eventCount: evidence.events.length,
+                    })
+                    result = await postEvidenceToWorkspace()
+                    if (!silent) log(`Evidence saved: ${result.path}`, 'success')
+                    return result
+                } catch (e) {
+                    recordEvidence('evidence.save_failed', {
+                        receiver: EVIDENCE_RECEIVER,
+                        error: e.message,
+                    })
+                    if (!silent) {
+                        log(
+                            `Evidence save failed: ${e.message}. Is scripts/sandbox/evidence-server.mjs running?`,
+                            'error'
+                        )
+                    }
+                    return null
+                }
+            }
+
+            async function localJson(path, body, label) {
+                const requestEvent = recordEvidence('local.request', {
+                    label,
+                    path,
+                    body,
+                })
+                const started = performance.now()
+                const res = await fetch(path, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                })
+                const json = await res.json().catch(() => ({}))
+                recordEvidence('local.response', {
+                    requestSeq: requestEvent?.seq,
+                    label,
+                    path,
+                    status: res.status,
+                    ok: res.ok,
+                    durationMs: Math.round(performance.now() - started),
+                    body: json,
+                })
+
+                if (!res.ok) {
+                    throw new Error(json.error || `HTTP ${res.status}`)
+                }
+
+                return json
+            }
+
+            async function copyEvidence() {
+                if (!evidence) return
+                try {
+                    await navigator.clipboard.writeText(evidencePayload())
+                    log('Evidence copied to clipboard', 'success')
+                } catch (e) {
+                    log(`Copy failed: ${e.message}`, 'error')
+                }
+            }
+
+            function clearEvidence() {
+                evidence = null
+                localStorage.removeItem(EVIDENCE_STORAGE_KEY)
+                updateEvidenceButtons()
+                log('Evidence cleared')
+            }
+
+            // --- Raw REST probe for contract parity ---
+            async function api(method, path, body, label, options = {}) {
+                const cfg = getConfig()
+                const requestEvent = recordEvidence('api.request', {
+                    label,
+                    method,
+                    path,
+                    body,
+                })
+                const started = performance.now()
+                let proxy
+                try {
+                    const res = await fetch('/sandbox-api', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            method,
+                            path,
+                            body,
+                            integrationKey: cfg.integrationKey,
+                            integratorSecret: cfg.integratorSecret,
+                            apiKey: cfg.apiKey,
+                        }),
+                    })
+                    proxy = await res.json()
+                    if (!res.ok) throw new Error(proxy.error || `HTTP ${res.status}`)
+                } catch (e) {
+                    recordEvidence('api.network_error', {
+                        requestSeq: requestEvent?.seq,
+                        label,
+                        method,
+                        path,
+                        durationMs: Math.round(performance.now() - started),
+                        error: e.message,
+                    })
+                    throw new Error(`Sandbox API proxy error: ${e.message}`)
+                }
+                const result = {
+                    label,
+                    method,
+                    path,
+                    status: proxy.status,
+                    ok: proxy.ok,
+                    durationMs: Math.round(performance.now() - started),
+                    headers: proxy.headers || {},
+                    body: proxy.body,
+                }
+                recordEvidence('api.response', {
+                    requestSeq: requestEvent?.seq,
+                    ...result,
+                })
+                if (!proxy.ok) {
+                    const problem =
+                        proxy.body?.detail ||
+                        proxy.body?.title ||
+                        proxy.body?.error ||
+                        `HTTP ${proxy.status}`
+                    const type = proxy.body?.type ? ` (${proxy.body.type})` : ''
+                    if (!options.allowError)
+                        throw new Error(`HTTP ${proxy.status}: ${problem}${type}`)
+                }
+                return options.withMeta ? result : proxy.body
+            }
+
+            async function sdk(action, input, label, options = {}) {
+                const cfg = getConfig()
+                const requestEvent = recordEvidence('sdk.request', {
+                    label,
+                    action,
+                    input,
+                })
+                const started = performance.now()
+                let response
+                try {
+                    const res = await fetch('/sdk-call', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action,
+                            input,
+                            integrationKey: cfg.integrationKey,
+                            integratorSecret: cfg.integratorSecret,
+                            apiKey: cfg.apiKey,
+                        }),
+                    })
+                    response = await res.json()
+                    if (!res.ok) throw new Error(response.error || `HTTP ${res.status}`)
+                } catch (e) {
+                    recordEvidence('sdk.network_error', {
+                        requestSeq: requestEvent?.seq,
+                        label,
+                        action,
+                        durationMs: Math.round(performance.now() - started),
+                        error: e.message,
+                    })
+                    throw new Error(`SDK proxy error: ${e.message}`)
+                }
+
+                const result = {
+                    label,
+                    action,
+                    ok: Boolean(response.ok),
+                    status: response.ok ? 200 : response.error?.status,
+                    durationMs: Math.round(performance.now() - started),
+                    body: response.ok ? response.body : null,
+                    error: response.ok ? null : response.error,
+                }
+                recordEvidence('sdk.response', {
+                    requestSeq: requestEvent?.seq,
+                    ...result,
+                })
+
+                if (!response.ok && !options.allowError) {
+                    const problem = response.error?.message || `SDK action failed: ${action}`
+                    throw new Error(problem)
+                }
+
+                return options.withMeta ? result : response.body
             }
 
             function getConfig() {
@@ -341,14 +760,167 @@
                 steps[idx].innerHTML = `
     <div class="step-header">
       <span class="step-num ${statusClass}">${status === 'done' ? '✓' : status === 'error' ? '✗' : idx + 1}</span>
-      <span class="step-title">${title}</span>
+      <span class="step-title">${escapeHtml(title)}</span>
     </div>
     <div class="step-body">${content}</div>
   `
             }
 
+            function escapeHtml(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;')
+            }
+
             function field(label, value) {
-                return `<div class="field"><div class="field-label">${label}</div><div class="field-value">${value}</div></div>`
+                return `<div class="field"><div class="field-label">${escapeHtml(label)}</div><div class="field-value">${escapeHtml(value)}</div></div>`
+            }
+
+            function jsonPre(value) {
+                return `<pre>${escapeHtml(JSON.stringify(value, null, 2))}</pre>`
+            }
+
+            function problemSummary(body) {
+                if (!body || typeof body !== 'object') return ''
+
+                let content =
+                    field('Problem', body.title || body.error || '(none)') +
+                    field('Detail', body.detail || '(none)')
+
+                if (body.requirement) {
+                    content +=
+                        field('Requirement', body.requirement.type || '(none)') +
+                        field('Requirement Status', body.requirement.status || '(none)')
+                }
+
+                if (body.code) content += field('Code', body.code)
+                if (body.type) content += field('Problem Type', body.type)
+                if (Array.isArray(body.errors) && body.errors.length > 0) {
+                    content += body.errors
+                        .map((error, index) =>
+                            field(
+                                `Validation ${index + 1}`,
+                                `${error.field || 'request'}: ${error.code || 'invalid'} — ${
+                                    error.message || '(no message)'
+                                }`
+                            )
+                        )
+                        .join('')
+                }
+                return content
+            }
+
+            function sdkErrorSummary(error) {
+                if (!error) return field('SDK Error', '(none)')
+                return (
+                    field('SDK Error', error.name || '(none)') +
+                    field('Status', error.status || '(none)') +
+                    field('Message', error.message || '(none)') +
+                    problemSummary(error.error)
+                )
+            }
+
+            function createDepositErrorGuidance(error, signalProfile) {
+                const problem = error?.error || {}
+                const code = problem.code || ''
+                const status = error?.status || problem.status
+
+                let content =
+                    field('SDK Method Failed', 'deposit create') +
+                    sdkErrorSummary(error) +
+                    field('ACH Debit Initiated', 'no')
+
+                if (status === 409) {
+                    content += field('Preparation Reusable', 'no — prepare a fresh quote')
+                }
+
+                if (code === 'risk_evaluation_unavailable') {
+                    content += field(
+                        'Meaning',
+                        'Plaid Signal/risk evaluation was unavailable, so Spritz blocked before pulling funds'
+                    )
+                    content += field(
+                        'Likely Cause',
+                        'Signal data may not be ready yet for a newly linked Plaid account, or the funding source is not backed by Signal data'
+                    )
+                    content += field(
+                        'Sandbox Action',
+                        signalProfile?.amountUsd
+                            ? `Use a fresh preparation and rerun the ${signalProfile.label} amount profile`
+                            : 'Use a fresh preparation and a documented Plaid Signal sandbox amount profile'
+                    )
+                } else if (code === 'risk_review_required') {
+                    content += field('Meaning', 'Signal requires review; this is a pre-debit block')
+                } else if (code === 'risk_rejected') {
+                    content += field(
+                        'Meaning',
+                        'Signal rejected or rerouted the debit; this is a pre-debit block'
+                    )
+                }
+
+                content +=
+                    '<div class="button-row">' +
+                    '<button onclick="continueWith(step3_prepareDeposit)">Prepare Fresh Quote</button>' +
+                    '<button class="secondary" onclick="continueWith(waitThenPrepareFreshQuote)">Wait 20s + Prepare Fresh Quote</button>' +
+                    '<button class="secondary" onclick="startPlaidLink()">Link Fresh Bank</button>' +
+                    '<button class="secondary" onclick="saveEvidenceToWorkspace()">Save Evidence to Workspace</button>' +
+                    '</div>'
+
+                return content
+            }
+
+            function linkTokenSuccessSummary(body) {
+                return (
+                    field('Link Token', body?.linkToken ? 'returned' : '(missing)') +
+                    field('Hosted Link URL', body?.hostedLinkUrl ? 'returned' : '(missing)') +
+                    field('Expiration', body?.expiration || '(not returned)')
+                )
+            }
+
+            function selectedSignalProfile() {
+                const key = document.getElementById('signalProfile').value.trim() || 'score60'
+                return SIGNAL_AMOUNT_PROFILES[key] ? key : 'custom'
+            }
+
+            function applySignalProfileAmount() {
+                const key = selectedSignalProfile()
+                const profile = SIGNAL_AMOUNT_PROFILES[key]
+                if (profile?.amountUsd) {
+                    document.getElementById('depositAmount').value = profile.amountUsd
+                    saveFormValues()
+                }
+                return { key, ...profile }
+            }
+
+            function selectedReturnCode() {
+                return document.getElementById('returnSimulationCode').value.trim().toUpperCase()
+            }
+
+            function usd(value) {
+                return value === undefined || value === null || value === ''
+                    ? '(not returned)'
+                    : `$${value}`
+            }
+
+            function ageMs(isoDate) {
+                const created = Date.parse(isoDate || '')
+                if (!Number.isFinite(created)) return null
+                return Date.now() - created
+            }
+
+            function seconds(valueMs) {
+                return Math.ceil(valueMs / 1000)
+            }
+
+            async function continueWith(stepFn) {
+                try {
+                    await stepFn()
+                } catch (e) {
+                    failActiveStep(e)
+                }
             }
 
             // --- Demo flow ---
@@ -362,8 +934,252 @@
                         activeStep,
                         steps[activeStep].querySelector('.step-title')?.textContent || 'Error',
                         'error',
-                        `<span style="color:var(--red)">${error.message}</span>`
+                        `<span style="color:var(--red)">${escapeHtml(error.message)}</span>`
                     )
+                }
+                saveEvidenceToWorkspace({ silent: true })
+            }
+
+            function resetRunState() {
+                document.getElementById('steps').innerHTML = ''
+                document.getElementById('log').innerHTML = ''
+                steps = []
+                activeStep = 0
+            }
+
+            function getIntegratorConfig() {
+                const cfg = getConfig()
+                if (!cfg.integrationKey || !cfg.integratorSecret) {
+                    throw new Error('Fill in integration key and integrator secret')
+                }
+                return cfg
+            }
+
+            function sleep(ms) {
+                return new Promise((resolve) => setTimeout(resolve, ms))
+            }
+
+            function ensureEvidenceRun() {
+                if (!evidence) initEvidence()
+            }
+
+            async function createFreshSandboxUser({ reset = true } = {}) {
+                const cfg = getIntegratorConfig()
+                if (reset) {
+                    resetRunState()
+                    state = {}
+                    initEvidence()
+                } else {
+                    ensureEvidenceRun()
+                }
+
+                activeStep = 0
+                renderStep(0, 'Create Fresh Sandbox User', 'active', 'Creating user...')
+                const user = await localJson(
+                    '/sandbox-user/create',
+                    {
+                        integrationKey: cfg.integrationKey,
+                        fresh: true,
+                    },
+                    'sandbox_user.create_fresh'
+                )
+                state.generatedUser = user
+                document.getElementById('sandboxUserEmail').value = user.email
+                document.getElementById('apiKey').value = user.apiKey
+                saveFormValues()
+                renderStep(
+                    0,
+                    'Create Fresh Sandbox User',
+                    'done',
+                    field('User ID', user.userId) +
+                        field('Email', user.email) +
+                        field('API Key', 'generated and filled')
+                )
+                log(`Generated fresh sandbox user: ${user.email}`, 'success')
+                return user
+            }
+
+            async function generateFreshUser() {
+                try {
+                    await createFreshSandboxUser()
+                    await saveEvidenceToWorkspace({ silent: true })
+                } catch (e) {
+                    failActiveStep(e)
+                }
+            }
+
+            async function bypassCurrentUserKyc() {
+                try {
+                    const cfg = getIntegratorConfig()
+                    if (!cfg.apiKey) throw new Error('Generate or enter an API key first')
+                    ensureEvidenceRun()
+
+                    activeStep = 1
+                    renderStep(1, 'Bypass KYC', 'active', 'Bypassing current user to US...')
+                    await sdk('sandbox.bypassKyc', { country: 'US' }, 'sandbox.bypass_kyc_us')
+                    renderStep(1, 'Bypass KYC', 'done', field('Country', 'US'))
+                    log('Current user KYC bypassed to US', 'success')
+                    await saveEvidenceToWorkspace({ silent: true })
+                } catch (e) {
+                    failActiveStep(e)
+                }
+            }
+
+            async function runKycGateQc() {
+                try {
+                    const user = await createFreshSandboxUser()
+
+                    await probeLinkTokenGate({
+                        step: 1,
+                        title: 'Pre-KYC Link Token Gate',
+                        expectedOk: false,
+                    })
+
+                    activeStep = 2
+                    renderStep(2, 'Bypass KYC', 'active', 'Bypassing KYC to US through SDK...')
+                    await sdk('sandbox.bypassKyc', { country: 'US' }, 'sandbox.bypass_kyc_us')
+                    renderStep(
+                        2,
+                        'Bypass KYC',
+                        'done',
+                        field('SDK Method', 'sandbox.bypassKyc') + field('Country', 'US')
+                    )
+                    log('KYC bypassed to US', 'success')
+
+                    await probeLinkTokenGate({
+                        step: 3,
+                        title: 'Post-KYC Link Token Gate',
+                        expectedOk: true,
+                        attempts: 5,
+                    })
+
+                    renderStep(
+                        4,
+                        'SDK KYC Gate QC Complete',
+                        'done',
+                        '<p style="color:var(--green)">SDK blocked the unverified user, then allowed the US-verified user.</p>' +
+                            field('User ID', user.userId) +
+                            field('Email', user.email) +
+                            '<div class="button-row"><button onclick="saveEvidenceToWorkspace()">Save Evidence to Workspace</button></div>'
+                    )
+                    recordEvidence('kyc_gate_qc.completed', {
+                        userId: user.userId,
+                        email: user.email,
+                    })
+                    await saveEvidenceToWorkspace({ silent: true })
+                } catch (e) {
+                    failActiveStep(e)
+                }
+            }
+
+            async function probeLinkTokenGate({ step, title, expectedOk, attempts = 1 }) {
+                activeStep = step
+                let lastResult = null
+
+                for (let attempt = 1; attempt <= attempts; attempt += 1) {
+                    renderStep(
+                        step,
+                        title,
+                        'active',
+                        `SDK bankAccount.createLinkToken() (attempt ${attempt}/${attempts})`
+                    )
+                    log(`SDK bankAccount.createLinkToken() (${title})`)
+                    lastResult = await sdk(
+                        'bankAccount.createLinkToken',
+                        undefined,
+                        expectedOk
+                            ? 'sdk.bank_accounts.link_token.post_kyc_probe'
+                            : 'sdk.bank_accounts.link_token.pre_kyc_probe',
+                        { allowError: true, withMeta: true }
+                    )
+
+                    const matchedExpectation = expectedOk
+                        ? lastResult.ok
+                        : !lastResult.ok && lastResult.status === 403
+
+                    recordEvidence('kyc_gate.probe', {
+                        title,
+                        expectedOk,
+                        attempt,
+                        matchedExpectation,
+                        status: lastResult.status,
+                        ok: lastResult.ok,
+                        body: lastResult.body,
+                        error: lastResult.error,
+                    })
+
+                    if (matchedExpectation) {
+                        const restParity = await probeRestLinkTokenGate({
+                            title,
+                            expectedOk,
+                        })
+                        const content = expectedOk
+                            ? field('Expected', 'success after US KYC') +
+                              field('Actual Status', lastResult.status) +
+                              field('Result', 'link token created') +
+                              linkTokenSuccessSummary(lastResult.body) +
+                              field('REST Parity', restParity.matched ? 'matched' : 'mismatch')
+                            : field('Expected', '403 before KYC') +
+                              field('Actual Status', lastResult.status) +
+                              field('Result', 'blocked until US verification') +
+                              sdkErrorSummary(lastResult.error) +
+                              field('REST Parity', restParity.matched ? 'matched' : 'mismatch')
+
+                        if (!restParity.matched) {
+                            throw new Error(
+                                `${title} REST parity failed: expected ${
+                                    expectedOk ? 'success' : '403'
+                                }, got ${restParity.status ?? 'no response'}`
+                            )
+                        }
+
+                        renderStep(step, title, 'done', content)
+                        log(`${title}: passed`, 'success')
+                        return lastResult
+                    }
+
+                    if (expectedOk && attempt < attempts) await sleep(1000)
+                }
+
+                renderStep(
+                    step,
+                    title,
+                    'error',
+                    field('Expected', expectedOk ? 'success' : '403 before KYC') +
+                        field('Actual Status', lastResult?.status ?? '(none)') +
+                        problemSummary(lastResult?.body) +
+                        sdkErrorSummary(lastResult?.error) +
+                        '<p style="margin-top:0.5rem;font-size:0.7rem">Raw response is captured in the evidence file.</p>'
+                )
+                throw new Error(
+                    `${title} failed: expected ${expectedOk ? 'success' : '403'}, got ${
+                        lastResult?.status ?? 'no response'
+                    }`
+                )
+            }
+
+            async function probeRestLinkTokenGate({ title, expectedOk }) {
+                const result = await api(
+                    'POST',
+                    '/v1/bank-accounts/link-token',
+                    undefined,
+                    expectedOk
+                        ? 'api.bank_accounts.link_token.post_kyc_parity'
+                        : 'api.bank_accounts.link_token.pre_kyc_parity',
+                    { allowError: true, withMeta: true }
+                )
+                const matched = expectedOk ? result.ok : !result.ok && result.status === 403
+                recordEvidence('kyc_gate.rest_parity', {
+                    title,
+                    expectedOk,
+                    matched,
+                    status: result.status,
+                    ok: result.ok,
+                    body: result.body,
+                })
+                return {
+                    matched,
+                    status: result.status,
                 }
             }
 
@@ -379,10 +1195,8 @@
                     return
                 }
                 state = { walletAddress: wallet }
-                document.getElementById('steps').innerHTML = ''
-                document.getElementById('log').innerHTML = ''
-                steps = []
-                activeStep = 0
+                resetRunState()
+                initEvidence()
 
                 try {
                     await step1_checkFundingSources()
@@ -392,10 +1206,15 @@
             }
 
             async function step1_checkFundingSources() {
+                activeStep = 0
                 renderStep(0, 'Check Funding Sources', 'active', 'Fetching...')
-                log('GET /v1/funding-sources/')
+                log('SDK fundingSource.list()')
 
-                const sources = await api('GET', '/v1/funding-sources/')
+                const sources = await sdk(
+                    'fundingSource.list',
+                    undefined,
+                    'sdk.funding_sources.list'
+                )
                 state.fundingSources = sources
 
                 if (sources.length === 0) {
@@ -413,6 +1232,7 @@
                 const active = sources.find((s) => s.status === 'active')
                 if (active) {
                     state.selectedSource = active
+                    recordEvidence('funding_source.selected', active)
                     renderStep(
                         0,
                         'Funding Source',
@@ -426,7 +1246,7 @@
                             field('Status', active.status)
                     )
                     log(`Using funding source: ${active.id}`, 'success')
-                    await step2_createDeposit()
+                    await step2_getDepositLimits()
                 } else {
                     const first = sources[0]
                     renderStep(
@@ -436,45 +1256,94 @@
                         field('ID', first.id) +
                             field('Status', `${first.status} — waiting for activation`) +
                             '<p style="margin-top:0.5rem">Funding source is not yet active. This may take a moment after Plaid linking.</p>' +
-                            '<button onclick="step1_checkFundingSources()">Refresh</button>'
+                            '<button onclick="continueWith(step1_checkFundingSources)">Refresh</button>'
                     )
                     log(`Funding source ${first.id} status: ${first.status}`)
                 }
             }
 
             async function startPlaidLink() {
+                activeStep = 0
                 renderStep(0, 'Link Bank Account', 'active', 'Creating Plaid link token...')
-                log('POST /v1/bank-accounts/link-token')
+                log('SDK bankAccount.createLinkToken()')
 
-                const { linkToken } = await api('POST', '/v1/bank-accounts/link-token')
+                const linkTokenResult = await sdk(
+                    'bankAccount.createLinkToken',
+                    undefined,
+                    'sdk.bank_accounts.link_token',
+                    { allowError: true, withMeta: true }
+                )
+                if (!linkTokenResult.ok) {
+                    renderStep(
+                        0,
+                        'Link Bank Account',
+                        'error',
+                        field('Status', linkTokenResult.status) +
+                            sdkErrorSummary(linkTokenResult.error) +
+                            '<p style="margin-top:0.5rem">Run the KYC gate check or use a US-verified sandbox user before opening Plaid Link.</p>' +
+                            '<div class="button-row">' +
+                            '<button onclick="bypassCurrentUserKyc()">Bypass KYC (US)</button>' +
+                            '<button class="secondary" onclick="runKycGateQc()">Full SDK KYC Gate QC</button>' +
+                            '<button class="secondary" onclick="startPlaidLink()">Retry</button>' +
+                            '</div>'
+                    )
+                    log(`Link token blocked: HTTP ${linkTokenResult.status}`, 'error')
+                    recordEvidence('plaid.link_token_blocked', {
+                        status: linkTokenResult.status,
+                        error: linkTokenResult.error,
+                    })
+                    await saveEvidenceToWorkspace({ silent: true })
+                    return
+                }
+
+                const { linkToken } = linkTokenResult.body
                 log(`Link token received`, 'success')
 
                 const handler = Plaid.create({
                     token: linkToken,
                     onSuccess: async (publicToken, metadata) => {
-                        log(`Plaid success — exchanging token`)
-                        renderStep(0, 'Link Bank Account', 'active', 'Completing link...')
+                        try {
+                            recordEvidence('plaid.success', {
+                                metadata,
+                                selectedAccountIds: metadata.accounts.map((a) => a.id),
+                            })
+                            log(`Plaid success — exchanging token`)
+                            renderStep(0, 'Link Bank Account', 'active', 'Completing link...')
 
-                        const accountIds = metadata.accounts.map((a) => a.id)
-                        await api('POST', '/v1/bank-accounts/link-complete', {
-                            publicToken,
-                            accountIds,
-                            institutionId: metadata.institution?.institution_id,
-                            institutionName: metadata.institution?.name,
-                        })
+                            const accountIds = metadata.accounts.map((a) => a.id)
+                            await sdk(
+                                'bankAccount.completeLinking',
+                                {
+                                    publicToken,
+                                    accountIds,
+                                    institutionId: metadata.institution?.institution_id,
+                                    institutionName: metadata.institution?.name,
+                                },
+                                'sdk.bank_accounts.link_complete'
+                            )
 
-                        log('Bank account linked', 'success')
-                        renderStep(0, 'Link Bank Account', 'done', 'Bank account linked via Plaid.')
-                        await step1_checkFundingSources()
+                            log('Bank account linked', 'success')
+                            renderStep(
+                                0,
+                                'Link Bank Account',
+                                'done',
+                                'Bank account linked via Plaid.'
+                            )
+                            await step1_checkFundingSources()
+                        } catch (e) {
+                            failActiveStep(e)
+                        }
                     },
                     onExit: (err) => {
+                        recordEvidence('plaid.exit', { error: err })
                         if (err) {
-                            log(`Plaid error: ${err.display_message || err.error_code}`, 'error')
+                            const message = err.display_message || err.error_code
+                            log(`Plaid error: ${message}`, 'error')
                             renderStep(
                                 0,
                                 'Link Bank Account',
                                 'error',
-                                `Plaid error: ${err.display_message || err.error_code}<br><button onclick="startPlaidLink()">Retry</button>`
+                                `Plaid error: ${escapeHtml(message)}<br><button onclick="startPlaidLink()">Retry</button>`
                             )
                         } else {
                             log('Plaid link closed')
@@ -490,19 +1359,84 @@
                 handler.open()
             }
 
-            async function step2_createDeposit() {
+            async function step2_getDepositLimits() {
                 activeStep = 1
+                const sourceId = state.selectedSource.id
+
+                renderStep(1, 'Deposit Limits', 'active', 'Fetching current ACH limits...')
+                log('SDK fundingSource.getDepositLimits()')
+
+                const limits = await sdk(
+                    'fundingSource.getDepositLimits',
+                    { fundingSourceId: sourceId },
+                    'sdk.funding_sources.deposit_limits'
+                )
+                state.depositLimits = limits
+
+                const amount = document.getElementById('depositAmount').value.trim() || '1.00'
+                const requested = Number(amount)
+                const warnings = []
+                if (Number.isFinite(requested)) {
+                    if (requested < Number(limits.minimumDepositAmountUsd)) {
+                        warnings.push(`below minimum ${usd(limits.minimumDepositAmountUsd)}`)
+                    }
+                    if (requested > Number(limits.transactionLimitUsd)) {
+                        warnings.push(`above transaction limit ${usd(limits.transactionLimitUsd)}`)
+                    }
+                    if (requested > Number(limits.dailyRemainingUsd)) {
+                        warnings.push(`above daily remaining ${usd(limits.dailyRemainingUsd)}`)
+                    }
+                    if (requested > Number(limits.monthlyRemainingUsd)) {
+                        warnings.push(`above monthly remaining ${usd(limits.monthlyRemainingUsd)}`)
+                    }
+                }
+                if (limits.unsettledDepositRemaining <= 0) {
+                    warnings.push('no unsettled deposit capacity remaining')
+                }
+
+                renderStep(
+                    1,
+                    'Deposit Limits',
+                    'done',
+                    field('SDK Method', 'fundingSource.getDepositLimits') +
+                        field('Funding Source', sourceId) +
+                        field('Minimum Deposit', usd(limits.minimumDepositAmountUsd)) +
+                        field('Transaction Limit', usd(limits.transactionLimitUsd)) +
+                        field(
+                            'Daily Remaining',
+                            `${usd(limits.dailyRemainingUsd)} / ${usd(limits.dailyLimitUsd)}`
+                        ) +
+                        field(
+                            'Monthly Remaining',
+                            `${usd(limits.monthlyRemainingUsd)} / ${usd(limits.monthlyLimitUsd)}`
+                        ) +
+                        field(
+                            'Unsettled Remaining',
+                            `${limits.unsettledDepositRemaining} / ${limits.unsettledDepositLimit}`
+                        ) +
+                        field(
+                            'Requested Amount Check',
+                            warnings.length ? warnings.join('; ') : 'ok'
+                        )
+                )
+                log('Deposit limits fetched', 'success')
+                await step3_prepareDeposit()
+            }
+
+            async function step3_prepareDeposit() {
+                activeStep = 2
+                const signalProfile = applySignalProfileAmount()
                 const amount = document.getElementById('depositAmount').value.trim() || '1.00'
                 const subsidyPct = document.getElementById('feeSubsidyPct').value.trim()
                 const subsidyMax = document.getElementById('feeSubsidyMax').value.trim()
 
                 renderStep(
-                    1,
+                    2,
                     'Prepare Deposit',
                     'active',
                     `Preparing deposit quote ($${amount})...`
                 )
-                log('POST /v1/deposits/direct/prepare')
+                log('SDK deposit.prepare()')
 
                 const body = {
                     sourceId: state.selectedSource.id,
@@ -518,10 +1452,16 @@
                     if (subsidyMax) body.feeSubsidy.maxAmountUsd = subsidyMax
                 }
 
-                const prep = await api('POST', '/v1/deposits/direct/prepare', body)
+                const prep = await sdk('deposit.prepare', body, 'sdk.deposits.direct.prepare')
                 state.depositPrep = prep
                 const s = prep.summary
                 log(`Quote: $${s.totalDebitAmountUsd} debit → ${s.expectedAssetAmount} USDC`)
+                recordEvidence('authorization.presented', {
+                    preparationId: prep.preparationId,
+                    message: prep.message,
+                    summary: prep.summary,
+                    signalProfile,
+                })
 
                 let feeDetail = `$${s.userFeeUsd} (${s.feeRateBps} bps)`
                 let subsidyDetail = ''
@@ -538,29 +1478,165 @@
                 }
 
                 renderStep(
-                    1,
-                    'Prepare Deposit',
+                    2,
+                    'Review Authorization',
                     'active',
                     field('Requested', `$${s.requestedAmountUsd}`) +
+                        field(
+                            'Signal Amount Profile',
+                            `${signalProfile.label} (${signalProfile.expected})`
+                        ) +
                         field('User Fee', feeDetail) +
                         subsidyDetail +
                         field('Total Debit', `$${s.totalDebitAmountUsd}`) +
                         field('Expected USDC', s.expectedAssetAmount) +
                         field('Destination', s.destinationAddress) +
                         '<p style="margin-top:0.5rem;font-size:0.7rem">Authorization message:</p>' +
-                        `<pre>${prep.message}</pre>` +
-                        '<p style="margin-top:0.5rem;font-size:0.7rem">Submitting deposit...</p>'
+                        `<pre>${escapeHtml(prep.message)}</pre>` +
+                        '<div class="button-row"><button onclick="continueWith(confirmDeposit)">Confirm Deposit</button></div>'
                 )
+            }
 
-                log('POST /v1/deposits/direct')
-                const deposit = await api('POST', '/v1/deposits/direct', {
-                    preparationId: prep.preparationId,
+            async function waitForSignalDataReadiness() {
+                if (!state.selectedSource?.createdAt) return
+
+                const sourceAgeMs = ageMs(state.selectedSource.createdAt)
+                if (sourceAgeMs === null || sourceAgeMs >= SIGNAL_DATA_READY_DELAY_MS) return
+
+                const waitMs = SIGNAL_DATA_READY_DELAY_MS - sourceAgeMs
+                activeStep = 3
+                recordEvidence('signal.readiness_wait_started', {
+                    fundingSourceId: state.selectedSource.id,
+                    fundingSourceCreatedAt: state.selectedSource.createdAt,
+                    sourceAgeMs,
+                    waitMs,
                 })
+                renderStep(
+                    3,
+                    'Signal Data Readiness',
+                    'active',
+                    field('Funding Source Age', `${seconds(sourceAgeMs)}s`) +
+                        field('Waiting Before Create', `${seconds(waitMs)}s`) +
+                        field(
+                            'Reason',
+                            'Plaid Signal sandbox data may take a short time after Link'
+                        )
+                )
+                log(`Waiting ${seconds(waitMs)}s for Plaid Signal data readiness`)
+                await sleep(waitMs)
+                recordEvidence('signal.readiness_wait_completed', {
+                    fundingSourceId: state.selectedSource.id,
+                    waitedMs: waitMs,
+                })
+            }
+
+            async function waitThenPrepareFreshQuote() {
+                activeStep = 3
+                renderStep(
+                    3,
+                    'Signal Data Readiness',
+                    'active',
+                    field('Waiting Before New Quote', `${seconds(SIGNAL_DATA_READY_DELAY_MS)}s`) +
+                        field('Reason', 'Retrying after Plaid Signal data readiness window')
+                )
+                log(`Waiting ${seconds(SIGNAL_DATA_READY_DELAY_MS)}s before fresh quote`)
+                recordEvidence('signal.manual_wait_started', {
+                    waitMs: SIGNAL_DATA_READY_DELAY_MS,
+                    fundingSourceId: state.selectedSource?.id || null,
+                })
+                await sleep(SIGNAL_DATA_READY_DELAY_MS)
+                recordEvidence('signal.manual_wait_completed', {
+                    fundingSourceId: state.selectedSource?.id || null,
+                })
+                await step3_prepareDeposit()
+            }
+
+            async function confirmDeposit() {
+                activeStep = 3
+                if (!state.depositPrep) throw new Error('Prepare a deposit before confirming')
+
+                const signalProfile = applySignalProfileAmount()
+                const returnCode = selectedReturnCode()
+                const createPath = returnCode
+                    ? '/v1/sandbox/deposits/direct'
+                    : '/v1/deposits/direct'
+                const createBody = {
+                    preparationId: state.depositPrep.preparationId,
+                    clientContext: {
+                        userAgent: navigator.userAgent,
+                        platform: navigator.platform,
+                    },
+                }
+                if (returnCode) createBody.returnSimulation = { code: returnCode }
+
+                renderStep(
+                    2,
+                    'Authorization Reviewed',
+                    'done',
+                    field('Preparation', state.depositPrep.preparationId) +
+                        field(
+                            'Signal Amount Profile',
+                            `${signalProfile.label} (${signalProfile.expected})`
+                        ) +
+                        field(
+                            'Amount Sent to Signal',
+                            `$${document.getElementById('depositAmount').value.trim()}`
+                        ) +
+                        field('Return Simulation', returnCode || '(none)')
+                )
+                renderStep(3, 'Create Deposit', 'active', 'Submitting confirmed deposit...')
+                recordEvidence('user.confirmed_deposit', {
+                    preparationId: state.depositPrep.preparationId,
+                    signalProfile,
+                    signalAmountUsd: document.getElementById('depositAmount').value.trim(),
+                    returnCode,
+                    createPath,
+                })
+                const createAction = returnCode
+                    ? 'sandbox.createDepositWithReturn'
+                    : 'deposit.create'
+                log(`SDK ${createAction}()`)
+
+                await waitForSignalDataReadiness()
+                renderStep(3, 'Create Deposit', 'active', 'Submitting confirmed deposit...')
+
+                const createResult = await sdk(
+                    createAction,
+                    createBody,
+                    createPath.includes('/sandbox/')
+                        ? 'sdk.sandbox.deposits.direct.create'
+                        : 'sdk.deposits.direct.create',
+                    { allowError: true, withMeta: true }
+                )
+                if (!createResult.ok) {
+                    recordEvidence('deposit.create_blocked', {
+                        createAction,
+                        signalProfile,
+                        signalAmountUsd: document.getElementById('depositAmount').value.trim(),
+                        returnCode,
+                        status: createResult.status,
+                        error: createResult.error,
+                    })
+                    renderStep(
+                        3,
+                        'Create Deposit Blocked',
+                        'error',
+                        createDepositErrorGuidance(createResult.error, signalProfile)
+                    )
+                    log(
+                        `Create blocked: ${createResult.error?.message || 'unknown error'}`,
+                        'error'
+                    )
+                    await saveEvidenceToWorkspace({ silent: true })
+                    return
+                }
+
+                const deposit = createResult.body
                 state.deposit = deposit
                 log(`Deposit created: ${deposit.id} [${deposit.status}]`, 'success')
 
                 renderStep(
-                    1,
+                    3,
                     'Deposit Created',
                     'done',
                     field('ID', deposit.id) +
@@ -573,16 +1649,141 @@
                         field('To', deposit.address)
                 )
 
+                await step5_fetchOnRamp()
+            }
+
+            async function step5_fetchOnRamp() {
+                activeStep = 4
+                if (!state.deposit) throw new Error('Create a deposit before polling on-ramps')
+
+                renderStep(4, 'On-Ramp Polling', 'active', 'Fetching recent on-ramps...')
+                log('SDK onrampPayment.list()')
+                const onRamps = await sdk(
+                    'onrampPayment.list',
+                    {
+                        query: {
+                            network: 'solana',
+                            token: 'USDC',
+                            address: state.walletAddress,
+                            limit: 10,
+                            sort: 'desc',
+                        },
+                    },
+                    'sdk.onramp_payment.list'
+                )
+                state.onRamps = onRamps
+
+                const rows = onRamps.data || []
+                const matched =
+                    rows.find((row) => row.id === state.deposit.bridgeOnRampId) ||
+                    rows.find((row) => row.output?.address === state.walletAddress) ||
+                    null
+                let detail = null
+                if (state.deposit.bridgeOnRampId) {
+                    log('SDK onrampPayment.get()')
+                    detail = await sdk(
+                        'onrampPayment.get',
+                        { onRampId: state.deposit.bridgeOnRampId },
+                        'sdk.onramp_payment.get'
+                    )
+                    state.onRampDetail = detail
+                }
+
+                const status = matched || detail ? 'done' : 'active'
                 renderStep(
-                    2,
+                    4,
+                    'On-Ramp Polling',
+                    status,
+                    field('List Count', rows.length) +
+                        field(
+                            'Deposit bridgeOnRampId',
+                            state.deposit.bridgeOnRampId || '(not set)'
+                        ) +
+                        field('Matched On-Ramp', (detail || matched)?.id || '(not found yet)') +
+                        field('Matched Status', (detail || matched)?.status || '(not found yet)') +
+                        '<div class="button-row"><button class="secondary" onclick="continueWith(step5_fetchOnRamp)">Refresh On-Ramp</button></div>' +
+                        (detail || matched ? jsonPre(detail || matched) : '')
+                )
+
+                renderStep(
+                    5,
                     'Done',
                     'done',
-                    '<p style="color:var(--green)">ACH onramp flow complete.</p>' +
+                    '<p style="color:var(--green)">ACH onramp flow captured.</p>' +
                         field('Funding Source', state.selectedSource.id) +
-                        field('Deposit', deposit.id) +
-                        field('Wallet', state.walletAddress)
+                        field('Deposit', state.deposit.id) +
+                        field('Wallet', state.walletAddress) +
+                        '<div class="button-row">' +
+                        '<button onclick="saveEvidenceToWorkspace()">Save Evidence to Workspace</button>' +
+                        '<button class="secondary" onclick="downloadEvidence()">Download Evidence</button>' +
+                        '<button class="secondary" onclick="continueWith(fetchAchReturns)">Fetch ACH Returns</button>' +
+                        '</div>'
                 )
+                recordEvidence('run.ready_for_review', {
+                    depositId: state.deposit.id,
+                    bridgeOnRampId: state.deposit.bridgeOnRampId,
+                    onRampMatched: Boolean(detail || matched),
+                })
+                await saveEvidenceToWorkspace({ silent: true })
             }
+
+            async function fetchAchReturns() {
+                activeStep = 6
+                if (!state.deposit) throw new Error('Create a deposit before fetching returns')
+
+                renderStep(6, 'ACH Returns', 'active', 'Fetching ACH debit returns...')
+                log('SDK achDebitReturn.list()')
+                const returns = await sdk(
+                    'achDebitReturn.list',
+                    {
+                        query: {
+                            limit: 20,
+                            search: state.deposit.id,
+                        },
+                    },
+                    'sdk.ach_debit_return.list'
+                )
+                state.achReturns = returns
+
+                const rows = returns.data || []
+                const matched = rows.find((row) => row.depositId === state.deposit.id) || null
+                let detail = null
+                if (matched) {
+                    log('SDK achDebitReturn.get()')
+                    detail = await sdk(
+                        'achDebitReturn.get',
+                        { returnId: matched.id },
+                        'sdk.ach_debit_return.get'
+                    )
+                    state.achReturnDetail = detail
+                }
+
+                renderStep(
+                    6,
+                    'ACH Returns',
+                    matched ? 'done' : 'active',
+                    field('Return Count', rows.length) +
+                        field('Matched Return', matched?.id || '(not found yet)') +
+                        field('Return Code', (detail || matched)?.returnCode || '(not returned)') +
+                        field(
+                            'Return Reason',
+                            (detail || matched)?.returnReason || '(not returned)'
+                        ) +
+                        '<div class="button-row"><button class="secondary" onclick="continueWith(fetchAchReturns)">Refresh Returns</button></div>' +
+                        (detail || matched ? jsonPre(detail || matched) : jsonPre(returns))
+                )
+                recordEvidence('ach_returns.polled', {
+                    depositId: state.deposit.id,
+                    matchedReturnId: matched?.id || null,
+                    returnCode: (detail || matched)?.returnCode || null,
+                })
+                await saveEvidenceToWorkspace({ silent: true })
+            }
+
+            restoreFormValues()
+            bindFormPersistence()
+            loadEvidence()
+            document.getElementById('appVersionLabel').textContent = APP_VERSION
         </script>
     </body>
 </html>

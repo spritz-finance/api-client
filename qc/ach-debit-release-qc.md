@@ -28,6 +28,24 @@ Do not sign off until every item below is either complete or explicitly excluded
 - Partner docs/examples compile and match the SDK.
 - Any backend/API gaps are closed or called out as non-release scope.
 
+## Findings To Carry Into Sign-Off
+
+These are the concrete things identified during QC and must stay visible until release:
+
+- The partner will consume ACH debit through the generated SDK. REST parity is useful for debugging, but release sign-off is based on SDK behavior, SDK error classes, SDK types, and SDK docs.
+- The flow is intentionally small: create/link bank account, choose an `active` funding source, fetch limits, prepare, show authorization text, create, then track by webhook plus `onrampPayment`/`achDebitReturn`.
+- `GET /v1/funding-sources/{id}/deposit-limits` must be exposed by the SDK and verified in sandbox before release.
+- Plaid Signal is not a public request field. It runs after user confirmation during `client.deposit.create(...)`, before Spritz submits the ACH pull.
+- Plaid Signal sandbox simulation is amount-driven. The SDK must not invent a `signal` field that is not in the OpenAPI contract.
+- Error quality is release-critical. The SDK must surface clear subclasses, status codes, problem details, request IDs, and actionable messages.
+- Webhook setup is part of partner release scope. Polling through `onrampPayment` and `achDebitReturn` is required for reconciliation, but not enough for the production integration.
+- ACH webhook public event scope is `onramp.created`, `onramp.updated`, `onramp.completed`, `achDebitReturn.created`, `achDebitReturn.updated`, and `*` for all events. Internal event names may be transformed, but the consumer-facing webhook contract must not break.
+- Return simulation is post-authorization and sandbox-only. It should use `client.sandbox.createDepositWithReturn(...)`, not a normal create call.
+- Current staging blocker found on 2026-05-07: authorized ACH deposits are not auto-progressing because `DepositCreatedSubscriber` and `DepositExecutionLoop` crash on an unlinked `PlaidWebhookUrl` resource at startup. This does not mean ACH requires Plaid webhooks; it is a platform configuration/layer-coupling bug that must be fixed and redeployed before webhook/settlement certification.
+- Webhook E2E was manually verified for non-return events in staging on 2026-05-07. Return webhook receipt still needs explicit confirmation after a simulated return.
+- R01 return simulation was verified through the SDK on 2026-05-08: deposit `dep_01KR3DBTDDFEZ8FBMC0EVQVVH0`, return `dr_01KR3DDAQYERAAMWXMCT32RBBE`, on-ramp `69fda76d13a0c32a6571c786`, source `fs_01KR16ZM37E2JTBC19P8RXFV8R` disabled with reason `returned`.
+- Potential API gap found on 2026-05-08: `client.achDebitReturn.list({ search: depositId })` returned no rows for public deposit ID `dep_01KR3DBTDDFEZ8FBMC0EVQVVH0`, but `client.achDebitReturn.list({ returnCode: 'R01' })` returned the matching return. Confirm whether `search` should support public deposit IDs and fix if yes.
+
 ## Scope
 
 Partner-facing SDK surface:
@@ -49,11 +67,7 @@ Partner-facing SDK surface:
 - `client.webhook.updateWebhookSecret(...)`
 - `client.webhook.list()`
 - `client.webhook.delete(id)`
-- Signal simulation support, if added
-
-Open scope questions:
-
-- What exact Signal fixture should represent partner-facing "medium risk": a Plaid ruleset `review` outcome, or an accepted score below Spritz's local block threshold?
+- `client.user.create(...)` or equivalent user creation path used by the example app to generate a sandbox user API key
 
 Confirmed product behavior:
 
@@ -61,11 +75,13 @@ Confirmed product behavior:
 - A blocked/rerouted Signal result must return a clean 409 error and must not create or submit an ACH debit.
 - Signal `review` maps to `risk_review_required`; `reject`, `reroute`, and local-threshold blocks map to `risk_rejected`; unavailable/insufficient data maps to `risk_evaluation_unavailable`.
 - A blocked create attempt consumes the preparation. The partner must prepare a new quote after resolving the issue, not retry the same `preparationId`.
+- Staging should automatically move accepted deposits through the async ACH lifecycle once the deposit is authorized. If a deposit remains `authorized` with no Modern Treasury submission, inspect the deposit execution subscribers before treating webhook delivery as the issue.
 
 Known API gaps to resolve before sign-off:
 
-- Signal simulation is partner-release scope and should use the sandbox `signal` selector. The SDK/OpenAPI contract in this worktree must be refreshed or extended so `client.sandbox.createDepositWithReturn(...)` accepts it with strong types.
-- The generated webhook event enum currently exposes legacy account/payment/capability events only. Platform emits internal ACH events such as `deposit.created`, `deposit.updated`, `deposit-return.created`, and `deposit-return.updated`, but this repo does not show a public webhook subscription/delivery contract for those ACH events. Confirm whether legacy `payment.*` events are the intended public mapping, or update the backend/OpenAPI contract before E2E webhook certification.
+- The generated webhook event enum must include the ACH partner events: `onramp.created`, `onramp.updated`, `onramp.completed`, `achDebitReturn.created`, `achDebitReturn.updated`, and `*`.
+- Webhook payloads and endpoint behavior must remain backward compatible for existing consumers. If platform internal events differ, transform them before delivery rather than changing the public contract.
+- Platform staging must be fixed so `DepositCreatedSubscriber` and `DepositExecutionLoop` can start without requiring unrelated Plaid webhook resource linkage.
 
 ## Backend Contract Check
 
@@ -84,8 +100,7 @@ Create order:
 Sandbox reality:
 
 - `/v1/sandbox/deposits` and `/v1/sandbox/deposits/direct` support `returnSimulation.code`.
-- Signal simulation should be exposed as `signal` on the sandbox create payload.
-- The current generated SDK types only show `returnSimulation`, so SDK contract work is still required before sign-off.
+- Signal sandbox behavior is exercised through Plaid amount fixtures; there is no public SDK `signal` field.
 
 ## QC Matrix
 
@@ -123,8 +138,8 @@ Sandbox reality:
 | Webhooks         | Create webhook                              | Webhook can be registered for ACH-relevant public event names against a real HTTPS receiver                | Contract test + sandbox run                                        |
 | Webhooks         | Configure secret                            | Webhook secret is configured before event testing                                                          | Contract test + sandbox run                                        |
 | Webhooks         | Verify signature                            | Receiver validates HMAC signature using raw request body                                                   | Local receiver test + sandbox run                                  |
-| Webhooks         | Receive deposit event                       | Public webhook event for the ACH/on-ramp lifecycle is delivered after sandbox deposit creation             | Sandbox run                                                        |
-| Webhooks         | Receive return event                        | Public webhook event for ACH return handling is delivered after sandbox return simulation                  | Sandbox run                                                        |
+| Webhooks         | Receive on-ramp events                      | `onramp.created` and `onramp.updated` are delivered after sandbox deposit creation and lifecycle updates   | Sandbox run                                                        |
+| Webhooks         | Receive return events                       | `achDebitReturn.created` and `achDebitReturn.updated` are delivered after sandbox return simulation        | Sandbox run                                                        |
 | Webhooks         | List/delete webhook                         | Webhook appears in list and can be deleted during cleanup                                                  | Contract test + sandbox run                                        |
 | Auth             | Bad bearer token                            | Throws `AuthenticationError` with clear message and IDs                                                    | Error test                                                         |
 | Auth             | Missing/invalid HMAC                        | Throws clean auth/permission error                                                                         | Error test                                                         |
@@ -150,28 +165,25 @@ Required behavior matrix:
 | Null score / insufficient data | 409 `risk_evaluation_unavailable`; no debit is initiated | Error/simulation test         |
 | Ruleset misconfigured          | Clean configuration error or unavailable-path response   | Error/simulation test         |
 
-Recommended sandbox API design:
+Sandbox Signal testing is amount-driven. The generated SDK must not expose a
+`signal` request field because it is not in the public OpenAPI contract.
+
+Use Plaid's sandbox amount fixtures:
+
+| Amount  | Plaid Signal score | Expected Spritz use                                  |
+| ------- | ------------------ | ---------------------------------------------------- |
+| `3.53`  | `10`               | Low score; below current ACH minimum in this sandbox |
+| `12.17` | `60`               | Medium score; expected allow under local threshold   |
+| `27.53` | `90`               | High score; expected pre-debit risk block            |
+
+Return simulation remains explicit and post-authorization:
 
 ```typescript
 await client.sandbox.createDepositWithReturn({
     preparationId,
-    signal: { outcome: 'reroute' },
-})
-```
-
-Keep Signal simulation separate from return simulation because Signal happens before debit initiation and returns happen after debit initiation.
-
-If combined simulations are needed for end-to-end cases, make the ordering explicit:
-
-```typescript
-await client.sandbox.createDepositWithReturn({
-    preparationId,
-    signal: { outcome: 'accept' },
     returnSimulation: { code: 'R01' },
 })
 ```
-
-Do not expose Plaid sandbox magic amounts as the partner workflow. They can be used internally to validate Signal rules, but partner-facing simulation should describe business outcomes such as `accept`, `review`, and `reroute`.
 
 ## Automated Test Plan
 
@@ -213,6 +225,7 @@ Minimum standard:
 - `error.name` maps to the HTTP class where possible.
 - `error.status` is populated for HTTP errors.
 - `error.message` prefers RFC 7807 `detail`, then `title`, then `message`, then a safe fallback.
+- `error.error` preserves the parsed RFC 7807 payload for requirements, problem type, and partner support diagnostics.
 - `error.headers.requestId` and `error.headers.traceId` are available when returned.
 - Raw JSON stringification should not be the default partner experience.
 
@@ -234,35 +247,39 @@ Required error fixtures:
 
 Run this with real sandbox credentials and save evidence.
 
-1. Create or select a test user.
-2. Bypass KYC with `client.sandbox.bypassKyc({ country: 'US' })`.
-3. Create Plaid link token.
-4. Complete Plaid Link with sandbox credentials.
-5. Poll funding sources until an `active` source exists.
-6. Fetch deposit limits with `client.fundingSource.getDepositLimits(source.id)`.
-7. Start a real HTTPS webhook receiver that records raw body, headers, and parsed payload.
-8. Set webhook secret with `client.webhook.updateWebhookSecret(...)`.
-9. Register webhook with `client.webhook.create(...)`.
-10. Confirm webhook appears in `client.webhook.list()`.
-11. Prepare low-risk deposit.
-12. Verify quote fields and authorization message.
-13. Create low-risk deposit.
-14. Confirm on-ramp appears in `client.onrampPayment.list()`.
-15. Fetch on-ramp by ID.
-16. Confirm webhook receiver gets the expected deposit/on-ramp lifecycle event.
-17. Verify webhook signature against the raw request body.
-18. Run medium-risk Signal scenario and verify policy behavior.
-19. Run high-risk Signal scenario and verify no ACH debit is initiated.
-20. Run Signal timeout/unavailable/null-score scenarios if sandbox supports them.
-21. Simulate `R01` return.
-22. Simulate `R10` return.
-23. Simulate `R29` return.
-24. Confirm each return appears in `client.achDebitReturn.list()`.
-25. Fetch each return by ID.
-26. Confirm webhook receiver gets expected return-related events.
-27. Verify return filters and pagination.
-28. Delete the webhook and verify it no longer appears in `client.webhook.list()`.
-29. Capture request IDs, deposit IDs, on-ramp IDs, return IDs, webhook IDs, received event payloads, and relevant screenshots/log excerpts.
+1. Generate a fresh sandbox user API key through the SDK/example app.
+2. Before KYC bypass, call `client.bankAccount.createLinkToken()` and confirm the SDK throws `PermissionDeniedError` with status `403`, request IDs, and the identity-verification requirement body.
+3. Bypass KYC with `client.sandbox.bypassKyc({ country: 'US' })`.
+4. Retry `client.bankAccount.createLinkToken()` and confirm success.
+5. Complete Plaid Link with sandbox credentials in the browser.
+6. Poll `client.fundingSource.list()` until an `active` source exists.
+7. Fetch `client.fundingSource.get(source.id)` and verify path encoding and source fields.
+8. Fetch `client.fundingSource.getDepositLimits(source.id)` and verify transaction, daily, monthly, and unsettled-limit fields.
+9. Start a real HTTPS webhook receiver that records raw body, headers, parsed payload, signature verification result, and receipt timestamp.
+10. Set webhook secret with `client.webhook.updateWebhookSecret(...)`.
+11. Register webhook with `client.webhook.create(...)` for `onramp.created`, `onramp.updated`, `achDebitReturn.created`, and `achDebitReturn.updated`.
+12. Confirm webhook appears in `client.webhook.list()`.
+13. Prepare a low/medium-risk deposit using the Plaid score `60` amount fixture.
+14. Verify quote fields, fees, destination, limits snapshot if returned, and the full ACH authorization message.
+15. Confirm in the UI, then create with `client.deposit.create(...)`.
+16. Confirm the SDK response is clean and the deposit/on-ramp IDs are recorded.
+17. Confirm `onramp.created` and `onramp.updated` are received and signature verification passes against the raw request body.
+18. Confirm the on-ramp appears in `client.onrampPayment.list(...)`.
+19. Fetch the on-ramp by ID with `client.onrampPayment.get(id)`.
+20. Confirm the deposit leaves `authorized` and progresses through the staging async lifecycle after platform workers run.
+21. Run high-risk Plaid Signal using the score `90` amount fixture and verify a clean 409, no ACH debit initiation, and no MT payment order.
+22. Run Signal unavailable/null-score coverage if the sandbox fixture exists; otherwise record as excluded with platform owner and reason.
+23. Simulate `R01` using `client.sandbox.createDepositWithReturn(...)`.
+24. Simulate `R10` using `client.sandbox.createDepositWithReturn(...)`.
+25. Simulate `R29` using `client.sandbox.createDepositWithReturn(...)`.
+26. Confirm each return appears in `client.achDebitReturn.list(...)`.
+27. Fetch each return by ID with `client.achDebitReturn.get(id)`.
+28. Confirm `achDebitReturn.created` and `achDebitReturn.updated` are received and signature verification passes.
+29. Verify return filters and pagination: `returnCode`, `returnBucket`, `lossOnly`, `userAction`, date bounds, `limit`, and `cursor`.
+30. Delete the webhook and verify it no longer appears in `client.webhook.list()`.
+31. Capture request IDs, deposit IDs, on-ramp IDs, return IDs, webhook IDs, received event payloads, signature results, evidence file names, and relevant log excerpts.
+
+All live sandbox certification must run through the SDK. Raw REST calls are allowed only as parity checks when debugging an SDK failure.
 
 ## Documentation Review
 
@@ -271,6 +288,7 @@ Review these before sign-off:
 - `README.md`
 - `docs/ach-onramp-guide.md`
 - `scripts/sandbox/ach-onramp.html`
+- `qc/ach-debit-example-app-e2e.md`
 - package public exports in `src/index.ts`
 
 Docs must clearly state:
@@ -290,18 +308,18 @@ Docs must clearly state:
 
 Complete this section when executing the plan.
 
-| Gate                          | Status  | Evidence                                                           |
-| ----------------------------- | ------- | ------------------------------------------------------------------ |
-| Automated checks              | Pending |                                                                    |
-| ACH contract tests            | Pending |                                                                    |
-| Error surfacing tests         | Pending |                                                                    |
-| Funding source deposit limits | Pending |                                                                    |
-| Signal simulations            | Pending | Wire/verify sandbox `signal` selector in SDK contract              |
-| Webhook E2E                   | Blocked | Public ACH webhook event mapping not confirmed in platform/OpenAPI |
-| Live sandbox happy path       | Pending |                                                                    |
-| Live sandbox return paths     | Pending |                                                                    |
-| Docs review                   | Pending |                                                                    |
-| API gaps resolved/excluded    | Pending |                                                                    |
+| Gate                          | Status  | Evidence                                                         |
+| ----------------------------- | ------- | ---------------------------------------------------------------- |
+| Automated checks              | Pending |                                                                  |
+| ACH contract tests            | Pending |                                                                  |
+| Error surfacing tests         | Pending |                                                                  |
+| Funding source deposit limits | Pending |                                                                  |
+| Signal simulations            | Pending | Amount-driven Plaid sandbox fixtures; run sandbox evidence       |
+| Webhook E2E                   | Partial | Non-return events verified; return webhook receipt still needed  |
+| Live sandbox happy path       | Pending |                                                                  |
+| Live sandbox return paths     | Partial | R01 verified via SDK on 2026-05-08; R10/R29 pending              |
+| Docs review                   | Pending |                                                                  |
+| API gaps resolved/excluded    | Pending | Webhook enum/events; staging `PlaidWebhookUrl` resource coupling |
 
 Final release decision:
 
