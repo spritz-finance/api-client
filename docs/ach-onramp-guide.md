@@ -522,9 +522,11 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 
 function verifySpritzWebhook(rawBody: string, signature: string, secret: string) {
     const expected = createHmac('sha256', secret).update(rawBody).digest('hex')
+    const expectedBuffer = Buffer.from(expected, 'utf8')
+    const signatureBuffer = Buffer.from(signature, 'utf8')
 
-    if (expected.length !== signature.length) return false
-    return timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
+    if (expectedBuffer.length !== signatureBuffer.length) return false
+    return timingSafeEqual(expectedBuffer, signatureBuffer)
 }
 ```
 
@@ -596,6 +598,7 @@ Use `Environment.Sandbox` for testing. The sandbox base URL is `https://sandbox.
     ```
 
     Open `http://localhost:3001/ach-onramp.html`, enter your credentials, and walk through the full flow. The demo saves redacted QC evidence under `qc/evidence/`.
+    The evidence server binds to `127.0.0.1` by default. If you intentionally need a non-local browser to access it, run with `EVIDENCE_HOST=0.0.0.0`.
 
 ### Plaid sandbox credentials
 

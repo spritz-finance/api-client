@@ -951,9 +951,11 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 
 function verifySpritzWebhook(rawBody: string, signature: string, secret: string) {
     const expected = createHmac('sha256', secret).update(rawBody).digest('hex')
+    const expectedBuffer = Buffer.from(expected, 'utf8')
+    const signatureBuffer = Buffer.from(signature, 'utf8')
 
-    if (expected.length !== signature.length) return false
-    return timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
+    if (expectedBuffer.length !== signatureBuffer.length) return false
+    return timingSafeEqual(expectedBuffer, signatureBuffer)
 }
 
 const signature = request.headers['signature']

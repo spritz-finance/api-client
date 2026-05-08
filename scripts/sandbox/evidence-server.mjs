@@ -5,7 +5,7 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { dirname, extname, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-const host = process.env.EVIDENCE_HOST || '0.0.0.0'
+const host = process.env.EVIDENCE_HOST || '127.0.0.1'
 const port = Number(process.env.PORT || process.env.EVIDENCE_PORT || 3001)
 const staticRoot = dirname(fileURLToPath(import.meta.url))
 const outputDir = resolve(process.cwd(), process.env.EVIDENCE_DIR || 'qc/evidence')
@@ -77,6 +77,7 @@ function safeFileName(value) {
     const base = String(value || `ach-qc-${new Date().toISOString()}`)
         .replace(/[:]/g, '-')
         .replace(/[^a-zA-Z0-9_.-]/g, '_')
+        .replace(/\.json$/i, '')
         .slice(0, 160)
     return `${base || 'ach-qc-evidence'}.json`
 }

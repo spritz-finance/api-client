@@ -28,7 +28,9 @@ Browser JavaScript cannot safely write directly to an arbitrary local path, so t
     node scripts/sandbox/evidence-server.mjs
     ```
 
-4. Open the forwarded URL for port `3001`, ending in `/ach-onramp.html`.
+    The server binds to `127.0.0.1` by default. Prefer an SSH port-forward for VPS/browser testing. If you intentionally need direct non-local access, run with `EVIDENCE_HOST=0.0.0.0`.
+
+4. Open `http://localhost:3001/ach-onramp.html`, or the forwarded URL for port `3001` ending in `/ach-onramp.html`.
 
 5. Fill in:
     - Integration key
