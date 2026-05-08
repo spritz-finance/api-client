@@ -25,6 +25,14 @@ function sendJson(res, status, body) {
     res.end(JSON.stringify(body))
 }
 
+function sendBadRequest(res, error, message) {
+    console.error(error)
+    sendJson(res, 400, {
+        ok: false,
+        error: message,
+    })
+}
+
 function contentType(filePath) {
     switch (extname(filePath)) {
         case '.html':
@@ -414,10 +422,7 @@ const server = createServer(async (req, res) => {
         try {
             await createSandboxUser(req, res)
         } catch (error) {
-            sendJson(res, 400, {
-                ok: false,
-                error: error instanceof Error ? error.message : 'Failed to create sandbox user',
-            })
+            sendBadRequest(res, error, 'Failed to create sandbox user')
         }
         return
     }
@@ -426,10 +431,7 @@ const server = createServer(async (req, res) => {
         try {
             await bypassSandboxKyc(req, res)
         } catch (error) {
-            sendJson(res, 400, {
-                ok: false,
-                error: error instanceof Error ? error.message : 'Failed to bypass sandbox KYC',
-            })
+            sendBadRequest(res, error, 'Failed to bypass sandbox KYC')
         }
         return
     }
@@ -438,10 +440,7 @@ const server = createServer(async (req, res) => {
         try {
             await sandboxApiProxy(req, res)
         } catch (error) {
-            sendJson(res, 400, {
-                ok: false,
-                error: error instanceof Error ? error.message : 'Failed to proxy sandbox API call',
-            })
+            sendBadRequest(res, error, 'Failed to proxy sandbox API call')
         }
         return
     }
@@ -450,10 +449,7 @@ const server = createServer(async (req, res) => {
         try {
             await sdkCall(req, res)
         } catch (error) {
-            sendJson(res, 400, {
-                ok: false,
-                error: error instanceof Error ? error.message : 'Failed to run SDK call',
-            })
+            sendBadRequest(res, error, 'Failed to run SDK call')
         }
         return
     }
@@ -476,10 +472,7 @@ const server = createServer(async (req, res) => {
 
         sendJson(res, 200, { ok: true, path: filePath })
     } catch (error) {
-        sendJson(res, 400, {
-            ok: false,
-            error: error instanceof Error ? error.message : 'Invalid evidence payload',
-        })
+        sendBadRequest(res, error, 'Invalid evidence payload')
     }
 })
 

@@ -278,7 +278,7 @@
             <p class="evidence-note">
                 Evidence export redacts credentials, HMAC signatures, Plaid public tokens, and link
                 tokens. Workspace saves go to <code>qc/evidence/</code> when the local receiver is
-                running. Sandbox form values are saved in this browser.
+                running. Non-sensitive sandbox form values are saved in this browser.
             </p>
         </div>
 
@@ -306,7 +306,6 @@
                     expected: 'no hardcoded Signal score',
                 },
             }
-            const EVIDENCE_STORAGE_KEY = 'spritz-ach-onramp-evidence'
             const FORM_STORAGE_KEY = 'spritz-ach-onramp-form'
             const EVIDENCE_RECEIVER = `${window.location.origin}/evidence`
             const FORM_FIELD_IDS = [
@@ -321,6 +320,9 @@
                 'signalProfile',
                 'returnSimulationCode',
             ]
+            const PERSISTED_FORM_FIELD_IDS = FORM_FIELD_IDS.filter(
+                (id) => !['integrationKey', 'integratorSecret', 'apiKey'].includes(id)
+            )
 
             // --- Evidence capture ---
             let evidence = null
@@ -374,7 +376,7 @@
 
             function collectFormValues() {
                 return Object.fromEntries(
-                    FORM_FIELD_IDS.map((id) => [id, getFormField(id)?.value ?? ''])
+                    PERSISTED_FORM_FIELD_IDS.map((id) => [id, getFormField(id)?.value ?? ''])
                 )
             }
 
@@ -388,7 +390,7 @@
 
                 try {
                     const values = JSON.parse(raw)
-                    for (const id of FORM_FIELD_IDS) {
+                    for (const id of PERSISTED_FORM_FIELD_IDS) {
                         const field = getFormField(id)
                         if (field && typeof values[id] === 'string') field.value = values[id]
                     }
@@ -464,19 +466,7 @@
 
             function persistEvidence() {
                 if (!evidence) return
-                localStorage.setItem(EVIDENCE_STORAGE_KEY, JSON.stringify(evidence))
                 updateEvidenceButtons()
-            }
-
-            function loadEvidence() {
-                const raw = localStorage.getItem(EVIDENCE_STORAGE_KEY)
-                if (!raw) return
-                try {
-                    evidence = JSON.parse(raw)
-                    updateEvidenceButtons()
-                } catch {
-                    localStorage.removeItem(EVIDENCE_STORAGE_KEY)
-                }
             }
 
             function updateEvidenceButtons() {
@@ -598,7 +588,6 @@
 
             function clearEvidence() {
                 evidence = null
-                localStorage.removeItem(EVIDENCE_STORAGE_KEY)
                 updateEvidenceButtons()
                 log('Evidence cleared')
             }
@@ -1782,7 +1771,6 @@
 
             restoreFormValues()
             bindFormPersistence()
-            loadEvidence()
             document.getElementById('appVersionLabel').textContent = APP_VERSION
         </script>
     </body>
