@@ -19,16 +19,20 @@ Plaid Link → Funding Source → Limits → Prepare Quote → User Confirms →
 Once your frontend has completed Plaid Link, the ACH flow is:
 
 ```typescript
-await client.bankAccount.completeLinking({
+const { bankAccounts } = await client.bankAccount.completeLinking({
     publicToken,
     accountIds,
     institutionId,
     institutionName,
 })
 
-const sources = await client.fundingSource.list()
-const source = sources.find((s) => s.status === 'active')
-if (!source) throw new Error('No active funding source available')
+// A bank account is the canonical record. Its `fundingSourceId`, if present,
+// is what makes it usable for ACH onramp.
+const onrampable = bankAccounts.find((b) => b.fundingSourceId)
+if (!onrampable?.fundingSourceId) throw new Error('Linked account is not ACH-onramp eligible')
+
+const source = await client.fundingSource.get(onrampable.fundingSourceId)
+if (source.status !== 'active') throw new Error('Funding source is not active yet')
 
 const limits = await client.fundingSource.getDepositLimits(source.id)
 
@@ -160,21 +164,51 @@ handler.open()
 
 The `completeLinking` call exchanges the Plaid public token and stores the linked bank account. A **funding source** is created automatically from the linked account.
 
+### Bank accounts vs. funding sources
+
+A linked bank account can be used for **off-ramp** (paying out to USD) on its own. Using it for **on-ramp** (pulling USD via ACH debit) additionally requires a `fundingSource`, which represents the ACH eligibility check on top of the bank account.
+
+The model is intentionally one-way:
+
+- **Bank account** — the canonical record. Always usable for off-ramp.
+- **Funding source** — exists only for ACH-onramp-eligible accounts. Linked to a bank account via `fundingSourceId`.
+
+In practice, treat `client.bankAccount.list()` as the source of truth and use `bankAccount.fundingSourceId` as the signal that an account can be on-ramped from. A `null` `fundingSourceId` means off-ramp only.
+
 ---
 
 ## Step 2: Get Funding Source And Limits
 
-A funding source represents a linked bank account that has been evaluated for ACH eligibility. After Plaid linking, query for available sources:
+After Plaid linking, find the bank account you want to debit and use its `fundingSourceId` to load the ACH funding source and limits:
 
 ```typescript
-const sources = await client.fundingSource.list()
-const source = sources.find((s) => s.status === 'active')
+const accounts = await client.bankAccount.list()
+const account = accounts.find((a) => a.fundingSourceId) // pick the ACH-eligible account
 
-if (!source) {
-    // No active funding source yet — may still be pending after Plaid linking
-    throw new Error('No active funding source available')
+if (!account?.fundingSourceId) {
+    throw new Error('No ACH-onramp-eligible bank account available')
+}
+
+const source = await client.fundingSource.get(account.fundingSourceId)
+if (source.status !== 'active') {
+    // May still be pending shortly after Plaid linking while ownership verifies
+    throw new Error('Funding source is not active yet')
 }
 ```
+
+`client.fundingSource.list()` is still available if you want to iterate funding sources directly, but the recommended path is bank-account-first.
+
+**Bank account fields relevant to on-ramp:**
+
+| Field             | Type             | Description                                                                   |
+| ----------------- | ---------------- | ----------------------------------------------------------------------------- |
+| `id`              | `string`         | Bank account ID (`ba_...`). Use this for off-ramp.                            |
+| `fundingSourceId` | `string \| null` | If present, the account is ACH-onramp-eligible. `null` means off-ramp only.   |
+| `status`          | `string`         | `active`, `pending`, `inactive`, `rejected`.                                  |
+| `type`            | `string`         | Region — `us`, `ca`, `uk`, `iban`. Only `us` accounts are ACH-debit eligible. |
+| `supportedRails`  | `string[]`       | Payment rails enabled on the account (e.g. `ach_standard`, `rtp`, `wire`).    |
+| `institution`     | `object?`        | Bank name and logo.                                                           |
+| `label`           | `string?`        | Friendly name supplied at link/create time.                                   |
 
 **Funding source fields:**
 
@@ -665,19 +699,23 @@ This endpoint returns 403 in production. The 200 response shape is the same as `
 
 ## API Reference
 
-| Method | Endpoint                                      | SDK Method                                    | Description                                              |
-| ------ | --------------------------------------------- | --------------------------------------------- | -------------------------------------------------------- |
-| `POST` | `/v1/bank-accounts/link-token`                | `client.bankAccount.createLinkToken()`        | Create Plaid link token                                  |
-| `POST` | `/v1/bank-accounts/link-complete`             | `client.bankAccount.completeLinking(...)`     | Complete Plaid linking                                   |
-| `GET`  | `/v1/funding-sources/`                        | `client.fundingSource.list()`                 | List funding sources                                     |
-| `GET`  | `/v1/funding-sources/{id}`                    | `client.fundingSource.get(id)`                | Get funding source                                       |
-| `GET`  | `/v1/funding-sources/{id}/deposit-limits`     | `client.fundingSource.getDepositLimits(id)`   | Get current ACH debit limits                             |
-| `POST` | `/v1/deposits/direct/prepare`                 | `client.deposit.prepare(...)`                 | Prepare deposit quote                                    |
-| `POST` | `/v1/deposits/direct`                         | `client.deposit.create(...)`                  | Create deposit                                           |
-| `GET`  | `/v1/on-ramps/`                               | `client.onrampPayment.list(...)`              | List on-ramps (canonical deposit lookup)                 |
-| `GET`  | `/v1/on-ramps/{onRampId}`                     | `client.onrampPayment.get(id)`                | Get a single on-ramp                                     |
-| `GET`  | `/v1/integrator/ach-debit/returns`            | `client.achDebitReturn.list(...)`             | List ACH debit returns                                   |
-| `GET`  | `/v1/integrator/ach-debit/returns/{returnId}` | `client.achDebitReturn.get(id)`               | Get a single return                                      |
-| `POST` | `/v1/sandbox/deposits/direct`                 | `client.sandbox.createDepositWithReturn(...)` | Sandbox-only — create a deposit with an armed ACH return |
+| Method   | Endpoint                                      | SDK Method                                    | Description                                                     |
+| -------- | --------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------- |
+| `GET`    | `/v1/bank-accounts/`                          | `client.bankAccount.list()`                   | List bank accounts (canonical list, includes `fundingSourceId`) |
+| `GET`    | `/v1/bank-accounts/{accountId}`               | `client.bankAccount.get(id)`                  | Get a single bank account                                       |
+| `POST`   | `/v1/bank-accounts/`                          | `client.bankAccount.create(...)`              | Add a bank account by routing/account number                    |
+| `DELETE` | `/v1/bank-accounts/{accountId}`               | `client.bankAccount.delete(id)`               | Remove a bank account                                           |
+| `POST`   | `/v1/bank-accounts/link-token`                | `client.bankAccount.createLinkToken()`        | Create Plaid link token                                         |
+| `POST`   | `/v1/bank-accounts/link-complete`             | `client.bankAccount.completeLinking(...)`     | Complete Plaid linking                                          |
+| `GET`    | `/v1/funding-sources/`                        | `client.fundingSource.list()`                 | List funding sources                                            |
+| `GET`    | `/v1/funding-sources/{id}`                    | `client.fundingSource.get(id)`                | Get funding source                                              |
+| `GET`    | `/v1/funding-sources/{id}/deposit-limits`     | `client.fundingSource.getDepositLimits(id)`   | Get current ACH debit limits                                    |
+| `POST`   | `/v1/deposits/direct/prepare`                 | `client.deposit.prepare(...)`                 | Prepare deposit quote                                           |
+| `POST`   | `/v1/deposits/direct`                         | `client.deposit.create(...)`                  | Create deposit                                                  |
+| `GET`    | `/v1/on-ramps/`                               | `client.onrampPayment.list(...)`              | List on-ramps (canonical deposit lookup)                        |
+| `GET`    | `/v1/on-ramps/{onRampId}`                     | `client.onrampPayment.get(id)`                | Get a single on-ramp                                            |
+| `GET`    | `/v1/integrator/ach-debit/returns`            | `client.achDebitReturn.list(...)`             | List ACH debit returns                                          |
+| `GET`    | `/v1/integrator/ach-debit/returns/{returnId}` | `client.achDebitReturn.get(id)`               | Get a single return                                             |
+| `POST`   | `/v1/sandbox/deposits/direct`                 | `client.sandbox.createDepositWithReturn(...)` | Sandbox-only — create a deposit with an armed ACH return        |
 
 All endpoints require a Bearer token (`apiKey`). Integrator requests are additionally signed with HMAC — the SDK handles this automatically when `integratorSecret` is provided.

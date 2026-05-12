@@ -74,7 +74,7 @@ describe('Spritz API Client - Core Functionality', () => {
             expect(Array.isArray(result)).toBe(true)
             if (result.length > 0) {
                 expect(result[0]).toHaveProperty('id')
-                expect(result[0]).toHaveProperty('name')
+                expect(result[0]).toHaveProperty('fundingSourceId')
             }
         })
     })
