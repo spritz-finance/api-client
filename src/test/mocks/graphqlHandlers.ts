@@ -42,22 +42,6 @@ export const graphqlHandlers = [
         })
     }),
 
-    // User Bank Accounts Query
-    graphql.query('UserBankAccounts', () => {
-        return HttpResponse.json({
-            data: {
-                userBankAccounts: [
-                    {
-                        id: 'bank-account-123',
-                        name: 'Test Bank Account',
-                        userId: 'user-123',
-                        type: 'BankAccount',
-                    },
-                ],
-            },
-        })
-    }),
-
     // Create Payment Request Mutation
     graphql.mutation('CreatePaymentRequest', () => {
         return HttpResponse.json({

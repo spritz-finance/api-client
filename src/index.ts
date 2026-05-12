@@ -67,8 +67,14 @@ export type {
     AchDebitReturnListQuery,
 } from './modules/achDebitReturn/achDebitReturnService'
 export type {
+    BankAccount,
+    BankAccountList,
+    CreateBankAccountInput,
+    CreateBankAccountResponse,
+    DeleteBankAccountResponse,
     LinkTokenResponse,
     CompleteLinkingRequest,
+    CompleteLinkingResponse,
 } from './modules/bankAccount/bankAccountService'
 export type {
     BypassKycRequest,

@@ -1,55 +1,14 @@
-import { z } from 'zod'
-import {
-    CreateBankAccount,
-    CreateBankAccountVariables,
-} from '../../graph/mutations/__types__/CreateBankAccount'
-import {
-    DeletePayableAccount,
-    DeletePayableAccountVariables,
-    DeletePayableAccount_deletePayableAccount_BankAccount,
-} from '../../graph/mutations/__types__/DeletePayableAccount'
-import {
-    RenameBankAccount,
-    RenameBankAccountVariables,
-    RenameBankAccount_renamePayableAccount_BankAccount,
-} from '../../graph/mutations/__types__/RenameBankAccount'
-import CreateBankAccountMutation from '../../graph/mutations/createBankAccount.graphql'
-import DeletePayableAccountMutation from '../../graph/mutations/deletePayableAccount.graphql'
-import RenameBankAccountMutation from '../../graph/mutations/renameBankAccount.graphql'
-import { UserBankAccounts } from '../../graph/queries/__types__'
-import UserBankAccountsQuery from '../../graph/queries/bankAccounts.graphql'
 import { SpritzClient } from '../../lib/client'
 import type { PathRequestBody, PathResponse } from '../../rest/types'
-import { BankAccountInput, BankAccountType } from '../../types/globalTypes'
-import { raise } from '../../utils/raise'
-import { BankAccountDetailsValidation } from './validation'
 
+export type BankAccount = PathResponse<'/v1/bank-accounts/', 'get'>[number]
+export type BankAccountList = PathResponse<'/v1/bank-accounts/', 'get'>
+export type CreateBankAccountInput = PathRequestBody<'/v1/bank-accounts/', 'post'>
+export type CreateBankAccountResponse = PathResponse<'/v1/bank-accounts/', 'post'>
+export type DeleteBankAccountResponse = PathResponse<'/v1/bank-accounts/{accountId}', 'delete'>
 export type LinkTokenResponse = PathResponse<'/v1/bank-accounts/link-token', 'post'>
 export type CompleteLinkingRequest = PathRequestBody<'/v1/bank-accounts/link-complete', 'post'>
-
-type BaseBankAccountInput = Omit<BankAccountInput, 'details' | 'type'>
-
-export type UsBankAccountInput = BaseBankAccountInput & {
-    routingNumber: string
-}
-
-export type CaBankAccountInput = BaseBankAccountInput & {
-    transitNumber: string
-    institutionNumber: string
-}
-
-export type IbanAccountInput = BaseBankAccountInput
-
-export type UKBankAccountInput = BaseBankAccountInput & {
-    sortCode: string
-}
-
-type CreateInputMapping = {
-    [BankAccountType.USBankAccount]: UsBankAccountInput
-    [BankAccountType.CABankAccount]: CaBankAccountInput
-    [BankAccountType.IbanAccount]: IbanAccountInput
-    [BankAccountType.UKBankAccount]: UKBankAccountInput
-}
+export type CompleteLinkingResponse = PathResponse<'/v1/bank-accounts/link-complete', 'post'>
 
 export class BankAccountService {
     private client: SpritzClient
@@ -59,40 +18,32 @@ export class BankAccountService {
     }
 
     public async list() {
-        const response = await this.client.query<UserBankAccounts>({
-            query: UserBankAccountsQuery,
+        return this.client.restApi<BankAccountList>({
+            method: 'get',
+            path: '/v1/bank-accounts/',
         })
-        return response?.bankAccounts ?? []
     }
 
-    public async rename(accountId: string, name: string) {
-        const response = await this.client.query<RenameBankAccount, RenameBankAccountVariables>({
-            query: RenameBankAccountMutation,
-            variables: {
-                accountId,
-                name,
-            },
+    public async get(accountId: string) {
+        return this.client.restApi<BankAccount>({
+            method: 'get',
+            path: `/v1/bank-accounts/${encodeURIComponent(accountId)}`,
         })
-        return (
-            (response?.renamePayableAccount as RenameBankAccount_renamePayableAccount_BankAccount) ??
-            null
-        )
+    }
+
+    public async create(input: CreateBankAccountInput) {
+        return this.client.restApi<CreateBankAccountResponse, CreateBankAccountInput>({
+            method: 'post',
+            path: '/v1/bank-accounts/',
+            body: input,
+        })
     }
 
     public async delete(accountId: string) {
-        const response = await this.client.query<
-            DeletePayableAccount,
-            DeletePayableAccountVariables
-        >({
-            query: DeletePayableAccountMutation,
-            variables: {
-                accountId,
-            },
+        return this.client.restApi<DeleteBankAccountResponse>({
+            method: 'delete',
+            path: `/v1/bank-accounts/${encodeURIComponent(accountId)}`,
         })
-        return (
-            (response?.deletePayableAccount as DeletePayableAccount_deletePayableAccount_BankAccount) ??
-            null
-        )
     }
 
     public async createLinkToken() {
@@ -103,44 +54,10 @@ export class BankAccountService {
     }
 
     public async completeLinking(input: CompleteLinkingRequest) {
-        return this.client.restApi<
-            PathResponse<'/v1/bank-accounts/link-complete', 'post'>,
-            CompleteLinkingRequest
-        >({
+        return this.client.restApi<CompleteLinkingResponse, CompleteLinkingRequest>({
             method: 'post',
             path: '/v1/bank-accounts/link-complete',
             body: input,
         })
-    }
-
-    public async create<T extends BankAccountType>(type: T, input: CreateInputMapping[T]) {
-        const validator = BankAccountDetailsValidation[type] ?? raise('Invalid bank account type')
-
-        try {
-            const details = validator.parse(input)
-            const response = await this.client.query<CreateBankAccount, CreateBankAccountVariables>(
-                {
-                    query: CreateBankAccountMutation,
-                    variables: {
-                        createAccountInput: {
-                            accountNumber: input.accountNumber,
-                            name: input.name ?? null,
-                            type,
-                            subType: input.subType,
-                            details,
-                            email: input.email ?? null,
-                            ownedByUser: input.ownedByUser ?? null,
-                        },
-                    },
-                }
-            )
-
-            return response?.createBankAccount ?? null
-        } catch (err) {
-            if (err instanceof z.ZodError) {
-                throw new Error(err?.issues?.[0]?.message ?? 'Input validation failure')
-            }
-            throw err
-        }
     }
 }

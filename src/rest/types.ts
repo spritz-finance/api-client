@@ -2,13 +2,15 @@ import type { paths } from './__generated__/api'
 
 type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete'
 
-/** Extract the 200 JSON response body for a path + method */
+/** Extract the success (200/201) JSON response body for a path + method */
 export type PathResponse<
     P extends keyof paths,
     M extends HttpMethod & keyof paths[P],
 > = paths[P][M] extends { responses: { 200: { content: { 'application/json': infer R } } } }
     ? R
-    : never
+    : paths[P][M] extends { responses: { 201: { content: { 'application/json': infer R } } } }
+      ? R
+      : never
 
 /** Extract the JSON request body for a path + method */
 export type PathRequestBody<
