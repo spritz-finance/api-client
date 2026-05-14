@@ -9403,7 +9403,34 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Plaid OAuth redirect target. For web, use a URL. For iOS, use a universal link. For Android, use the package name.
+                     * @example https://app.example.com/plaid/oauth-return
+                     * @example com.example.app
+                     */
+                    redirectUri?: string;
+                } | Record<string, never>;
+                "application/x-www-form-urlencoded": {
+                    /**
+                     * @description Plaid OAuth redirect target. For web, use a URL. For iOS, use a universal link. For Android, use the package name.
+                     * @example https://app.example.com/plaid/oauth-return
+                     * @example com.example.app
+                     */
+                    redirectUri?: string;
+                } | Record<string, never>;
+                "multipart/form-data": {
+                    /**
+                     * @description Plaid OAuth redirect target. For web, use a URL. For iOS, use a universal link. For Android, use the package name.
+                     * @example https://app.example.com/plaid/oauth-return
+                     * @example com.example.app
+                     */
+                    redirectUri?: string;
+                } | Record<string, never>;
+            };
+        };
         responses: {
             /** @description Response for status 200 */
             200: {
