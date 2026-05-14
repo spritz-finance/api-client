@@ -164,6 +164,52 @@ handler.open()
 
 The `completeLinking` call exchanges the Plaid public token and stores the linked bank account. A **funding source** is created automatically from the linked account.
 
+### 1c. Handle OAuth redirects
+
+For some institutions, Plaid Link sends the user out to their bank's OAuth page and the bank redirects back when auth completes. Spritz creates the Plaid link token, so the redirect targets must be registered on Spritz's Plaid account.
+
+**Send the following to Spritz for allowlisting before going live:**
+
+| Platform | What to send                                                          |
+| -------- | --------------------------------------------------------------------- |
+| Web      | An HTTPS redirect URL on a domain you control (e.g. `https://app.yourdomain.com/plaid-oauth`) |
+| iOS      | The universal link URL you'll receive the redirect on (e.g. `https://app.yourdomain.com/plaid-oauth/`) — custom URL schemes (`yourapp://`) are not accepted |
+| Android  | Your app's `applicationId` / package name (e.g. `com.yourdomain.app`) |
+
+The work each platform has to do to actually handle the redirect differs:
+
+#### Web
+
+The flow has to be actively resumed by your app:
+
+1. Persist the `linkToken` before opening Plaid Link (Plaid recommends `localStorage`).
+2. The bank redirects back to your registered URL with `?oauth_state_id=...`.
+3. On that landing page, re-initialize Plaid Link with the **same token** plus `receivedRedirectUri: window.location.href`. The SDK reads the OAuth state out of the URL and finishes the handoff.
+4. After `onSuccess`, route the user back to wherever they started.
+
+This matters especially on mobile web and in-app webviews (Gmail, Instagram, etc.), where the original tab can't be restored.
+
+#### iOS (native)
+
+The Plaid iOS SDK is still in memory while the user is in the bank's app/Safari, so the redirect just needs to be forwarded back into it:
+
+1. Host an Apple App Site Association file at `https://yourdomain.com/.well-known/apple-app-site-association` (HTTPS, valid cert, no redirects) listing your team-ID-prefixed bundle ID and a path pattern matching the redirect URL.
+2. Enable the **Associated Domains** capability in Xcode with `applinks:yourdomain.com`.
+3. In `application(_:continue:restorationHandler:)`, forward the universal link URL into the Plaid SDK's continuation API.
+
+No "received redirect URI" dance, no token persistence, no resume page — the SDK finishes the flow itself.
+
+#### Android (native)
+
+For most banks, you don't pass a `redirect_uri` at all. Plaid auto-generates one that bounces back into your app via Android's intent system using the registered package name.
+
+Only if you need to link USAA, Chase, or a handful of other institutions that require true Android App Links:
+
+1. Host `https://yourdomain.com/.well-known/assetlinks.json` with your app's SHA-256 cert fingerprints.
+2. Add an `<intent-filter>` with `android:autoVerify="true"` for the redirect URL.
+
+Otherwise, registering the package name with Spritz is the only step.
+
 ### Bank accounts vs. funding sources
 
 A linked bank account can be used for **off-ramp** (paying out to USD) on its own. Using it for **on-ramp** (pulling USD via ACH debit) additionally requires a `fundingSource`, which represents the ACH eligibility check on top of the bank account.
