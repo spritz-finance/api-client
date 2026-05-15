@@ -1,14 +1,11 @@
 import { SpritzClient } from '../../lib/client'
+import { restRoute } from '../../rest/route'
 import type { PathRequestBody, PathResponse } from '../../rest/types'
 
 type RestCreateWebhookRequest = PathRequestBody<'/v1/integrator/webhooks', 'post'>
 type RestIntegratorWebhook = PathResponse<'/v1/integrator/webhooks', 'post'>
 type RestIntegratorWebhookList = PathResponse<'/v1/integrator/webhooks', 'get'>
-type RestDeletedIntegratorWebhook = PathResponse<'/v1/integrator/webhooks/{webhookId}', 'delete'>
-type RestUpdateWebhookRequest = PathRequestBody<'/v1/integrator/webhooks/{webhookId}', 'patch'>
 type RestUpdatedIntegratorWebhook = PathResponse<'/v1/integrator/webhooks/{webhookId}', 'patch'>
-type RestUpdateWebhookSecretRequest = PathRequestBody<'/v1/integrator/webhook-secret', 'post'>
-type RestUpdateWebhookSecretResponse = PathResponse<'/v1/integrator/webhook-secret', 'post'>
 
 export type WebhookEvent = NonNullable<RestCreateWebhookRequest['events']>[number]
 
@@ -62,46 +59,38 @@ export class WebhookService {
     }
 
     public async create(args: CreateWebhookParams) {
-        const webhook = await this.client.restApi<RestIntegratorWebhook, RestCreateWebhookRequest>({
-            method: 'post',
-            path: '/v1/integrator/webhooks',
-            body: args,
-        })
+        const webhook = await this.client.restApi(
+            restRoute('/v1/integrator/webhooks', 'post', {
+                body: args,
+            })
+        )
 
         return normalizeWebhook(webhook)
     }
 
     public async update(webhookId: string, args: UpdateWebhookParams) {
-        const webhook = await this.client.restApi<
-            RestUpdatedIntegratorWebhook,
-            RestUpdateWebhookRequest
-        >({
-            method: 'patch',
-            path: `/v1/integrator/webhooks/${encodeURIComponent(webhookId)}`,
-            body: args,
-        })
+        const webhook = await this.client.restApi(
+            restRoute('/v1/integrator/webhooks/{webhookId}', 'patch', {
+                params: { webhookId },
+                body: args,
+            })
+        )
 
         return normalizeWebhook(webhook)
     }
 
     public async updateWebhookSecret(secret: string) {
-        const response = await this.client.restApi<
-            RestUpdateWebhookSecretResponse,
-            RestUpdateWebhookSecretRequest
-        >({
-            method: 'post',
-            path: '/v1/integrator/webhook-secret',
-            body: { secret },
-        })
+        const response = await this.client.restApi(
+            restRoute('/v1/integrator/webhook-secret', 'post', {
+                body: { secret },
+            })
+        )
 
         return { success: response.secretConfigured }
     }
 
     public async list() {
-        const webhooks = await this.client.restApi<RestIntegratorWebhookList>({
-            method: 'get',
-            path: '/v1/integrator/webhooks',
-        })
+        const webhooks = await this.client.restApi(restRoute('/v1/integrator/webhooks', 'get'))
 
         return webhooks.map(normalizeWebhook)
     }
@@ -111,10 +100,11 @@ export class WebhookService {
             .then((webhooks) => webhooks.find((webhook) => webhook.id === webhookId))
             .catch(() => undefined)
 
-        await this.client.restApi<RestDeletedIntegratorWebhook>({
-            method: 'delete',
-            path: `/v1/integrator/webhooks/${encodeURIComponent(webhookId)}`,
-        })
+        await this.client.restApi(
+            restRoute('/v1/integrator/webhooks/{webhookId}', 'delete', {
+                params: { webhookId },
+            })
+        )
 
         return (
             existingWebhook ?? {

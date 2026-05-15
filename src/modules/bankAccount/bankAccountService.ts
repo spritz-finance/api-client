@@ -1,4 +1,5 @@
 import { SpritzClient } from '../../lib/client'
+import { restRoute } from '../../rest/route'
 import type { PathRequestBody, PathResponse } from '../../rest/types'
 
 export type BankAccount = PathResponse<'/v1/bank-accounts/', 'get'>[number]
@@ -19,47 +20,44 @@ export class BankAccountService {
     }
 
     public async list() {
-        return this.client.restApi<BankAccountList>({
-            method: 'get',
-            path: '/v1/bank-accounts/',
-        })
+        return this.client.restApi(restRoute('/v1/bank-accounts/', 'get'))
     }
 
     public async get(accountId: string) {
-        return this.client.restApi<BankAccount>({
-            method: 'get',
-            path: `/v1/bank-accounts/${encodeURIComponent(accountId)}`,
-        })
+        return this.client.restApi(
+            restRoute('/v1/bank-accounts/{accountId}', 'get', {
+                params: { accountId },
+            })
+        )
     }
 
     public async create(input: CreateBankAccountInput) {
-        return this.client.restApi<CreateBankAccountResponse, CreateBankAccountInput>({
-            method: 'post',
-            path: '/v1/bank-accounts/',
-            body: input,
-        })
+        return this.client.restApi(
+            restRoute('/v1/bank-accounts/', 'post', {
+                body: input,
+            })
+        )
     }
 
     public async delete(accountId: string) {
-        return this.client.restApi<DeleteBankAccountResponse>({
-            method: 'delete',
-            path: `/v1/bank-accounts/${encodeURIComponent(accountId)}`,
-        })
+        return this.client.restApi(
+            restRoute('/v1/bank-accounts/{accountId}', 'delete', {
+                params: { accountId },
+            })
+        )
     }
 
     public async createLinkToken(input?: CreateLinkTokenRequest) {
-        return this.client.restApi<LinkTokenResponse, CreateLinkTokenRequest>({
-            method: 'post',
-            path: '/v1/bank-accounts/link-token',
-            body: input,
-        })
+        return this.client.restApi(
+            restRoute('/v1/bank-accounts/link-token', 'post', input ? { body: input } : undefined)
+        )
     }
 
     public async completeLinking(input: CompleteLinkingRequest) {
-        return this.client.restApi<CompleteLinkingResponse, CompleteLinkingRequest>({
-            method: 'post',
-            path: '/v1/bank-accounts/link-complete',
-            body: input,
-        })
+        return this.client.restApi(
+            restRoute('/v1/bank-accounts/link-complete', 'post', {
+                body: input,
+            })
+        )
     }
 }

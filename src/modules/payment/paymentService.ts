@@ -10,9 +10,7 @@ import PaymentRequestPaymentQuery from '../../graph/queries/paymentForPaymentReq
 import AccountPaymentsQuery from '../../graph/queries/paymentsForAccount.graphql'
 import PaymentQuery from '../../graph/queries/payment.graphql'
 import { SpritzClient } from '../../lib/client'
-import type { PathResponse } from '../../rest/types'
-
-type PaymentLimitsRaw = PathResponse<'/v1/bank-accounts/{accountId}/payment-limits', 'get'>
+import { restRoute } from '../../rest/route'
 
 export interface PaymentLimitsResponse {
     perTransaction: number
@@ -65,10 +63,11 @@ export class PaymentService {
 
     public async getPaymentLimits(accountId: string): Promise<PaymentLimitsResponse | null> {
         try {
-            const raw = await this.client.restApi<PaymentLimitsRaw>({
-                method: 'get',
-                path: `/v1/bank-accounts/${encodeURIComponent(accountId)}/payment-limits`,
-            })
+            const raw = await this.client.restApi(
+                restRoute('/v1/bank-accounts/{accountId}/payment-limits', 'get', {
+                    params: { accountId },
+                })
+            )
 
             return {
                 perTransaction: Number(raw.transactionLimit),

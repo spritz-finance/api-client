@@ -1,4 +1,5 @@
 import { SpritzClient } from '../../lib/client'
+import { restRoute } from '../../rest/route'
 import type { PathRequestBody, PathResponse } from '../../rest/types'
 
 export type PrepareDepositRequest = PathRequestBody<'/v1/deposits/direct/prepare', 'post'>
@@ -14,18 +15,18 @@ export class DepositService {
     }
 
     public async prepare(input: PrepareDepositRequest) {
-        return this.client.restApi<PrepareDepositResponse, PrepareDepositRequest>({
-            method: 'post',
-            path: '/v1/deposits/direct/prepare',
-            body: input,
-        })
+        return this.client.restApi(
+            restRoute('/v1/deposits/direct/prepare', 'post', {
+                body: input,
+            })
+        )
     }
 
     public async create(input: CreateDepositRequest) {
-        return this.client.restApi<Deposit, CreateDepositRequest>({
-            method: 'post',
-            path: '/v1/deposits/direct',
-            body: input,
-        })
+        return this.client.restApi(
+            restRoute('/v1/deposits/direct', 'post', {
+                body: input,
+            })
+        )
     }
 }

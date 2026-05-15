@@ -1,4 +1,5 @@
 import { SpritzClient } from '../../lib/client'
+import { restRoute } from '../../rest/route'
 import type { PathRequestBody, PathResponse } from '../../rest/types'
 
 export type BypassKycRequest = PathRequestBody<'/v1/sandbox/bypass-kyc', 'post'>
@@ -17,11 +18,11 @@ export class SandboxService {
      * Only available in sandbox environments — returns 403 in production.
      */
     public async bypassKyc(options?: BypassKycRequest) {
-        return this.client.restApi({
-            method: 'post',
-            path: '/v1/sandbox/bypass-kyc',
-            body: options ?? { country: 'US' },
-        })
+        return this.client.restApi(
+            restRoute('/v1/sandbox/bypass-kyc', 'post', {
+                body: options ?? { country: 'US' },
+            })
+        )
     }
 
     /**
@@ -32,12 +33,10 @@ export class SandboxService {
      * Only available in sandbox environments — returns 403 in production.
      */
     public async createDepositWithReturn(input: CreateDepositWithReturnRequest) {
-        return this.client.restApi<CreateDepositWithReturnResponse, CreateDepositWithReturnRequest>(
-            {
-                method: 'post',
-                path: '/v1/sandbox/deposits/direct',
+        return this.client.restApi(
+            restRoute('/v1/sandbox/deposits/direct', 'post', {
                 body: input,
-            }
+            })
         )
     }
 }

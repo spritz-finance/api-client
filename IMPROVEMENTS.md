@@ -10,7 +10,7 @@ Rules for every item:
 - [ ] Ship small, reviewable diffs with focused tests.
 - [ ] Preserve generated GraphQL/OpenAPI type contracts.
 
-Selected next: **2. Deepen REST route handling**.
+Completed first: **2. Deepen REST route handling**.
 
 ## 1. Deepen Session Credentials
 
@@ -64,16 +64,16 @@ Create a typed REST route module that concentrates method, path params, query se
 
 Checklist:
 
-- [ ] Add a typed route builder module for OpenAPI paths.
-- [ ] Centralize path param encoding.
-- [ ] Centralize query serialization while preserving current scalar behavior.
-- [ ] Bind `PathResponse`, `PathRequestBody`, `PathQuery`, and `PathParams` to one operation descriptor.
-- [ ] Keep `SpritzClient.restApi()` public/internal behavior compatible.
-- [ ] Migrate one low-risk module first, likely ACH debit returns or funding sources.
-- [ ] Add route builder tests for path params, query params, body passthrough, and response typing.
-- [ ] Migrate remaining REST modules in small follow-up diffs.
-- [ ] Delete repeated `encodeURIComponent` route assembly after migration.
-- [ ] Keep public module method names and return shapes unchanged.
+- [x] Add a typed route builder module for OpenAPI paths.
+- [x] Centralize path param encoding.
+- [x] Centralize query serialization while preserving current scalar behavior.
+- [x] Bind `PathResponse`, `PathRequestBody`, `PathQuery`, and `PathParams` to one operation descriptor.
+- [x] Keep `SpritzClient.restApi()` public/internal behavior compatible.
+- [x] Migrate one low-risk module first, likely ACH debit returns or funding sources.
+- [x] Add route builder tests for path params, query params, body passthrough, and response typing.
+- [x] Migrate remaining REST modules in small follow-up diffs.
+- [x] Delete repeated `encodeURIComponent` route assembly after migration.
+- [x] Keep public module method names and return shapes unchanged.
 
 ## 3. Deepen ACH Onramp Flow
 
