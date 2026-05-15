@@ -2695,7 +2695,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6a05da63c358f286e124b9fc
+                     * @example 6a073b8fc31db9dffe9cd278
                      */
                     accountId: string;
                     /**
@@ -2723,7 +2723,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6a05da63c358f286e124b9fc
+                     * @example 6a073b8fc31db9dffe9cd278
                      */
                     accountId: string;
                     /**
@@ -2751,7 +2751,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6a05da63c358f286e124b9fc
+                     * @example 6a073b8fc31db9dffe9cd278
                      */
                     accountId: string;
                     /**
@@ -2798,7 +2798,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-05-14T14:21:23.458Z
+                         * @example 2026-05-15T15:28:15.636Z
                          */
                         createdAt: string;
                         /** @description What the user pays — total USD cost and token used. */
@@ -2837,7 +2837,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6a05da63c358f286e124b9fd
+                             * @example 6a073b8fc31db9dffe9cd279
                              */
                             accountId: string;
                         };
@@ -3044,7 +3044,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-05-14T14:21:23.458Z
+                         * @example 2026-05-15T15:28:15.636Z
                          */
                         createdAt: string;
                         /** @description What the user pays — total USD cost and token used. */
@@ -3083,7 +3083,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6a05da63c358f286e124b9fd
+                             * @example 6a073b8fc31db9dffe9cd279
                              */
                             accountId: string;
                         };
@@ -3580,7 +3580,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6a05da63c358f286e124b9fe
+                                 * @example 6a073b8fc31db9dffe9cd27a
                                  */
                                 accountId: string;
                                 accountName: (string | null) | null;
@@ -3796,7 +3796,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6a05da63c358f286e124b9fe
+                             * @example 6a073b8fc31db9dffe9cd27a
                              */
                             accountId: string;
                             accountName: (string | null) | null;
@@ -7005,11 +7005,31 @@ export interface operations {
                          */
                         bankAccountId: string;
                         /**
-                         * @description Institution name used for funding source display
+                         * @description Institution name used for funding source display. Prefer `institution.name` when present; this field will be removed in a future release.
                          * @example Plaid Test Bank
                          * @example null
                          */
                         institutionName: string | null;
+                        /** @description Branding metadata for the institution backing the funding source, or null when no institution data is available. */
+                        institution: {
+                            /**
+                             * @description Display name for the institution
+                             * @example Chase
+                             */
+                            name: string;
+                            /**
+                             * @description Absolute URL to the institution's logo (PNG). Null when the institution has no logo on file.
+                             * @example https://assets.platform.spritz.finance/institutions/ins_109508.png
+                             * @example null
+                             */
+                            logoUrl: string | null;
+                            /**
+                             * @description Hex color (e.g. `#1e88e5`) representing the institution's brand. Null when unavailable.
+                             * @example #1e88e5
+                             * @example null
+                             */
+                            primaryColor: string | null;
+                        } | null;
                         /**
                          * @description Last 4 digits of the linked bank account number
                          * @example 6789
@@ -7368,11 +7388,31 @@ export interface operations {
                          */
                         bankAccountId: string;
                         /**
-                         * @description Institution name used for funding source display
+                         * @description Institution name used for funding source display. Prefer `institution.name` when present; this field will be removed in a future release.
                          * @example Plaid Test Bank
                          * @example null
                          */
                         institutionName: string | null;
+                        /** @description Branding metadata for the institution backing the funding source, or null when no institution data is available. */
+                        institution: {
+                            /**
+                             * @description Display name for the institution
+                             * @example Chase
+                             */
+                            name: string;
+                            /**
+                             * @description Absolute URL to the institution's logo (PNG). Null when the institution has no logo on file.
+                             * @example https://assets.platform.spritz.finance/institutions/ins_109508.png
+                             * @example null
+                             */
+                            logoUrl: string | null;
+                            /**
+                             * @description Hex color (e.g. `#1e88e5`) representing the institution's brand. Null when unavailable.
+                             * @example #1e88e5
+                             * @example null
+                             */
+                            primaryColor: string | null;
+                        } | null;
                         /**
                          * @description Last 4 digits of the linked bank account number
                          * @example 6789
@@ -8093,7 +8133,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /**
-                     * @description Plaid OAuth redirect target. For web, use a URL. For iOS, use a universal link. For Android, use the package name.
+                     * @description Plaid OAuth target. For web or iOS, pass an https:// URL (web return URL or iOS universal link). For Android, pass the package name (e.g. com.example.app) — values without an https:// prefix are forwarded to Plaid as android_package_name with redirect_uri left blank, per Plaid's per-platform requirements.
                      * @example https://app.example.com/plaid/oauth-return
                      * @example com.example.app
                      */
@@ -8101,7 +8141,7 @@ export interface operations {
                 } | Record<string, never>;
                 "application/x-www-form-urlencoded": {
                     /**
-                     * @description Plaid OAuth redirect target. For web, use a URL. For iOS, use a universal link. For Android, use the package name.
+                     * @description Plaid OAuth target. For web or iOS, pass an https:// URL (web return URL or iOS universal link). For Android, pass the package name (e.g. com.example.app) — values without an https:// prefix are forwarded to Plaid as android_package_name with redirect_uri left blank, per Plaid's per-platform requirements.
                      * @example https://app.example.com/plaid/oauth-return
                      * @example com.example.app
                      */
@@ -8109,7 +8149,7 @@ export interface operations {
                 } | Record<string, never>;
                 "multipart/form-data": {
                     /**
-                     * @description Plaid OAuth redirect target. For web, use a URL. For iOS, use a universal link. For Android, use the package name.
+                     * @description Plaid OAuth target. For web or iOS, pass an https:// URL (web return URL or iOS universal link). For Android, pass the package name (e.g. com.example.app) — values without an https:// prefix are forwarded to Plaid as android_package_name with redirect_uri left blank, per Plaid's per-platform requirements.
                      * @example https://app.example.com/plaid/oauth-return
                      * @example com.example.app
                      */
@@ -11520,7 +11560,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6a05da63c358f286e124ba06
+                         * @example 6a073b8fc31db9dffe9cd282
                          */
                         userId: string;
                         /**
@@ -11536,7 +11576,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-05-14T15:21:23.651Z
+                         * @example 2026-05-15T16:28:15.737Z
                          */
                         expiresAt: string;
                     };
@@ -11711,7 +11751,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-05-14T14:21:23.650Z
+                         * @example 2026-05-15T15:28:15.737Z
                          */
                         createdAt: string;
                     };
@@ -11882,7 +11922,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6a05da63c358f286e124ba05
+                             * @example 6a073b8fc31db9dffe9cd281
                              */
                             userId: string;
                             /**
@@ -12070,7 +12110,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6a05da63c358f286e124ba05
+                         * @example 6a073b8fc31db9dffe9cd281
                          */
                         userId: string;
                         /**
@@ -12239,7 +12279,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a05da63c358f286e124ba07
+                         * @example 6a073b8fc31db9dffe9cd283
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -12446,7 +12486,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a05da63c358f286e124ba07
+                         * @example 6a073b8fc31db9dffe9cd283
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -12782,7 +12822,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a05da63c358f286e124ba07
+                         * @example 6a073b8fc31db9dffe9cd283
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -13157,7 +13197,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-05-14T14:26:23.651Z
+                         * @example 2026-05-15T15:33:15.737Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -13304,7 +13344,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a05da63c358f286e124ba03
+                         * @example 6a073b8fc31db9dffe9cd27f
                          */
                         id: string;
                         email: (string | null) | null;
@@ -13312,7 +13352,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-05-14T14:21:23.645Z
+                         * @example 2026-05-15T15:28:15.732Z
                          */
                         signedUpAt: string;
                         timezone: (string | null) | null;
@@ -13642,7 +13682,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a05da63c358f286e124ba03
+                         * @example 6a073b8fc31db9dffe9cd27f
                          */
                         id: string;
                         email: (string | null) | null;
@@ -13650,7 +13690,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-05-14T14:21:23.645Z
+                         * @example 2026-05-15T15:28:15.732Z
                          */
                         signedUpAt: string;
                         timezone: (string | null) | null;
@@ -14052,7 +14092,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a05da63c358f286e124ba03
+                         * @example 6a073b8fc31db9dffe9cd27f
                          */
                         id: string;
                         email: (string | null) | null;
@@ -14060,7 +14100,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-05-14T14:21:23.645Z
+                         * @example 2026-05-15T15:28:15.732Z
                          */
                         signedUpAt: string;
                         timezone: (string | null) | null;
