@@ -10,6 +10,14 @@ on:
                 description: Git ref to publish from
                 required: true
                 default: main
+            dist-tag:
+                description: |
+                    Optional npm dist-tag for maintenance releases on diverged branches
+                    (e.g. legacy-0.7). Leave blank to publish under 'latest' via changesets.
+                    Must NOT be 'latest' and must NOT parse as a SemVer range (so '0.7',
+                    '0.7.x', '~0.7' are all rejected — prefix or suffix to avoid the parser).
+                required: false
+                default: ''
 
 env:
     FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
@@ -33,6 +41,12 @@ jobs:
         environment: production
 
         steps:
+            - name: Refuse 'latest' as a manual dist-tag
+              if: github.event_name == 'workflow_dispatch' && inputs.dist-tag == 'latest'
+              run: |
+                  echo "::error::dist-tag must be blank for a 'latest' publish (let changesets handle it). Refusing explicit 'latest'."
+                  exit 1
+
             - name: Checkout
               uses: actions/checkout@v4
               with:
@@ -60,5 +74,10 @@ jobs:
             - name: Verify
               run: yarn agent:check
 
-            - name: Publish to npm
+            - name: Publish to npm (latest, via changesets)
+              if: github.event_name != 'workflow_dispatch' || inputs.dist-tag == ''
               run: yarn release
+
+            - name: Publish to npm (maintenance dist-tag)
+              if: github.event_name == 'workflow_dispatch' && inputs.dist-tag != ''
+              run: npx changeset publish --tag ${{ inputs.dist-tag }}
