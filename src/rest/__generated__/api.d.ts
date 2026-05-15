@@ -7109,11 +7109,31 @@ export interface operations {
                          */
                         bankAccountId: string;
                         /**
-                         * @description Institution name used for funding source display
+                         * @description Institution name used for funding source display. Prefer `institution.name` when present; this field will be removed in a future release.
                          * @example Plaid Test Bank
                          * @example null
                          */
                         institutionName: string | null;
+                        /** @description Branding metadata for the institution backing the funding source, or null when no institution data is available. */
+                        institution: {
+                            /**
+                             * @description Display name for the institution
+                             * @example Chase
+                             */
+                            name: string;
+                            /**
+                             * @description Absolute URL to the institution's logo (PNG). Null when the institution has no logo on file.
+                             * @example https://assets.platform.spritz.finance/institutions/ins_109508.png
+                             * @example null
+                             */
+                            logoUrl: string | null;
+                            /**
+                             * @description Hex color (e.g. `#1e88e5`) representing the institution's brand. Null when unavailable.
+                             * @example #1e88e5
+                             * @example null
+                             */
+                            primaryColor: string | null;
+                        } | null;
                         /**
                          * @description Last 4 digits of the linked bank account number
                          * @example 6789
@@ -7472,11 +7492,31 @@ export interface operations {
                          */
                         bankAccountId: string;
                         /**
-                         * @description Institution name used for funding source display
+                         * @description Institution name used for funding source display. Prefer `institution.name` when present; this field will be removed in a future release.
                          * @example Plaid Test Bank
                          * @example null
                          */
                         institutionName: string | null;
+                        /** @description Branding metadata for the institution backing the funding source, or null when no institution data is available. */
+                        institution: {
+                            /**
+                             * @description Display name for the institution
+                             * @example Chase
+                             */
+                            name: string;
+                            /**
+                             * @description Absolute URL to the institution's logo (PNG). Null when the institution has no logo on file.
+                             * @example https://assets.platform.spritz.finance/institutions/ins_109508.png
+                             * @example null
+                             */
+                            logoUrl: string | null;
+                            /**
+                             * @description Hex color (e.g. `#1e88e5`) representing the institution's brand. Null when unavailable.
+                             * @example #1e88e5
+                             * @example null
+                             */
+                            primaryColor: string | null;
+                        } | null;
                         /**
                          * @description Last 4 digits of the linked bank account number
                          * @example 6789
