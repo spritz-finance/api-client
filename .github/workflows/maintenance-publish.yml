@@ -7,7 +7,10 @@ on:
                 description: Maintenance branch (e.g. release/0.7) or commit SHA to publish from
                 required: true
             dist-tag:
-                description: npm dist-tag (e.g. 0.7, 0.8). Must NOT be 'latest' — use the main Publish workflow for that.
+                description: |
+                    npm dist-tag for this maintenance line (e.g. legacy-0.7, legacy-0.8). Must NOT be 'latest'
+                    (use the main Publish workflow for that) and must NOT parse as a SemVer range — that
+                    rules out bare versions like '0.7' or '0.7.x'. Prefix or suffix to avoid the SemVer parser.
                 required: true
 
 env:
