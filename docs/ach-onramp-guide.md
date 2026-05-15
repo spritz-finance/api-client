@@ -170,11 +170,11 @@ For some institutions, Plaid Link sends the user out to their bank's OAuth page 
 
 **Send the following to Spritz for allowlisting before going live:**
 
-| Platform | What to send                                                          |
-| -------- | --------------------------------------------------------------------- |
-| Web      | An HTTPS redirect URL on a domain you control (e.g. `https://app.yourdomain.com/plaid-oauth`) |
+| Platform | What to send                                                                                                                                                |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web      | An HTTPS redirect URL on a domain you control (e.g. `https://app.yourdomain.com/plaid-oauth`)                                                               |
 | iOS      | The universal link URL you'll receive the redirect on (e.g. `https://app.yourdomain.com/plaid-oauth/`) — custom URL schemes (`yourapp://`) are not accepted |
-| Android  | Your app's `applicationId` / package name (e.g. `com.yourdomain.app`) |
+| Android  | Your app's `applicationId` / package name (e.g. `com.yourdomain.app`)                                                                                       |
 
 The work each platform has to do to actually handle the redirect differs:
 
