@@ -1,5 +1,11 @@
 # @spritz-finance/api-client
 
+## 0.8.1
+
+### Patch Changes
+
+- f9fbb4d: Surface optional `redirectUri` on `bankAccount.createLinkToken` for Plaid OAuth flows. Pass a URL (web), universal link (iOS), or package name (Android) to receive a Plaid Link token configured for OAuth redirect handling.
+
 ## 0.8.0
 
 ### Minor Changes
