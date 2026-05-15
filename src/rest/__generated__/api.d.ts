@@ -442,90 +442,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/deposit-destinations/prepare": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Prepare a deposit destination bind
-         * @description Creates the canonical message a wallet must sign to bind a deposit destination to a funding source.
-         */
-        post: operations["postV1Deposit-destinationsPrepare"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/deposit-destinations/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List deposit destinations
-         * @description Returns the authenticated user's bound deposit destinations.
-         */
-        get: operations["getV1Deposit-destinations"];
-        put?: never;
-        /**
-         * Bind a deposit destination
-         * @description Verifies the signed destination bind message and stores the bound wallet destination.
-         */
-        post: operations["postV1Deposit-destinations"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/deposits/prepare": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Prepare a deposit authorization
-         * @description Creates the canonical ACH authorization message a wallet must sign for a single deposit.
-         */
-        post: operations["postV1DepositsPrepare"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/deposits/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create a deposit
-         * @description Verifies the signed ACH authorization and creates a deposit for asynchronous debit and release processing.
-         */
-        post: operations["postV1Deposits"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/deposits/direct/prepare": {
         parameters: {
             query?: never;
@@ -1883,26 +1799,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/sandbox/deposits": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create a sandbox deposit with an armed ACH return
-         * @description Creates a deposit in sandbox and routes the Modern Treasury debit through a return-code-backed receiving account for end-to-end return testing.
-         */
-        post: operations["postV1SandboxDeposits"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/sandbox/deposits/direct": {
         parameters: {
             query?: never;
@@ -2799,7 +2695,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 69fcc3849e56476d70fe629a
+                     * @example 6a05da63c358f286e124b9fc
                      */
                     accountId: string;
                     /**
@@ -2827,7 +2723,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 69fcc3849e56476d70fe629a
+                     * @example 6a05da63c358f286e124b9fc
                      */
                     accountId: string;
                     /**
@@ -2855,7 +2751,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 69fcc3849e56476d70fe629a
+                     * @example 6a05da63c358f286e124b9fc
                      */
                     accountId: string;
                     /**
@@ -2902,7 +2798,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-05-07T16:53:24.366Z
+                         * @example 2026-05-14T14:21:23.458Z
                          */
                         createdAt: string;
                         /** @description What the user pays — total USD cost and token used. */
@@ -2941,7 +2837,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 69fcc3849e56476d70fe629b
+                             * @example 6a05da63c358f286e124b9fd
                              */
                             accountId: string;
                         };
@@ -3148,7 +3044,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-05-07T16:53:24.366Z
+                         * @example 2026-05-14T14:21:23.458Z
                          */
                         createdAt: string;
                         /** @description What the user pays — total USD cost and token used. */
@@ -3187,7 +3083,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 69fcc3849e56476d70fe629b
+                             * @example 6a05da63c358f286e124b9fd
                              */
                             accountId: string;
                         };
@@ -3684,7 +3580,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 69fcc3849e56476d70fe629c
+                                 * @example 6a05da63c358f286e124b9fe
                                  */
                                 accountId: string;
                                 accountName: (string | null) | null;
@@ -3900,7 +3796,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 69fcc3849e56476d70fe629c
+                             * @example 6a05da63c358f286e124b9fe
                              */
                             accountId: string;
                             accountName: (string | null) | null;
@@ -7622,1223 +7518,6 @@ export interface operations {
             };
         };
     };
-    "postV1Deposit-destinationsPrepare": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /**
-                     * @description Opaque public funding source identifier
-                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    sourceId: string;
-                    /** @constant */
-                    network: "solana";
-                    /** @constant */
-                    asset: "USDC";
-                    /**
-                     * @description Destination wallet address for the selected network
-                     * @example 9xQeWvG816bUx9EPjHmaT23yvVM3qvGqLrL7Kx1YwM9R
-                     */
-                    address: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                };
-                "application/x-www-form-urlencoded": {
-                    /**
-                     * @description Opaque public funding source identifier
-                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    sourceId: string;
-                    /** @constant */
-                    network: "solana";
-                    /** @constant */
-                    asset: "USDC";
-                    /**
-                     * @description Destination wallet address for the selected network
-                     * @example 9xQeWvG816bUx9EPjHmaT23yvVM3qvGqLrL7Kx1YwM9R
-                     */
-                    address: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                };
-                "multipart/form-data": {
-                    /**
-                     * @description Opaque public funding source identifier
-                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    sourceId: string;
-                    /** @constant */
-                    network: "solana";
-                    /** @constant */
-                    asset: "USDC";
-                    /**
-                     * @description Destination wallet address for the selected network
-                     * @example 9xQeWvG816bUx9EPjHmaT23yvVM3qvGqLrL7Kx1YwM9R
-                     */
-                    address: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                };
-            };
-        };
-        responses: {
-            /** @description Response for status 200 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description Opaque public preparation identifier
-                         * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                         */
-                        preparationId: string;
-                        /** @constant */
-                        kind: "destination_bind";
-                        /** Format: date-time */
-                        expiresAt: string;
-                        /** @constant */
-                        messageVersion: "v1";
-                        /** @description Canonical wallet-signable verification message */
-                        message: string;
-                        /**
-                         * @description Canonical asset address or mint address for the selected network and asset
-                         * @example EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
-                         */
-                        assetAddress: string;
-                        /** @description Normalized destination address used in the signed message */
-                        normalizedAddress: string;
-                    };
-                };
-            };
-            /** @description Response for status 401 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Token Expired
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 401
-                         * @example 403
-                         */
-                        status: number;
-                        /**
-                         * @description A human-readable explanation specific to this occurrence
-                         * @example Bearer token required
-                         * @example Invalid token
-                         */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The authentication realm
-                         * @example API
-                         */
-                        realm?: string;
-                        /**
-                         * @description The required scope for this resource
-                         * @example read:users
-                         * @example write:orders
-                         */
-                        scope?: string;
-                    };
-                };
-            };
-            /** @description Response for status 404 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         */
-                        type: string;
-                        /** @description A short, human-readable summary of the problem type */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 404
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The type of resource that was not found
-                         * @example user
-                         * @example account
-                         * @example transaction
-                         */
-                        resourceType: string;
-                        /** @description The identifier of the resource that was not found */
-                        resourceId: string;
-                    };
-                };
-            };
-            /** @description Response for status 500 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Internal Server Error
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                    };
-                };
-            };
-        };
-    };
-    "getV1Deposit-destinations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Response for status 200 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description Opaque public identifier for the deposit destination
-                         * @example dd_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                         */
-                        id: string;
-                        /**
-                         * @description Opaque public funding source identifier
-                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                         */
-                        sourceId: string;
-                        /**
-                         * @description Blockchain network for the bound deposit destination
-                         * @example solana
-                         * @constant
-                         */
-                        network: "solana";
-                        /**
-                         * @description Asset sent to the deposit destination
-                         * @example USDC
-                         * @constant
-                         */
-                        asset: "USDC";
-                        /**
-                         * @description Canonical asset address or mint address for the selected network and asset
-                         * @example EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
-                         */
-                        assetAddress: string;
-                        /** @description Bound wallet destination address */
-                        address: string;
-                        /** @enum {string} */
-                        status: "active" | "revoked";
-                        /**
-                         * Format: date-time
-                         * @description When the destination was created
-                         */
-                        createdAt: string;
-                        /** @description When the destination was revoked, or null when active */
-                        revokedAt: string | null;
-                    }[];
-                };
-            };
-            /** @description Response for status 401 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Token Expired
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 401
-                         * @example 403
-                         */
-                        status: number;
-                        /**
-                         * @description A human-readable explanation specific to this occurrence
-                         * @example Bearer token required
-                         * @example Invalid token
-                         */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The authentication realm
-                         * @example API
-                         */
-                        realm?: string;
-                        /**
-                         * @description The required scope for this resource
-                         * @example read:users
-                         * @example write:orders
-                         */
-                        scope?: string;
-                    };
-                };
-            };
-            /** @description Response for status 404 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         */
-                        type: string;
-                        /** @description A short, human-readable summary of the problem type */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 404
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The type of resource that was not found
-                         * @example user
-                         * @example account
-                         * @example transaction
-                         */
-                        resourceType: string;
-                        /** @description The identifier of the resource that was not found */
-                        resourceId: string;
-                    };
-                };
-            };
-            /** @description Response for status 500 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Internal Server Error
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                    };
-                };
-            };
-        };
-    };
-    "postV1Deposit-destinations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /**
-                     * @description Opaque public preparation identifier returned by prepare
-                     * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    preparationId: string;
-                    /** @description Ed25519 signature over the exact message text. Base58 is preferred for Solana clients; base64 is also accepted. */
-                    signature: string;
-                    /**
-                     * @description Wallet address that produced the signature
-                     * @example 9xQeWvG816bUx9EPjHmaT23yvVM3qvGqLrL7Kx1YwM9R
-                     */
-                    signerAddress: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                };
-                "application/x-www-form-urlencoded": {
-                    /**
-                     * @description Opaque public preparation identifier returned by prepare
-                     * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    preparationId: string;
-                    /** @description Ed25519 signature over the exact message text. Base58 is preferred for Solana clients; base64 is also accepted. */
-                    signature: string;
-                    /**
-                     * @description Wallet address that produced the signature
-                     * @example 9xQeWvG816bUx9EPjHmaT23yvVM3qvGqLrL7Kx1YwM9R
-                     */
-                    signerAddress: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                };
-                "multipart/form-data": {
-                    /**
-                     * @description Opaque public preparation identifier returned by prepare
-                     * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    preparationId: string;
-                    /** @description Ed25519 signature over the exact message text. Base58 is preferred for Solana clients; base64 is also accepted. */
-                    signature: string;
-                    /**
-                     * @description Wallet address that produced the signature
-                     * @example 9xQeWvG816bUx9EPjHmaT23yvVM3qvGqLrL7Kx1YwM9R
-                     */
-                    signerAddress: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                };
-            };
-        };
-        responses: {
-            /** @description A wallet destination bound to a funding source for future on-ramp deposits */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description Opaque public identifier for the deposit destination
-                         * @example dd_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                         */
-                        id: string;
-                        /**
-                         * @description Opaque public funding source identifier
-                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                         */
-                        sourceId: string;
-                        /**
-                         * @description Blockchain network for the bound deposit destination
-                         * @example solana
-                         * @constant
-                         */
-                        network: "solana";
-                        /**
-                         * @description Asset sent to the deposit destination
-                         * @example USDC
-                         * @constant
-                         */
-                        asset: "USDC";
-                        /**
-                         * @description Canonical asset address or mint address for the selected network and asset
-                         * @example EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
-                         */
-                        assetAddress: string;
-                        /** @description Bound wallet destination address */
-                        address: string;
-                        /** @enum {string} */
-                        status: "active" | "revoked";
-                        /**
-                         * Format: date-time
-                         * @description When the destination was created
-                         */
-                        createdAt: string;
-                        /** @description When the destination was revoked, or null when active */
-                        revokedAt: string | null;
-                    };
-                };
-            };
-            /** @description Response for status 401 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Token Expired
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 401
-                         * @example 403
-                         */
-                        status: number;
-                        /**
-                         * @description A human-readable explanation specific to this occurrence
-                         * @example Bearer token required
-                         * @example Invalid token
-                         */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The authentication realm
-                         * @example API
-                         */
-                        realm?: string;
-                        /**
-                         * @description The required scope for this resource
-                         * @example read:users
-                         * @example write:orders
-                         */
-                        scope?: string;
-                    };
-                };
-            };
-            /** @description Response for status 404 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         */
-                        type: string;
-                        /** @description A short, human-readable summary of the problem type */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 404
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The type of resource that was not found
-                         * @example user
-                         * @example account
-                         * @example transaction
-                         */
-                        resourceType: string;
-                        /** @description The identifier of the resource that was not found */
-                        resourceId: string;
-                    };
-                };
-            };
-            /** @description Response for status 500 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Internal Server Error
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                    };
-                };
-            };
-        };
-    };
-    postV1DepositsPrepare: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /**
-                     * @description Opaque public funding source identifier
-                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    sourceId: string;
-                    /**
-                     * @description Opaque public deposit destination identifier
-                     * @example dd_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    destinationId: string;
-                    /** @enum {string} */
-                    quoteType: "exact_input" | "exact_output";
-                    /**
-                     * @description Requested USD amount as a decimal string
-                     * @example 100.00
-                     */
-                    amountUsd: string;
-                    /** @enum {string} */
-                    priority: "normal" | "high";
-                    feeSubsidy?: {
-                        percentage: number;
-                        maxAmountUsd?: string;
-                    };
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                };
-                "application/x-www-form-urlencoded": {
-                    /**
-                     * @description Opaque public funding source identifier
-                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    sourceId: string;
-                    /**
-                     * @description Opaque public deposit destination identifier
-                     * @example dd_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    destinationId: string;
-                    /** @enum {string} */
-                    quoteType: "exact_input" | "exact_output";
-                    /**
-                     * @description Requested USD amount as a decimal string
-                     * @example 100.00
-                     */
-                    amountUsd: string;
-                    /** @enum {string} */
-                    priority: "normal" | "high";
-                    feeSubsidy?: {
-                        percentage: number;
-                        maxAmountUsd?: string;
-                    };
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                };
-                "multipart/form-data": {
-                    /**
-                     * @description Opaque public funding source identifier
-                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    sourceId: string;
-                    /**
-                     * @description Opaque public deposit destination identifier
-                     * @example dd_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    destinationId: string;
-                    /** @enum {string} */
-                    quoteType: "exact_input" | "exact_output";
-                    /**
-                     * @description Requested USD amount as a decimal string
-                     * @example 100.00
-                     */
-                    amountUsd: string;
-                    /** @enum {string} */
-                    priority: "normal" | "high";
-                    feeSubsidy?: {
-                        percentage: number;
-                        maxAmountUsd?: string;
-                    };
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                };
-            };
-        };
-        responses: {
-            /** @description Response for status 200 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description Opaque public preparation identifier
-                         * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                         */
-                        preparationId: string;
-                        /** @constant */
-                        kind: "deposit_authorization";
-                        /** Format: date-time */
-                        expiresAt: string;
-                        /** @constant */
-                        messageVersion: "v1";
-                        /** @description Display-ready ACH authorization message */
-                        message: string;
-                        summary: {
-                            /** @enum {string} */
-                            quoteType: "exact_input" | "exact_output";
-                            requestedAmountUsd: string;
-                            /** @enum {string} */
-                            priority: "normal" | "high";
-                            feeRateBps: number;
-                            principalAmountUsd: string;
-                            expectedAssetAmount: string;
-                            grossFeeUsd: string;
-                            feeSubsidyUsd: string;
-                            userFeeUsd: string;
-                            totalDebitAmountUsd: string;
-                            feeSubsidy: {
-                                percentage: number;
-                                percentageBps: number;
-                                maxAmountUsd: string | null;
-                                appliedAmountUsd: string;
-                            } | null;
-                            /** @constant */
-                            network: "solana";
-                            /** @constant */
-                            asset: "USDC";
-                            assetAddress: string;
-                            destinationAddress: string;
-                        };
-                    };
-                };
-            };
-            /** @description Response for status 401 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Token Expired
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 401
-                         * @example 403
-                         */
-                        status: number;
-                        /**
-                         * @description A human-readable explanation specific to this occurrence
-                         * @example Bearer token required
-                         * @example Invalid token
-                         */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The authentication realm
-                         * @example API
-                         */
-                        realm?: string;
-                        /**
-                         * @description The required scope for this resource
-                         * @example read:users
-                         * @example write:orders
-                         */
-                        scope?: string;
-                    };
-                };
-            };
-            /** @description Response for status 404 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         */
-                        type: string;
-                        /** @description A short, human-readable summary of the problem type */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 404
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The type of resource that was not found
-                         * @example user
-                         * @example account
-                         * @example transaction
-                         */
-                        resourceType: string;
-                        /** @description The identifier of the resource that was not found */
-                        resourceId: string;
-                    };
-                };
-            };
-            /** @description Response for status 500 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Internal Server Error
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                    };
-                };
-            };
-        };
-    };
-    postV1Deposits: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /**
-                     * @description Opaque public preparation identifier returned by prepare
-                     * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    preparationId: string;
-                    /** @description Ed25519 signature over the exact authorization message text. Base58 is preferred for Solana clients; base64 is also accepted. */
-                    signature: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                };
-                "application/x-www-form-urlencoded": {
-                    /**
-                     * @description Opaque public preparation identifier returned by prepare
-                     * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    preparationId: string;
-                    /** @description Ed25519 signature over the exact authorization message text. Base58 is preferred for Solana clients; base64 is also accepted. */
-                    signature: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                };
-                "multipart/form-data": {
-                    /**
-                     * @description Opaque public preparation identifier returned by prepare
-                     * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    preparationId: string;
-                    /** @description Ed25519 signature over the exact authorization message text. Base58 is preferred for Solana clients; base64 is also accepted. */
-                    signature: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                };
-            };
-        };
-        responses: {
-            /** @description An ACH debit deposit authorized by the user and processed asynchronously through debit and crypto release lifecycles. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description Opaque public deposit identifier
-                         * @example dep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                         */
-                        id: string;
-                        /**
-                         * @description Opaque public funding source identifier
-                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                         */
-                        sourceId: string;
-                        /**
-                         * @description Opaque public deposit destination identifier
-                         * @example dd_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                         */
-                        destinationId: string;
-                        /** @enum {string} */
-                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "failed";
-                        /** @enum {string} */
-                        quoteType: "exact_input" | "exact_output";
-                        /** @enum {string} */
-                        priority: "normal" | "high";
-                        feeRateBps: number;
-                        principalAmountUsd: string;
-                        expectedAssetAmount: string;
-                        grossFeeUsd: string;
-                        feeSubsidyUsd: string;
-                        userFeeUsd: string;
-                        totalDebitAmountUsd: string;
-                        feeSubsidy: {
-                            percentage: number;
-                            percentageBps: number;
-                            maxAmountUsd: string | null;
-                            appliedAmountUsd: string;
-                        } | null;
-                        /**
-                         * @description Blockchain network for the bound deposit destination
-                         * @example solana
-                         * @constant
-                         */
-                        network: "solana";
-                        /**
-                         * @description Asset sent to the deposit destination
-                         * @example USDC
-                         * @constant
-                         */
-                        asset: "USDC";
-                        assetAddress: string;
-                        /** @description Destination wallet address for the crypto release */
-                        address: string;
-                        /** @enum {string} */
-                        debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
-                        /** @enum {string} */
-                        releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
-                        /** @enum {string} */
-                        releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
-                        releasedAmountUsd: string;
-                        confirmedReleasedAmountUsd: string;
-                        exposureAmountUsd: string;
-                        /** Format: date-time */
-                        authorizedAt: string;
-                        /** Format: date-time */
-                        createdAt: string;
-                        settledAt: string | null;
-                        returnedAt: string | null;
-                        completedAt: string | null;
-                        returnCode: string | null;
-                        returnReason: string | null;
-                        debitFailureCode: string | null;
-                        debitFailureReason: string | null;
-                        releaseFailureCode: string | null;
-                        releaseFailureReason: string | null;
-                        payoutTxHash: string | null;
-                    };
-                };
-            };
-            /** @description Response for status 401 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Token Expired
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 401
-                         * @example 403
-                         */
-                        status: number;
-                        /**
-                         * @description A human-readable explanation specific to this occurrence
-                         * @example Bearer token required
-                         * @example Invalid token
-                         */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The authentication realm
-                         * @example API
-                         */
-                        realm?: string;
-                        /**
-                         * @description The required scope for this resource
-                         * @example read:users
-                         * @example write:orders
-                         */
-                        scope?: string;
-                    };
-                };
-            };
-            /** @description Response for status 404 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         */
-                        type: string;
-                        /** @description A short, human-readable summary of the problem type */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 404
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The type of resource that was not found
-                         * @example user
-                         * @example account
-                         * @example transaction
-                         */
-                        resourceType: string;
-                        /** @description The identifier of the resource that was not found */
-                        resourceId: string;
-                    };
-                };
-            };
-            /** @description Response for status 500 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Internal Server Error
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                    };
-                };
-            };
-        };
-    };
     postV1DepositsDirectPrepare: {
         parameters: {
             query?: never;
@@ -8859,9 +7538,13 @@ export interface operations {
                      * @example 9n4nbM75f5Ui33ZbPYXn59EwSb9Y1zdyu3x2b1f8jQRY
                      */
                     address: string;
-                    /** @constant */
-                    network: "solana";
-                    /** @constant */
+                    /** @enum {string} */
+                    network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
+                    /**
+                     * @description Asset sent to the deposit destination
+                     * @example USDC
+                     * @constant
+                     */
                     asset: "USDC";
                     /** @enum {string} */
                     quoteType: "exact_input" | "exact_output";
@@ -8896,9 +7579,13 @@ export interface operations {
                      * @example 9n4nbM75f5Ui33ZbPYXn59EwSb9Y1zdyu3x2b1f8jQRY
                      */
                     address: string;
-                    /** @constant */
-                    network: "solana";
-                    /** @constant */
+                    /** @enum {string} */
+                    network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
+                    /**
+                     * @description Asset sent to the deposit destination
+                     * @example USDC
+                     * @constant
+                     */
                     asset: "USDC";
                     /** @enum {string} */
                     quoteType: "exact_input" | "exact_output";
@@ -8933,9 +7620,13 @@ export interface operations {
                      * @example 9n4nbM75f5Ui33ZbPYXn59EwSb9Y1zdyu3x2b1f8jQRY
                      */
                     address: string;
-                    /** @constant */
-                    network: "solana";
-                    /** @constant */
+                    /** @enum {string} */
+                    network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
+                    /**
+                     * @description Asset sent to the deposit destination
+                     * @example USDC
+                     * @constant
+                     */
                     asset: "USDC";
                     /** @enum {string} */
                     quoteType: "exact_input" | "exact_output";
@@ -9001,9 +7692,13 @@ export interface operations {
                                 maxAmountUsd: string | null;
                                 appliedAmountUsd: string;
                             } | null;
-                            /** @constant */
-                            network: "solana";
-                            /** @constant */
+                            /** @enum {string} */
+                            network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
+                            /**
+                             * @description Asset sent to the deposit destination
+                             * @example USDC
+                             * @constant
+                             */
                             asset: "USDC";
                             assetAddress: string;
                             destinationAddress: string;
@@ -9208,11 +7903,6 @@ export interface operations {
                          * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                          */
                         sourceId: string;
-                        /**
-                         * @description Opaque public deposit destination identifier
-                         * @example dd_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                         */
-                        destinationId: string;
                         /** @enum {string} */
                         status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "failed";
                         /** @enum {string} */
@@ -9232,12 +7922,8 @@ export interface operations {
                             maxAmountUsd: string | null;
                             appliedAmountUsd: string;
                         } | null;
-                        /**
-                         * @description Blockchain network for the bound deposit destination
-                         * @example solana
-                         * @constant
-                         */
-                        network: "solana";
+                        /** @enum {string} */
+                        network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
                         /**
                          * @description Asset sent to the deposit destination
                          * @example USDC
@@ -9403,7 +8089,34 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Plaid OAuth redirect target. For web, use a URL. For iOS, use a universal link. For Android, use the package name.
+                     * @example https://app.example.com/plaid/oauth-return
+                     * @example com.example.app
+                     */
+                    redirectUri?: string;
+                } | Record<string, never>;
+                "application/x-www-form-urlencoded": {
+                    /**
+                     * @description Plaid OAuth redirect target. For web, use a URL. For iOS, use a universal link. For Android, use the package name.
+                     * @example https://app.example.com/plaid/oauth-return
+                     * @example com.example.app
+                     */
+                    redirectUri?: string;
+                } | Record<string, never>;
+                "multipart/form-data": {
+                    /**
+                     * @description Plaid OAuth redirect target. For web, use a URL. For iOS, use a universal link. For Android, use the package name.
+                     * @example https://app.example.com/plaid/oauth-return
+                     * @example com.example.app
+                     */
+                    redirectUri?: string;
+                } | Record<string, never>;
+            };
+        };
         responses: {
             /** @description Response for status 200 */
             200: {
@@ -12807,7 +11520,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 69fcc3849e56476d70fe62a4
+                         * @example 6a05da63c358f286e124ba06
                          */
                         userId: string;
                         /**
@@ -12823,7 +11536,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-05-07T17:53:24.550Z
+                         * @example 2026-05-14T15:21:23.651Z
                          */
                         expiresAt: string;
                     };
@@ -12998,7 +11711,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-05-07T16:53:24.550Z
+                         * @example 2026-05-14T14:21:23.650Z
                          */
                         createdAt: string;
                     };
@@ -13169,7 +11882,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 69fcc3849e56476d70fe62a3
+                             * @example 6a05da63c358f286e124ba05
                              */
                             userId: string;
                             /**
@@ -13357,7 +12070,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 69fcc3849e56476d70fe62a3
+                         * @example 6a05da63c358f286e124ba05
                          */
                         userId: string;
                         /**
@@ -13526,7 +12239,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 69fcc3849e56476d70fe62a5
+                         * @example 6a05da63c358f286e124ba07
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -13733,7 +12446,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 69fcc3849e56476d70fe62a5
+                         * @example 6a05da63c358f286e124ba07
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -14069,7 +12782,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 69fcc3849e56476d70fe62a5
+                         * @example 6a05da63c358f286e124ba07
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -14444,7 +13157,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-05-07T16:58:24.550Z
+                         * @example 2026-05-14T14:26:23.651Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -14591,7 +13304,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 69fcc3849e56476d70fe62a1
+                         * @example 6a05da63c358f286e124ba03
                          */
                         id: string;
                         email: (string | null) | null;
@@ -14599,7 +13312,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-05-07T16:53:24.483Z
+                         * @example 2026-05-14T14:21:23.645Z
                          */
                         signedUpAt: string;
                         timezone: (string | null) | null;
@@ -14929,7 +13642,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 69fcc3849e56476d70fe62a1
+                         * @example 6a05da63c358f286e124ba03
                          */
                         id: string;
                         email: (string | null) | null;
@@ -14937,7 +13650,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-05-07T16:53:24.483Z
+                         * @example 2026-05-14T14:21:23.645Z
                          */
                         signedUpAt: string;
                         timezone: (string | null) | null;
@@ -15339,7 +14052,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 69fcc3849e56476d70fe62a1
+                         * @example 6a05da63c358f286e124ba03
                          */
                         id: string;
                         email: (string | null) | null;
@@ -15347,7 +14060,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-05-07T16:53:24.483Z
+                         * @example 2026-05-14T14:21:23.645Z
                          */
                         signedUpAt: string;
                         timezone: (string | null) | null;
@@ -22159,333 +20872,6 @@ export interface operations {
             };
         };
     };
-    postV1SandboxDeposits: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /**
-                     * @description Opaque public preparation identifier returned by prepare
-                     * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    preparationId: string;
-                    /** @description Ed25519 signature over the exact authorization message text. Base58 is preferred for Solana clients; base64 is also accepted. */
-                    signature: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                    returnSimulation: {
-                        /**
-                         * @description Sandbox-only ACH return code to simulate through the Modern Treasury provider path
-                         * @example R10
-                         */
-                        code: string;
-                    };
-                };
-                "application/x-www-form-urlencoded": {
-                    /**
-                     * @description Opaque public preparation identifier returned by prepare
-                     * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    preparationId: string;
-                    /** @description Ed25519 signature over the exact authorization message text. Base58 is preferred for Solana clients; base64 is also accepted. */
-                    signature: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                    returnSimulation: {
-                        /**
-                         * @description Sandbox-only ACH return code to simulate through the Modern Treasury provider path
-                         * @example R10
-                         */
-                        code: string;
-                    };
-                };
-                "multipart/form-data": {
-                    /**
-                     * @description Opaque public preparation identifier returned by prepare
-                     * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                     */
-                    preparationId: string;
-                    /** @description Ed25519 signature over the exact authorization message text. Base58 is preferred for Solana clients; base64 is also accepted. */
-                    signature: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                    returnSimulation: {
-                        /**
-                         * @description Sandbox-only ACH return code to simulate through the Modern Treasury provider path
-                         * @example R10
-                         */
-                        code: string;
-                    };
-                };
-            };
-        };
-        responses: {
-            /** @description An ACH debit deposit authorized by the user and processed asynchronously through debit and crypto release lifecycles. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description Opaque public deposit identifier
-                         * @example dep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                         */
-                        id: string;
-                        /**
-                         * @description Opaque public funding source identifier
-                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                         */
-                        sourceId: string;
-                        /**
-                         * @description Opaque public deposit destination identifier
-                         * @example dd_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                         */
-                        destinationId: string;
-                        /** @enum {string} */
-                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "failed";
-                        /** @enum {string} */
-                        quoteType: "exact_input" | "exact_output";
-                        /** @enum {string} */
-                        priority: "normal" | "high";
-                        feeRateBps: number;
-                        principalAmountUsd: string;
-                        expectedAssetAmount: string;
-                        grossFeeUsd: string;
-                        feeSubsidyUsd: string;
-                        userFeeUsd: string;
-                        totalDebitAmountUsd: string;
-                        feeSubsidy: {
-                            percentage: number;
-                            percentageBps: number;
-                            maxAmountUsd: string | null;
-                            appliedAmountUsd: string;
-                        } | null;
-                        /**
-                         * @description Blockchain network for the bound deposit destination
-                         * @example solana
-                         * @constant
-                         */
-                        network: "solana";
-                        /**
-                         * @description Asset sent to the deposit destination
-                         * @example USDC
-                         * @constant
-                         */
-                        asset: "USDC";
-                        assetAddress: string;
-                        /** @description Destination wallet address for the crypto release */
-                        address: string;
-                        /** @enum {string} */
-                        debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
-                        /** @enum {string} */
-                        releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
-                        /** @enum {string} */
-                        releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
-                        releasedAmountUsd: string;
-                        confirmedReleasedAmountUsd: string;
-                        exposureAmountUsd: string;
-                        /** Format: date-time */
-                        authorizedAt: string;
-                        /** Format: date-time */
-                        createdAt: string;
-                        settledAt: string | null;
-                        returnedAt: string | null;
-                        completedAt: string | null;
-                        returnCode: string | null;
-                        returnReason: string | null;
-                        debitFailureCode: string | null;
-                        debitFailureReason: string | null;
-                        releaseFailureCode: string | null;
-                        releaseFailureReason: string | null;
-                        payoutTxHash: string | null;
-                    };
-                };
-            };
-            /** @description Response for status 401 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Token Expired
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 401
-                         * @example 403
-                         */
-                        status: number;
-                        /**
-                         * @description A human-readable explanation specific to this occurrence
-                         * @example Bearer token required
-                         * @example Invalid token
-                         */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The authentication realm
-                         * @example API
-                         */
-                        realm?: string;
-                        /**
-                         * @description The required scope for this resource
-                         * @example read:users
-                         * @example write:orders
-                         */
-                        scope?: string;
-                    };
-                };
-            };
-            /** @description Response for status 403 */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Internal Server Error
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                    };
-                };
-            };
-            /** @description Response for status 404 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         */
-                        type: string;
-                        /** @description A short, human-readable summary of the problem type */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 404
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The type of resource that was not found
-                         * @example user
-                         * @example account
-                         * @example transaction
-                         */
-                        resourceType: string;
-                        /** @description The identifier of the resource that was not found */
-                        resourceId: string;
-                    };
-                };
-            };
-            /** @description Response for status 500 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         * @example Internal Server Error
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                    };
-                };
-            };
-        };
-    };
     postV1SandboxDepositsDirect: {
         parameters: {
             query?: never;
@@ -22581,11 +20967,6 @@ export interface operations {
                          * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                          */
                         sourceId: string;
-                        /**
-                         * @description Opaque public deposit destination identifier
-                         * @example dd_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
-                         */
-                        destinationId: string;
                         /** @enum {string} */
                         status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "failed";
                         /** @enum {string} */
@@ -22605,12 +20986,8 @@ export interface operations {
                             maxAmountUsd: string | null;
                             appliedAmountUsd: string;
                         } | null;
-                        /**
-                         * @description Blockchain network for the bound deposit destination
-                         * @example solana
-                         * @constant
-                         */
-                        network: "solana";
+                        /** @enum {string} */
+                        network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
                         /**
                          * @description Asset sent to the deposit destination
                          * @example USDC

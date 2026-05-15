@@ -7,6 +7,7 @@ export type CreateBankAccountInput = PathRequestBody<'/v1/bank-accounts/', 'post
 export type CreateBankAccountResponse = PathResponse<'/v1/bank-accounts/', 'post'>
 export type DeleteBankAccountResponse = PathResponse<'/v1/bank-accounts/{accountId}', 'delete'>
 export type LinkTokenResponse = PathResponse<'/v1/bank-accounts/link-token', 'post'>
+export type CreateLinkTokenRequest = PathRequestBody<'/v1/bank-accounts/link-token', 'post'>
 export type CompleteLinkingRequest = PathRequestBody<'/v1/bank-accounts/link-complete', 'post'>
 export type CompleteLinkingResponse = PathResponse<'/v1/bank-accounts/link-complete', 'post'>
 
@@ -46,10 +47,11 @@ export class BankAccountService {
         })
     }
 
-    public async createLinkToken() {
-        return this.client.restApi<LinkTokenResponse>({
+    public async createLinkToken(input?: CreateLinkTokenRequest) {
+        return this.client.restApi<LinkTokenResponse, CreateLinkTokenRequest>({
             method: 'post',
             path: '/v1/bank-accounts/link-token',
+            body: input,
         })
     }
 
