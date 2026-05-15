@@ -1,5 +1,11 @@
 # @spritz-finance/api-client
 
+## 0.8.2
+
+### Patch Changes
+
+- 767dc00: Funding sources now expose an `institution` field with branding metadata (`name`, `logoUrl`, `primaryColor`) alongside the existing `institutionName`. The flat `institutionName` is deprecated — prefer `institution.name` going forward. Regenerated REST types against the platform OpenAPI spec.
+
 ## 0.8.1
 
 ### Patch Changes
