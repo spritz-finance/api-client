@@ -7,6 +7,8 @@ import { APIConnectionError, APIConnectionTimeoutError, APIError, SpritzApiError
 import { gracefulParseJSON } from '../utils/json'
 import { validateGraphQLQuery, sanitizeGraphQLVariables } from '../utils/graphqlSecurity'
 import { stampRequest } from './hmac'
+import type { RestQuery, RestRoute } from '../rest/route'
+import type { HttpMethod, PathResponse, RestMethod, RestPath } from '../rest/types'
 
 type GraphQLVariables = Record<string, unknown>
 
@@ -25,8 +27,6 @@ type GraphQLResponseData<T> = {
     data: T
     errors?: { message: string }[] | null
 }
-
-type HTTPMethod = 'get' | 'post' | 'put' | 'patch' | 'delete'
 
 async function parseAPIResponse<Response>(
     props: APIResponseProps
@@ -106,7 +106,7 @@ export class SpritzClient {
         path,
         body = undefined,
     }: {
-        method: HTTPMethod
+        method: HttpMethod
         path: string
         body?: Request | undefined
     }) {
@@ -119,22 +119,36 @@ export class SpritzClient {
             .then(({ response }) => response)
     }
 
-    public async restApi<Response, Request extends GraphQLVariables = GraphQLVariables>({
+    public async restApi<P extends RestPath, M extends RestMethod<P>>(
+        route: RestRoute<P, M>
+    ): Promise<PathResponse<P, M>>
+    public async restApi<Response, Request = unknown>({
+        method,
+        path,
+        body,
+        query,
+    }: {
+        method: HttpMethod
+        path: string
+        body?: Request | undefined
+        query?: RestQuery
+    }): Promise<Response>
+    public async restApi<Response, Request = unknown>({
         method,
         path,
         body = undefined,
         query,
     }: {
-        method: HTTPMethod
+        method: HttpMethod
         path: string
         body?: Request | undefined
-        query?: Record<string, string | number | boolean | undefined>
+        query?: RestQuery
     }) {
         return this.sendRestApiRequest({
             method,
             path,
             body,
-            query,
+            ...(query ? { query } : {}),
         })
             .then((res) => parseAPIResponse<Response>(res))
             .then(({ response }) => response)
@@ -156,7 +170,7 @@ export class SpritzClient {
         path,
         body,
     }: {
-        method: HTTPMethod
+        method: HttpMethod
         path: string
         body: GraphQLVariables | undefined
     }) {
@@ -170,10 +184,10 @@ export class SpritzClient {
         body,
         query,
     }: {
-        method: HTTPMethod
+        method: HttpMethod
         path: string
-        body: GraphQLVariables | undefined
-        query?: Record<string, string | number | boolean | undefined>
+        body: unknown | undefined
+        query?: RestQuery
     }) {
         const { url, req, timeout } = this.buildRestRequest(
             method,
@@ -298,11 +312,11 @@ export class SpritzClient {
     }
 
     private buildRestRequest(
-        method: HTTPMethod,
+        method: HttpMethod,
         path: string,
-        reqBody?: GraphQLVariables | null,
+        reqBody?: unknown | null,
         baseURL?: string,
-        query?: Record<string, string | number | boolean | undefined>
+        query?: RestQuery
     ) {
         const body = reqBody ? JSON.stringify(reqBody) : null
         const contentLength = this.calculateContentLength(body)

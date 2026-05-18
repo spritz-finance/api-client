@@ -1,4 +1,5 @@
 import { SpritzClient } from '../../lib/client'
+import { restRoute } from '../../rest/route'
 import type { PathResponse } from '../../rest/types'
 
 export type FundingSource = PathResponse<'/v1/funding-sources/', 'get'>[number]
@@ -15,23 +16,22 @@ export class FundingSourceService {
     }
 
     public async list() {
-        return this.client.restApi<PathResponse<'/v1/funding-sources/', 'get'>>({
-            method: 'get',
-            path: '/v1/funding-sources/',
-        })
+        return this.client.restApi(restRoute('/v1/funding-sources/', 'get'))
     }
 
     public async get(fundingSourceId: string) {
-        return this.client.restApi<PathResponse<'/v1/funding-sources/{fundingSourceId}', 'get'>>({
-            method: 'get',
-            path: `/v1/funding-sources/${encodeURIComponent(fundingSourceId)}`,
-        })
+        return this.client.restApi(
+            restRoute('/v1/funding-sources/{fundingSourceId}', 'get', {
+                params: { fundingSourceId },
+            })
+        )
     }
 
     public async getDepositLimits(fundingSourceId: string) {
-        return this.client.restApi<FundingSourceDepositLimits>({
-            method: 'get',
-            path: `/v1/funding-sources/${encodeURIComponent(fundingSourceId)}/deposit-limits`,
-        })
+        return this.client.restApi(
+            restRoute('/v1/funding-sources/{fundingSourceId}/deposit-limits', 'get', {
+                params: { fundingSourceId },
+            })
+        )
     }
 }

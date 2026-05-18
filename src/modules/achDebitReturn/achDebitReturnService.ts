@@ -1,4 +1,5 @@
 import { SpritzClient } from '../../lib/client'
+import { restRoute } from '../../rest/route'
 import type { PathQuery, PathResponse } from '../../rest/types'
 
 export type AchDebitReturnListResponse = PathResponse<'/v1/integrator/ach-debit/returns', 'get'>
@@ -13,17 +14,16 @@ export class AchDebitReturnService {
     }
 
     public async list(query?: AchDebitReturnListQuery) {
-        return this.client.restApi<AchDebitReturnListResponse>({
-            method: 'get',
-            path: '/v1/integrator/ach-debit/returns',
-            query: query as Record<string, string | number | boolean | undefined>,
-        })
+        return this.client.restApi(
+            restRoute('/v1/integrator/ach-debit/returns', 'get', query ? { query } : undefined)
+        )
     }
 
     public async get(returnId: string) {
-        return this.client.restApi<AchDebitReturn>({
-            method: 'get',
-            path: `/v1/integrator/ach-debit/returns/${encodeURIComponent(returnId)}`,
-        })
+        return this.client.restApi(
+            restRoute('/v1/integrator/ach-debit/returns/{returnId}', 'get', {
+                params: { returnId },
+            })
+        )
     }
 }

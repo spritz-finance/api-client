@@ -1,6 +1,7 @@
 import CreateOnrampPaymentMutation from '../../graph/mutations/createOnrampPayment.graphql'
 import { SpritzClient } from '../../lib/client'
 import { CreateOnrampPaymentInput } from '../../types/globalTypes'
+import { restRoute } from '../../rest/route'
 import {
     CreateOnrampPayment,
     CreateOnrampPaymentVariables,
@@ -33,17 +34,14 @@ export class OnrampPaymentService {
     }
 
     public async list(query?: OnRampListQuery) {
-        return this.client.restApi<OnRampListResponse>({
-            method: 'get',
-            path: '/v1/on-ramps/',
-            query: query as Record<string, string | number | boolean | undefined>,
-        })
+        return this.client.restApi(restRoute('/v1/on-ramps/', 'get', query ? { query } : undefined))
     }
 
     public async get(onRampId: string) {
-        return this.client.restApi<OnRampDetail>({
-            method: 'get',
-            path: `/v1/on-ramps/${encodeURIComponent(onRampId)}`,
-        })
+        return this.client.restApi(
+            restRoute('/v1/on-ramps/{onRampId}', 'get', {
+                params: { onRampId },
+            })
+        )
     }
 }
