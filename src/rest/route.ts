@@ -8,6 +8,9 @@ import type {
 } from './types'
 
 type IsNever<T> = [T] extends [never] ? true : false
+type EmptyObject = Record<string, never>
+type CanOmitBody<T> = EmptyObject extends T ? true : false
+type SupportedRestQuery<T> = IsNever<T> extends true ? never : T extends RestQuery ? T : never
 
 type RestPathParamsOption<P extends RestPath, M extends RestMethod<P>> =
     IsNever<PathParams<P, M>> extends true ? { params?: never } : { params: PathParams<P, M> }
@@ -15,13 +18,23 @@ type RestPathParamsOption<P extends RestPath, M extends RestMethod<P>> =
 type RestBodyOption<P extends RestPath, M extends RestMethod<P>> =
     IsNever<PathRequestBody<P, M>> extends true
         ? { body?: never }
-        : { body?: PathRequestBody<P, M> }
+        : CanOmitBody<PathRequestBody<P, M>> extends true
+          ? { body?: PathRequestBody<P, M> }
+          : { body: PathRequestBody<P, M> }
 
 type RestQueryOption<P extends RestPath, M extends RestMethod<P>> =
-    IsNever<PathQuery<P, M>> extends true ? { query?: never } : { query?: PathQuery<P, M> }
+    IsNever<SupportedRestQuery<PathQuery<P, M>>> extends true
+        ? { query?: never }
+        : { query?: SupportedRestQuery<PathQuery<P, M>> }
 
 type RestRouteNeedsOptions<P extends RestPath, M extends RestMethod<P>> =
-    IsNever<PathParams<P, M>> extends false ? true : false
+    IsNever<PathParams<P, M>> extends false
+        ? true
+        : IsNever<PathRequestBody<P, M>> extends true
+          ? false
+          : CanOmitBody<PathRequestBody<P, M>> extends true
+            ? false
+            : true
 
 export type RestQueryValue = string | number | boolean | undefined
 export type RestQuery = Record<string, RestQueryValue>
@@ -87,7 +100,7 @@ export function restRoute<P extends RestPath, M extends RestMethod<P>>(
 ): RestRoute<P, M> {
     const params = pathParamsAsRecord(options?.params)
     const routePath = buildRestPath(path, params)
-    const query = normalizeRestQuery(options?.query as Record<string, unknown> | undefined)
+    const query = normalizeRestQuery(options?.query)
     const body = options?.body as PathRequestBody<P, M> | undefined
 
     return {

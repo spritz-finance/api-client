@@ -148,7 +148,7 @@ export class SpritzClient {
             method,
             path,
             body,
-            query,
+            ...(query ? { query } : {}),
         })
             .then((res) => parseAPIResponse<Response>(res))
             .then(({ response }) => response)

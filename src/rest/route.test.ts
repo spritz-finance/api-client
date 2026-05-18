@@ -1,5 +1,12 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { buildRestPath, normalizeRestQuery, restRoute, type RestRoute } from './route'
+import {
+    buildRestPath,
+    normalizeRestQuery,
+    restRoute,
+    type RestRoute,
+    type RestRouteOptions,
+} from './route'
+import type { PathRequestBody } from './types'
 
 describe('REST route builder', () => {
     it('builds paths with encoded path parameters', () => {
@@ -60,5 +67,16 @@ describe('REST route builder', () => {
         expectTypeOf(route).toMatchTypeOf<
             RestRoute<'/v1/funding-sources/{fundingSourceId}', 'get'>
         >()
+    })
+
+    it('keeps required request bodies required at the route seam', () => {
+        type CreateDepositBody = PathRequestBody<'/v1/deposits/direct', 'post'>
+        type CreateDepositOptions = RestRouteOptions<'/v1/deposits/direct', 'post'>
+
+        expectTypeOf<CreateDepositOptions>().toMatchTypeOf<{ body: CreateDepositBody }>()
+    })
+
+    it('allows omitting bodies that the generated contract accepts as empty objects', () => {
+        expectTypeOf<{}>().toMatchTypeOf<RestRouteOptions<'/v1/bank-accounts/link-token', 'post'>>()
     })
 })
