@@ -71,6 +71,31 @@ describe('SandboxService', () => {
         expect(result).toEqual(response)
     })
 
+    it('deletes a funding source by id', async () => {
+        const response = { id: 'fs_123', deleted: true }
+        vi.mocked(mockClient.restApi).mockResolvedValue(response)
+
+        const result = await sandboxService.deleteFundingSource('fs_123')
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'delete',
+            path: '/v1/sandbox/funding-sources/fs_123',
+        })
+        expect(result).toEqual(response)
+    })
+
+    it('encodes funding source ids with reserved characters', async () => {
+        const response = { id: 'fs_123', deleted: true }
+        vi.mocked(mockClient.restApi).mockResolvedValue(response)
+
+        await sandboxService.deleteFundingSource('fs_123/with space')
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'delete',
+            path: '/v1/sandbox/funding-sources/fs_123%2Fwith%20space',
+        })
+    })
+
     it('passes through additional generated sandbox return fields without inventing Signal fields', async () => {
         const input = {
             preparationId: 'prep_123',
