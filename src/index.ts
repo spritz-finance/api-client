@@ -80,6 +80,7 @@ export type {
     BypassKycRequest,
     CreateDepositWithReturnRequest,
     CreateDepositWithReturnResponse,
+    DeleteFundingSourceResponse,
 } from './modules/sandbox/sandboxService'
 export type {
     OnRamp,
