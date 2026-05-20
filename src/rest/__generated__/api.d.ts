@@ -1879,6 +1879,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/sandbox/funding-sources/{fundingSourceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a funding source (sandbox only)
+         * @description Permanently removes an ACH debit funding source for the authenticated user. **Only available in sandbox environments** — returns 403 in production. Intended for resetting funding sources during integration testing.
+         */
+        delete: operations["deleteV1SandboxFunding-sourcesByFundingSourceId"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2695,7 +2715,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6a073b8fc31db9dffe9cd278
+                     * @example 6a0d5f1ac3aa49d4f16d0721
                      */
                     accountId: string;
                     /**
@@ -2723,7 +2743,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6a073b8fc31db9dffe9cd278
+                     * @example 6a0d5f1ac3aa49d4f16d0721
                      */
                     accountId: string;
                     /**
@@ -2751,7 +2771,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6a073b8fc31db9dffe9cd278
+                     * @example 6a0d5f1ac3aa49d4f16d0721
                      */
                     accountId: string;
                     /**
@@ -2798,7 +2818,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-05-15T15:28:15.636Z
+                         * @example 2026-05-20T07:13:30.894Z
                          */
                         createdAt: string;
                         /** @description What the user pays — total USD cost and token used. */
@@ -2837,7 +2857,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6a073b8fc31db9dffe9cd279
+                             * @example 6a0d5f1ac3aa49d4f16d0722
                              */
                             accountId: string;
                         };
@@ -3044,7 +3064,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-05-15T15:28:15.636Z
+                         * @example 2026-05-20T07:13:30.894Z
                          */
                         createdAt: string;
                         /** @description What the user pays — total USD cost and token used. */
@@ -3083,7 +3103,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6a073b8fc31db9dffe9cd279
+                             * @example 6a0d5f1ac3aa49d4f16d0722
                              */
                             accountId: string;
                         };
@@ -3580,7 +3600,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6a073b8fc31db9dffe9cd27a
+                                 * @example 6a0d5f1ac3aa49d4f16d0723
                                  */
                                 accountId: string;
                                 accountName: (string | null) | null;
@@ -3796,7 +3816,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6a073b8fc31db9dffe9cd27a
+                             * @example 6a0d5f1ac3aa49d4f16d0723
                              */
                             accountId: string;
                             accountName: (string | null) | null;
@@ -11560,7 +11580,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6a073b8fc31db9dffe9cd282
+                         * @example 6a0d5f1bc3aa49d4f16d072b
                          */
                         userId: string;
                         /**
@@ -11576,7 +11596,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-05-15T16:28:15.737Z
+                         * @example 2026-05-20T08:13:31.080Z
                          */
                         expiresAt: string;
                     };
@@ -11751,7 +11771,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-05-15T15:28:15.737Z
+                         * @example 2026-05-20T07:13:31.080Z
                          */
                         createdAt: string;
                     };
@@ -11922,7 +11942,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6a073b8fc31db9dffe9cd281
+                             * @example 6a0d5f1bc3aa49d4f16d072a
                              */
                             userId: string;
                             /**
@@ -12110,7 +12130,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6a073b8fc31db9dffe9cd281
+                         * @example 6a0d5f1bc3aa49d4f16d072a
                          */
                         userId: string;
                         /**
@@ -12279,7 +12299,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a073b8fc31db9dffe9cd283
+                         * @example 6a0d5f1bc3aa49d4f16d072c
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -12486,7 +12506,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a073b8fc31db9dffe9cd283
+                         * @example 6a0d5f1bc3aa49d4f16d072c
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -12822,7 +12842,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a073b8fc31db9dffe9cd283
+                         * @example 6a0d5f1bc3aa49d4f16d072c
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -13197,7 +13217,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-05-15T15:33:15.737Z
+                         * @example 2026-05-20T07:18:31.080Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -13344,7 +13364,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a073b8fc31db9dffe9cd27f
+                         * @example 6a0d5f1bc3aa49d4f16d0728
                          */
                         id: string;
                         email: (string | null) | null;
@@ -13352,7 +13372,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-05-15T15:28:15.732Z
+                         * @example 2026-05-20T07:13:31.075Z
                          */
                         signedUpAt: string;
                         timezone: (string | null) | null;
@@ -13682,7 +13702,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a073b8fc31db9dffe9cd27f
+                         * @example 6a0d5f1bc3aa49d4f16d0728
                          */
                         id: string;
                         email: (string | null) | null;
@@ -13690,7 +13710,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-05-15T15:28:15.732Z
+                         * @example 2026-05-20T07:13:31.075Z
                          */
                         signedUpAt: string;
                         timezone: (string | null) | null;
@@ -14092,7 +14112,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a073b8fc31db9dffe9cd27f
+                         * @example 6a0d5f1bc3aa49d4f16d0728
                          */
                         id: string;
                         email: (string | null) | null;
@@ -14100,7 +14120,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-05-15T15:28:15.732Z
+                         * @example 2026-05-20T07:13:31.075Z
                          */
                         signedUpAt: string;
                         timezone: (string | null) | null;
@@ -21777,6 +21797,198 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:system:internal-error
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Internal Server Error
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         * @example 401
+                         * @example 404
+                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    "deleteV1SandboxFunding-sourcesByFundingSourceId": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fundingSourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Confirmation that a funding source was removed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Opaque public identifier for the removed funding source
+                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        id: string;
+                        /**
+                         * @description Always true for a removed funding source response
+                         * @constant
+                         */
+                        deleted: true;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:auth:token-expired
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Token Expired
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         * @example 403
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         * @example Invalid token
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         * @example write:orders
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         * @example urn:problem-type:system:internal-error
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         * @example Internal Server Error
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         * @example 401
+                         * @example 404
+                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         * @example account
+                         * @example transaction
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
                     };
                 };
             };
