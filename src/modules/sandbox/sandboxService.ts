@@ -4,6 +4,10 @@ import type { PathRequestBody, PathResponse } from '../../rest/types'
 export type BypassKycRequest = PathRequestBody<'/v1/sandbox/bypass-kyc', 'post'>
 export type CreateDepositWithReturnRequest = PathRequestBody<'/v1/sandbox/deposits/direct', 'post'>
 export type CreateDepositWithReturnResponse = PathResponse<'/v1/sandbox/deposits/direct', 'post'>
+export type DeleteFundingSourceResponse = PathResponse<
+    '/v1/sandbox/funding-sources/{fundingSourceId}',
+    'delete'
+>
 
 export class SandboxService {
     private client: SpritzClient
@@ -39,5 +43,18 @@ export class SandboxService {
                 body: input,
             }
         )
+    }
+
+    /**
+     * Permanently remove an ACH debit funding source for the authenticated user.
+     * Intended for resetting funding sources during integration testing.
+     *
+     * Only available in sandbox environments — returns 403 in production.
+     */
+    public async deleteFundingSource(fundingSourceId: string) {
+        return this.client.restApi<DeleteFundingSourceResponse>({
+            method: 'delete',
+            path: `/v1/sandbox/funding-sources/${encodeURIComponent(fundingSourceId)}`,
+        })
     }
 }

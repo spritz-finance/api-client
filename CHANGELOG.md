@@ -1,5 +1,11 @@
 # @spritz-finance/api-client
 
+## 0.7.3
+
+### Patch Changes
+
+- Add `client.sandbox.deleteFundingSource(fundingSourceId)` for permanently removing an ACH debit funding source while integration testing. Only available in sandbox environments — returns 403 in production. Regenerated REST types against the platform OpenAPI spec. Backport of the 0.8 maintenance line.
+
 ## 0.7.0
 
 ### Minor Changes
