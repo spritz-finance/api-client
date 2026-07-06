@@ -1,5 +1,11 @@
 # @spritz-finance/api-client
 
+## 0.7.4
+
+### Patch Changes
+
+- On-ramps now expose the funding source they originated from: `source: { fundingSourceId } | null` (null for externally pushed funds). Deposits expose `onRampId`. Funding sources gain `deletedAt` and a `"deleted"` status — removed funding sources stay retrievable by id. Regenerated REST types against the platform OpenAPI spec. Backport of the 0.8 line.
+
 ## 0.7.3
 
 ### Patch Changes
