@@ -48,6 +48,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auto-ramp-addresses/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List auto-ramp addresses
+         * @description Returns the auto-ramp deposit addresses for the authenticated user, optionally filtered to a single account. Each address accepts stablecoin deposits on one network and automatically converts them into the linked account.
+         */
+        get: operations["getV1Auto-ramp-addresses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/off-ramp-quotes/": {
         parameters: {
             query?: never;
@@ -542,6 +562,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/bills/{billId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a bill
+         * @description Removes a linked bill for the authenticated user. The bill is soft-deleted: it no longer appears in the user's bill list but is retained for audit.
+         */
+        delete: operations["deleteV1BillsByBillId"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/bills/activate": {
         parameters: {
             query?: never;
@@ -616,6 +656,46 @@ export interface paths {
          * @description Link a card to your account using an encrypted token from the TabaPay Browser SDK. Optionally overwrites an existing bill.
          */
         post: operations["postV1BillsToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bills/{billId}/card-update-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start a card update
+         * @description Issues a short-lived token that launches the card-update module for a bill in the action_required state, so the user can supply the missing card number.
+         */
+        post: operations["postV1BillsByBillIdCard-update-token"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bills/{billId}/card-update-complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete a card update
+         * @description Refreshes a bill after the user completes the card-update module, returning its updated payability and any remaining requirements.
+         */
+        post: operations["postV1BillsByBillIdCard-update-complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -826,6 +906,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/debit-cards/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List debit cards
+         * @description Returns all debit cards for the authenticated user, including tokenization status.
+         */
+        get: operations["getV1Debit-cards"];
+        put?: never;
+        /**
+         * Add a debit card
+         * @description Adds a new debit card for push-to-debit payouts. Card data must be encrypted via the Evervault Card iframe — send the encrypted tokens and plaintext metadata (last four, BIN, brand) returned by the iframe.
+         */
+        post: operations["postV1Debit-cards"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/debit-cards/{cardId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a debit card
+         * @description Returns details for a specific debit card, including tokenization status.
+         */
+        get: operations["getV1Debit-cardsByCardId"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a debit card
+         * @description Removes a debit card. The underlying payable account is soft-deleted.
+         */
+        delete: operations["deleteV1Debit-cardsByCardId"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/integrator/connect/sessions": {
         parameters: {
             query?: never;
@@ -948,6 +1076,30 @@ export interface paths {
         get: operations["getV1Integrator"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/integrator/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a user
+         * @description Creates a new Spritz user under the authenticated integrator.
+         *
+         *     The response includes the user's API key (`ak_...`), which is returned only once at creation - store it securely.
+         *
+         *     **Conflict**: If a user with the given email already exists, the request fails with `409 Conflict`. In that case, use Spritz Connect (`POST /v1/integrator/connect/sessions`) to have the existing user authorize this integrator.
+         */
+        post: operations["postV1IntegratorUsers"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1899,6 +2051,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/sandbox/bills/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset sandbox bills activation
+         * @description Deletes the current user's Spinwheel sandbox user and clears local bills activation state so the flow can be run again from scratch.
+         */
+        post: operations["postV1SandboxBillsReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1954,7 +2126,7 @@ export interface operations {
                             paymentRails: string[];
                             /**
                              * @description US deposit instructions (ACH/wire)
-                             * @constant
+                             * @enum {string}
                              */
                             type: "us";
                             /**
@@ -1988,7 +2160,7 @@ export interface operations {
                             paymentRails: string[];
                             /**
                              * @description IBAN deposit instructions (SEPA)
-                             * @constant
+                             * @enum {string}
                              */
                             type: "iban";
                             /**
@@ -2005,8 +2177,6 @@ export interface operations {
                         /**
                          * @description Blockchain network where converted crypto will be sent. Lowercase network identifier.
                          * @example ethereum
-                         * @example polygon
-                         * @example base
                          */
                         network: string;
                         /**
@@ -2017,7 +2187,6 @@ export interface operations {
                         /**
                          * @description Token that fiat deposits will be converted to
                          * @example USDC
-                         * @example USDT
                          */
                         token: string;
                         /**
@@ -2047,25 +2216,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -2078,7 +2243,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -2110,8 +2274,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -2130,21 +2292,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -2248,7 +2405,7 @@ export interface operations {
                             paymentRails: string[];
                             /**
                              * @description US deposit instructions (ACH/wire)
-                             * @constant
+                             * @enum {string}
                              */
                             type: "us";
                             /**
@@ -2282,7 +2439,7 @@ export interface operations {
                             paymentRails: string[];
                             /**
                              * @description IBAN deposit instructions (SEPA)
-                             * @constant
+                             * @enum {string}
                              */
                             type: "iban";
                             /**
@@ -2299,8 +2456,6 @@ export interface operations {
                         /**
                          * @description Blockchain network where converted crypto will be sent. Lowercase network identifier.
                          * @example ethereum
-                         * @example polygon
-                         * @example base
                          */
                         network: string;
                         /**
@@ -2311,7 +2466,6 @@ export interface operations {
                         /**
                          * @description Token that fiat deposits will be converted to
                          * @example USDC
-                         * @example USDT
                          */
                         token: string;
                         /**
@@ -2341,25 +2495,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -2372,7 +2522,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -2404,8 +2553,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -2424,21 +2571,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -2498,7 +2640,7 @@ export interface operations {
                             paymentRails: string[];
                             /**
                              * @description US deposit instructions (ACH/wire)
-                             * @constant
+                             * @enum {string}
                              */
                             type: "us";
                             /**
@@ -2532,7 +2674,7 @@ export interface operations {
                             paymentRails: string[];
                             /**
                              * @description IBAN deposit instructions (SEPA)
-                             * @constant
+                             * @enum {string}
                              */
                             type: "iban";
                             /**
@@ -2549,8 +2691,6 @@ export interface operations {
                         /**
                          * @description Blockchain network where converted crypto will be sent. Lowercase network identifier.
                          * @example ethereum
-                         * @example polygon
-                         * @example base
                          */
                         network: string;
                         /**
@@ -2561,7 +2701,6 @@ export interface operations {
                         /**
                          * @description Token that fiat deposits will be converted to
                          * @example USDC
-                         * @example USDT
                          */
                         token: string;
                         /**
@@ -2591,25 +2730,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -2622,7 +2757,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -2654,8 +2788,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -2674,21 +2806,178 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    "getV1Auto-ramp-addresses": {
+        parameters: {
+            query?: {
+                accountId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Unique auto-ramp address identifier
+                         * @example 665f1b2e8f1b2c0012345678
+                         */
+                        id: string;
+                        /** @enum {string} */
+                        status: "active" | "inactive";
+                        /**
+                         * @description Blockchain address to send deposits to
+                         * @example 0x742d35Cc6634C0532925a3b844Bc9e7595f2a3b8
+                         */
+                        address: string;
+                        /** @enum {string} */
+                        network: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "hyperevm" | "monad" | "sonic" | "unichain";
+                        /**
+                         * @description Whether the deposit contract has been deployed on the network
+                         * @example true
+                         */
+                        deployed: boolean;
+                        /**
+                         * @description Destination account the deposits are ramped into
+                         * @example 665f1b2e8f1b2c0087654321
+                         */
+                        accountId: string;
+                        /**
+                         * Format: date-time
+                         * @description Creation timestamp
+                         * @example 2026-07-06T05:58:52.047Z
+                         */
+                        createdAt?: string;
+                    }[];
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
                          * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
                          * @example 404
-                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -2715,7 +3004,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6a0d5f1ac3aa49d4f16d0721
+                     * @example 6a4b441ba9931c9d1ac48c80
                      */
                     accountId: string;
                     /**
@@ -2743,7 +3032,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6a0d5f1ac3aa49d4f16d0721
+                     * @example 6a4b441ba9931c9d1ac48c80
                      */
                     accountId: string;
                     /**
@@ -2771,7 +3060,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6a0d5f1ac3aa49d4f16d0721
+                     * @example 6a4b441ba9931c9d1ac48c80
                      */
                     accountId: string;
                     /**
@@ -2818,7 +3107,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-05-20T07:13:30.894Z
+                         * @example 2026-07-06T05:58:51.973Z
                          */
                         createdAt: string;
                         /** @description What the user pays — total USD cost and token used. */
@@ -2830,7 +3119,7 @@ export interface operations {
                             amount: string;
                             /**
                              * @description Always USD
-                             * @constant
+                             * @enum {string}
                              */
                             currency: "USD";
                             /**
@@ -2857,7 +3146,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6a0d5f1ac3aa49d4f16d0722
+                             * @example 6a4b441ba9931c9d1ac48c81
                              */
                             accountId: string;
                         };
@@ -2874,7 +3163,8 @@ export interface operations {
                              */
                             currency: string;
                         };
-                        sendTo: ({
+                        /** @description Present when `fulfillment` is `send_to_address`. Send exactly `amount` of `token` to `address` before `expiresAt`. */
+                        sendTo: {
                             /**
                              * @description Blockchain address to send crypto to
                              * @example bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
@@ -2895,8 +3185,9 @@ export interface operations {
                              * @description Deadline to send crypto. Quote expires after this time.
                              */
                             expiresAt: string;
-                        } | null) | null;
-                        confirmation: ({
+                        } | null;
+                        /** @description Present after on-chain transaction is detected. */
+                        confirmation: {
                             /**
                              * @description On-chain transaction hash
                              * @example 0xabc123...
@@ -2907,7 +3198,7 @@ export interface operations {
                              * @example https://etherscan.io/tx/0xabc123...
                              */
                             explorerUrl: string;
-                        } | null) | null;
+                        } | null;
                     };
                 };
             };
@@ -2922,25 +3213,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -2953,7 +3240,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -2985,8 +3271,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -3005,21 +3289,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -3064,7 +3343,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-05-20T07:13:30.894Z
+                         * @example 2026-07-06T05:58:51.973Z
                          */
                         createdAt: string;
                         /** @description What the user pays — total USD cost and token used. */
@@ -3076,7 +3355,7 @@ export interface operations {
                             amount: string;
                             /**
                              * @description Always USD
-                             * @constant
+                             * @enum {string}
                              */
                             currency: "USD";
                             /**
@@ -3103,7 +3382,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6a0d5f1ac3aa49d4f16d0722
+                             * @example 6a4b441ba9931c9d1ac48c81
                              */
                             accountId: string;
                         };
@@ -3120,7 +3399,8 @@ export interface operations {
                              */
                             currency: string;
                         };
-                        sendTo: ({
+                        /** @description Present when `fulfillment` is `send_to_address`. Send exactly `amount` of `token` to `address` before `expiresAt`. */
+                        sendTo: {
                             /**
                              * @description Blockchain address to send crypto to
                              * @example bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
@@ -3141,8 +3421,9 @@ export interface operations {
                              * @description Deadline to send crypto. Quote expires after this time.
                              */
                             expiresAt: string;
-                        } | null) | null;
-                        confirmation: ({
+                        } | null;
+                        /** @description Present after on-chain transaction is detected. */
+                        confirmation: {
                             /**
                              * @description On-chain transaction hash
                              * @example 0xabc123...
@@ -3153,7 +3434,7 @@ export interface operations {
                              * @example https://etherscan.io/tx/0xabc123...
                              */
                             explorerUrl: string;
-                        } | null) | null;
+                        } | null;
                     };
                 };
             };
@@ -3168,25 +3449,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -3199,7 +3476,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -3231,8 +3507,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -3251,21 +3525,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -3337,7 +3606,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @constant */
+                        /** @enum {string} */
                         type: "evm";
                         /**
                          * @description Blockchain network
@@ -3374,9 +3643,13 @@ export interface operations {
                          * @example payWithToken
                          */
                         method: string;
-                        value: (string | null) | null;
+                        /**
+                         * @description Native token value in wei to send with the transaction (null for ERC-20 payments)
+                         * @example 0
+                         */
+                        value: string | null;
                     } | {
-                        /** @constant */
+                        /** @enum {string} */
                         type: "solana";
                         /**
                          * @description Blockchain network
@@ -3422,25 +3695,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -3453,7 +3722,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -3485,8 +3753,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -3505,21 +3771,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -3567,8 +3828,13 @@ export interface operations {
                             status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
                             /** Format: date-time */
                             createdAt: string;
-                            completedAt: (string | null) | null;
-                            input: ({
+                            /**
+                             * Format: date-time
+                             * @description When the off-ramp was completed. Null until status is completed.
+                             */
+                            completedAt: string | null;
+                            /** @description What the user paid — crypto asset and chain. */
+                            input: {
                                 /**
                                  * @description Crypto amount sent
                                  * @example 0.25
@@ -3584,7 +3850,7 @@ export interface operations {
                                  * @example ethereum
                                  */
                                 chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
-                            } | null) | null;
+                            } | null;
                             /** @description What the destination receives — fiat delivery details. */
                             output: {
                                 /**
@@ -3595,19 +3861,45 @@ export interface operations {
                                 /**
                                  * @description Fiat currency code
                                  * @example USD
-                                 * @example EUR
                                  */
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6a0d5f1ac3aa49d4f16d0723
+                                 * @example 6a4b441ba9931c9d1ac48c82
                                  */
                                 accountId: string;
-                                accountName: (string | null) | null;
-                                rail: (("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit") | null) | null;
+                                /**
+                                 * @description Display name of the destination account
+                                 * @example Chase Checking ••4567
+                                 */
+                                accountName: string | null;
+                                /**
+                                 * @description Fiat delivery rail.
+                                 *
+                                 *     - `ach_standard`: ACH bank transfer, next business day.
+                                 *     - `ach_same_day`: ACH same-day transfer, delivered same business day.
+                                 *     - `rtp`: Real-time payment, seconds, 24/7.
+                                 *     - `wire`: Wire transfer, same/next day.
+                                 *     - `eft`: Electronic funds transfer, 1-2 business days.
+                                 *     - `sepa`: SEPA transfer (EU), 1-2 business days.
+                                 *     - `faster_payments`: UK Faster Payments, near-instant.
+                                 *     - `push_to_card`: Push to debit card, minutes.
+                                 *     - `bill_pay`: Bill payment rail.
+                                 *     - `card_deposit`: Deposit to crypto card.
+                                 * @example ach_standard
+                                 */
+                                rail: ("ach_standard" | null) | ("ach_same_day" | null) | ("rtp" | null) | ("wire" | null) | ("eft" | null) | ("sepa" | null) | ("faster_payments" | null) | ("push_to_card" | null) | ("bill_pay" | null) | ("card_deposit" | null);
                             };
-                            fiatDestination: (("bank_account" | "bill" | "crypto_card") | null) | null;
-                            fees: ({
+                            /**
+                             * @description Type of fiat destination.
+                             *
+                             *     - `bank_account`: Bank account (includes debit card destinations).
+                             *     - `bill`: Bill payment.
+                             *     - `crypto_card`: Crypto card deposit.
+                             * @example bank_account
+                             */
+                            fiatDestination: ("bank_account" | null) | ("bill" | null) | ("crypto_card" | null);
+                            fees: {
                                 /**
                                  * @description Fee amount
                                  * @example 1.25
@@ -3618,18 +3910,30 @@ export interface operations {
                                  * @example USD
                                  */
                                 currency: string;
-                            } | null) | null;
-                            transaction: ({
-                                hash: (string | null) | null;
-                                explorerUrl: (string | null) | null;
-                            } | null) | null;
+                            } | null;
+                            transaction: {
+                                /**
+                                 * @description Blockchain transaction hash
+                                 * @example 0xabc123...
+                                 */
+                                hash: string | null;
+                                /**
+                                 * @description Block explorer transaction URL
+                                 * @example https://etherscan.io/tx/0xabc123...
+                                 */
+                                explorerUrl: string | null;
+                            } | null;
                         }[];
                         /**
                          * @description Whether there are more results
                          * @example true
                          */
                         hasMore: boolean;
-                        nextCursor: (string | null) | null;
+                        /**
+                         * @description Cursor for fetching the next page
+                         * @example eyJpZCI6Im9mZnJhbXBfeHl6Nzg5In0=
+                         */
+                        nextCursor: string | null;
                     };
                 };
             };
@@ -3644,25 +3948,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -3675,7 +3975,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -3707,8 +4006,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -3727,21 +4024,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -3783,8 +4075,13 @@ export interface operations {
                         status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
                         /** Format: date-time */
                         createdAt: string;
-                        completedAt: (string | null) | null;
-                        input: ({
+                        /**
+                         * Format: date-time
+                         * @description When the off-ramp was completed. Null until status is completed.
+                         */
+                        completedAt: string | null;
+                        /** @description What the user paid — crypto asset and chain. */
+                        input: {
                             /**
                              * @description Crypto amount sent
                              * @example 0.25
@@ -3800,7 +4097,7 @@ export interface operations {
                              * @example ethereum
                              */
                             chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
-                        } | null) | null;
+                        } | null;
                         /** @description What the destination receives — fiat delivery details. */
                         output: {
                             /**
@@ -3811,19 +4108,45 @@ export interface operations {
                             /**
                              * @description Fiat currency code
                              * @example USD
-                             * @example EUR
                              */
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6a0d5f1ac3aa49d4f16d0723
+                             * @example 6a4b441ba9931c9d1ac48c82
                              */
                             accountId: string;
-                            accountName: (string | null) | null;
-                            rail: (("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit") | null) | null;
+                            /**
+                             * @description Display name of the destination account
+                             * @example Chase Checking ••4567
+                             */
+                            accountName: string | null;
+                            /**
+                             * @description Fiat delivery rail.
+                             *
+                             *     - `ach_standard`: ACH bank transfer, next business day.
+                             *     - `ach_same_day`: ACH same-day transfer, delivered same business day.
+                             *     - `rtp`: Real-time payment, seconds, 24/7.
+                             *     - `wire`: Wire transfer, same/next day.
+                             *     - `eft`: Electronic funds transfer, 1-2 business days.
+                             *     - `sepa`: SEPA transfer (EU), 1-2 business days.
+                             *     - `faster_payments`: UK Faster Payments, near-instant.
+                             *     - `push_to_card`: Push to debit card, minutes.
+                             *     - `bill_pay`: Bill payment rail.
+                             *     - `card_deposit`: Deposit to crypto card.
+                             * @example ach_standard
+                             */
+                            rail: ("ach_standard" | null) | ("ach_same_day" | null) | ("rtp" | null) | ("wire" | null) | ("eft" | null) | ("sepa" | null) | ("faster_payments" | null) | ("push_to_card" | null) | ("bill_pay" | null) | ("card_deposit" | null);
                         };
-                        fiatDestination: (("bank_account" | "bill" | "crypto_card") | null) | null;
-                        fees: ({
+                        /**
+                         * @description Type of fiat destination.
+                         *
+                         *     - `bank_account`: Bank account (includes debit card destinations).
+                         *     - `bill`: Bill payment.
+                         *     - `crypto_card`: Crypto card deposit.
+                         * @example bank_account
+                         */
+                        fiatDestination: ("bank_account" | null) | ("bill" | null) | ("crypto_card" | null);
+                        fees: {
                             /**
                              * @description Fee amount
                              * @example 1.25
@@ -3834,11 +4157,19 @@ export interface operations {
                              * @example USD
                              */
                             currency: string;
-                        } | null) | null;
-                        transaction: ({
-                            hash: (string | null) | null;
-                            explorerUrl: (string | null) | null;
-                        } | null) | null;
+                        } | null;
+                        transaction: {
+                            /**
+                             * @description Blockchain transaction hash
+                             * @example 0xabc123...
+                             */
+                            hash: string | null;
+                            /**
+                             * @description Block explorer transaction URL
+                             * @example https://etherscan.io/tx/0xabc123...
+                             */
+                            explorerUrl: string | null;
+                        } | null;
                     };
                 };
             };
@@ -3853,25 +4184,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -3884,7 +4211,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -3916,8 +4242,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -3936,21 +4260,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -4045,6 +4364,14 @@ export interface operations {
                                  */
                                 txHash?: string;
                             };
+                            /** @description Where the fiat for this on-ramp originated. Present when the on-ramp was funded by debiting a linked funding source (ACH debit); null when funds were pushed from an external bank account (ach_credit, wire, sepa_credit_transfer). */
+                            source: {
+                                /**
+                                 * @description Opaque public identifier of the funding source that was debited
+                                 * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                                 */
+                                fundingSourceId: string;
+                            } | null;
                             deliverySummary?: {
                                 /**
                                  * @description Crypto amount delivered or submitted so far
@@ -4121,25 +4448,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -4152,7 +4475,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -4184,8 +4506,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -4204,21 +4524,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -4281,25 +4596,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -4312,7 +4623,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -4344,8 +4654,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -4364,21 +4672,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -4431,25 +4734,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -4462,7 +4761,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -4494,8 +4792,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -4514,21 +4810,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -4617,6 +4908,14 @@ export interface operations {
                              */
                             txHash?: string;
                         };
+                        /** @description Where the fiat for this on-ramp originated. Present when the on-ramp was funded by debiting a linked funding source (ACH debit); null when funds were pushed from an external bank account (ach_credit, wire, sepa_credit_transfer). */
+                        source: {
+                            /**
+                             * @description Opaque public identifier of the funding source that was debited
+                             * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                             */
+                            fundingSourceId: string;
+                        } | null;
                         deliverySummary?: {
                             /**
                              * @description Crypto amount delivered or submitted so far
@@ -4682,25 +4981,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -4713,7 +5008,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -4745,8 +5039,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -4765,21 +5057,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -4858,9 +5145,9 @@ export interface operations {
                         createdAt: string;
                         /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                         fundingSourceId: string | null;
-                        /** @constant */
+                        /** @enum {string} */
                         type: "us";
-                        /** @constant */
+                        /** @enum {string} */
                         currency: "USD";
                         /**
                          * @description Last 4 digits of account number
@@ -4926,9 +5213,9 @@ export interface operations {
                         createdAt: string;
                         /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                         fundingSourceId: string | null;
-                        /** @constant */
+                        /** @enum {string} */
                         type: "ca";
-                        /** @constant */
+                        /** @enum {string} */
                         currency: "CAD";
                         /**
                          * @description Last 4 digits of account number
@@ -4999,9 +5286,9 @@ export interface operations {
                         createdAt: string;
                         /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                         fundingSourceId: string | null;
-                        /** @constant */
+                        /** @enum {string} */
                         type: "uk";
-                        /** @constant */
+                        /** @enum {string} */
                         currency: "GBP";
                         /**
                          * @description Last 4 digits of account number
@@ -5062,7 +5349,7 @@ export interface operations {
                         createdAt: string;
                         /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                         fundingSourceId: string | null;
-                        /** @constant */
+                        /** @enum {string} */
                         type: "iban";
                         /**
                          * @description Fiat currency code
@@ -5093,25 +5380,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -5124,7 +5407,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -5156,8 +5438,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -5176,21 +5456,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -5218,7 +5493,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description US bank account type
-                     * @constant
+                     * @enum {string}
                      */
                     type: "us";
                     /**
@@ -5277,7 +5552,7 @@ export interface operations {
                 } | {
                     /**
                      * @description Canadian bank account type
-                     * @constant
+                     * @enum {string}
                      */
                     type: "ca";
                     /**
@@ -5341,7 +5616,7 @@ export interface operations {
                 } | {
                     /**
                      * @description UK bank account type
-                     * @constant
+                     * @enum {string}
                      */
                     type: "uk";
                     /**
@@ -5395,7 +5670,7 @@ export interface operations {
                 } | {
                     /**
                      * @description IBAN bank account type (SEPA)
-                     * @constant
+                     * @enum {string}
                      */
                     type: "iban";
                     /**
@@ -5450,7 +5725,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description US bank account type
-                     * @constant
+                     * @enum {string}
                      */
                     type: "us";
                     /**
@@ -5509,7 +5784,7 @@ export interface operations {
                 } | {
                     /**
                      * @description Canadian bank account type
-                     * @constant
+                     * @enum {string}
                      */
                     type: "ca";
                     /**
@@ -5573,7 +5848,7 @@ export interface operations {
                 } | {
                     /**
                      * @description UK bank account type
-                     * @constant
+                     * @enum {string}
                      */
                     type: "uk";
                     /**
@@ -5627,7 +5902,7 @@ export interface operations {
                 } | {
                     /**
                      * @description IBAN bank account type (SEPA)
-                     * @constant
+                     * @enum {string}
                      */
                     type: "iban";
                     /**
@@ -5682,7 +5957,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description US bank account type
-                     * @constant
+                     * @enum {string}
                      */
                     type: "us";
                     /**
@@ -5741,7 +6016,7 @@ export interface operations {
                 } | {
                     /**
                      * @description Canadian bank account type
-                     * @constant
+                     * @enum {string}
                      */
                     type: "ca";
                     /**
@@ -5805,7 +6080,7 @@ export interface operations {
                 } | {
                     /**
                      * @description UK bank account type
-                     * @constant
+                     * @enum {string}
                      */
                     type: "uk";
                     /**
@@ -5859,7 +6134,7 @@ export interface operations {
                 } | {
                     /**
                      * @description IBAN bank account type (SEPA)
-                     * @constant
+                     * @enum {string}
                      */
                     type: "iban";
                     /**
@@ -5969,9 +6244,9 @@ export interface operations {
                         createdAt: string;
                         /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                         fundingSourceId: string | null;
-                        /** @constant */
+                        /** @enum {string} */
                         type: "us";
-                        /** @constant */
+                        /** @enum {string} */
                         currency: "USD";
                         /**
                          * @description Last 4 digits of account number
@@ -6037,9 +6312,9 @@ export interface operations {
                         createdAt: string;
                         /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                         fundingSourceId: string | null;
-                        /** @constant */
+                        /** @enum {string} */
                         type: "ca";
-                        /** @constant */
+                        /** @enum {string} */
                         currency: "CAD";
                         /**
                          * @description Last 4 digits of account number
@@ -6110,9 +6385,9 @@ export interface operations {
                         createdAt: string;
                         /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                         fundingSourceId: string | null;
-                        /** @constant */
+                        /** @enum {string} */
                         type: "uk";
-                        /** @constant */
+                        /** @enum {string} */
                         currency: "GBP";
                         /**
                          * @description Last 4 digits of account number
@@ -6173,7 +6448,7 @@ export interface operations {
                         createdAt: string;
                         /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                         fundingSourceId: string | null;
-                        /** @constant */
+                        /** @enum {string} */
                         type: "iban";
                         /**
                          * @description Fiat currency code
@@ -6204,25 +6479,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -6235,7 +6506,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -6267,8 +6537,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -6287,21 +6555,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -6382,9 +6645,9 @@ export interface operations {
                         createdAt: string;
                         /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                         fundingSourceId: string | null;
-                        /** @constant */
+                        /** @enum {string} */
                         type: "us";
-                        /** @constant */
+                        /** @enum {string} */
                         currency: "USD";
                         /**
                          * @description Last 4 digits of account number
@@ -6450,9 +6713,9 @@ export interface operations {
                         createdAt: string;
                         /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                         fundingSourceId: string | null;
-                        /** @constant */
+                        /** @enum {string} */
                         type: "ca";
-                        /** @constant */
+                        /** @enum {string} */
                         currency: "CAD";
                         /**
                          * @description Last 4 digits of account number
@@ -6523,9 +6786,9 @@ export interface operations {
                         createdAt: string;
                         /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                         fundingSourceId: string | null;
-                        /** @constant */
+                        /** @enum {string} */
                         type: "uk";
-                        /** @constant */
+                        /** @enum {string} */
                         currency: "GBP";
                         /**
                          * @description Last 4 digits of account number
@@ -6586,7 +6849,7 @@ export interface operations {
                         createdAt: string;
                         /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                         fundingSourceId: string | null;
-                        /** @constant */
+                        /** @enum {string} */
                         type: "iban";
                         /**
                          * @description Fiat currency code
@@ -6617,25 +6880,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -6648,7 +6907,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -6680,8 +6938,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -6700,21 +6956,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -6754,7 +7005,7 @@ export interface operations {
                         id: string;
                         /**
                          * @description Always true for a deleted bank account response
-                         * @constant
+                         * @enum {boolean}
                          */
                         deleted: true;
                     };
@@ -6771,25 +7022,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -6802,7 +7049,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -6834,8 +7080,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -6854,21 +7098,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -6921,25 +7160,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -6952,7 +7187,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -6969,21 +7203,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -7027,7 +7256,6 @@ export interface operations {
                         /**
                          * @description Institution name used for funding source display. Prefer `institution.name` when present; this field will be removed in a future release.
                          * @example Plaid Test Bank
-                         * @example null
                          */
                         institutionName: string | null;
                         /** @description Branding metadata for the institution backing the funding source, or null when no institution data is available. */
@@ -7040,30 +7268,39 @@ export interface operations {
                             /**
                              * @description Absolute URL to the institution's logo (PNG). Null when the institution has no logo on file.
                              * @example https://assets.platform.spritz.finance/institutions/ins_109508.png
-                             * @example null
                              */
                             logoUrl: string | null;
                             /**
                              * @description Hex color (e.g. `#1e88e5`) representing the institution's brand. Null when unavailable.
                              * @example #1e88e5
-                             * @example null
                              */
                             primaryColor: string | null;
                         } | null;
                         /**
                          * @description Last 4 digits of the linked bank account number
                          * @example 6789
-                         * @example null
                          */
                         accountNumberLast4: string | null;
                         /** @enum {string} */
                         accountType: "checking" | "savings" | "business" | "unknown";
                         /** @enum {string} */
-                        status: "pending" | "active" | "review_required" | "ineligible" | "disabled";
-                        /** @description Why the funding source is not active, or null when no reason applies. */
-                        statusReason: ("ownership_mismatch" | "ownership_review_required" | "user_not_verified" | "duplicate_bank_account" | "returned" | "manually_disabled") | null;
-                        /** @description Ownership match result for the linked bank account, or null when unavailable. */
-                        ownershipMatchStatus: ("matched" | "mismatch" | "review_required") | null;
+                        status: "pending" | "active" | "review_required" | "ineligible" | "disabled" | "deleted";
+                        /**
+                         * @description Why the funding source is not active, or null when no reason applies.
+                         * @example ownership_mismatch
+                         */
+                        statusReason: ("ownership_mismatch" | null) | ("ownership_review_required" | null) | ("user_not_verified" | null) | ("duplicate_bank_account" | null) | ("returned" | null) | ("risk_blocked" | null) | ("manually_disabled" | null);
+                        /**
+                         * @description Ownership match result for the linked bank account, or null when unavailable.
+                         * @example matched
+                         */
+                        ownershipMatchStatus: ("matched" | null) | ("mismatch" | null) | ("review_required" | null);
+                        /**
+                         * Format: date-time
+                         * @description When the funding source was removed by the user, or null while it remains linked. Removed funding sources stay retrievable by id for historical reference.
+                         * @example null
+                         */
+                        deletedAt: string | null;
                         /**
                          * Format: date-time
                          * @description When the funding source was created
@@ -7083,25 +7320,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -7114,7 +7347,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -7146,8 +7378,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -7166,21 +7396,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -7267,25 +7492,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -7298,7 +7519,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -7330,8 +7550,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -7350,21 +7568,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -7410,7 +7623,6 @@ export interface operations {
                         /**
                          * @description Institution name used for funding source display. Prefer `institution.name` when present; this field will be removed in a future release.
                          * @example Plaid Test Bank
-                         * @example null
                          */
                         institutionName: string | null;
                         /** @description Branding metadata for the institution backing the funding source, or null when no institution data is available. */
@@ -7423,30 +7635,39 @@ export interface operations {
                             /**
                              * @description Absolute URL to the institution's logo (PNG). Null when the institution has no logo on file.
                              * @example https://assets.platform.spritz.finance/institutions/ins_109508.png
-                             * @example null
                              */
                             logoUrl: string | null;
                             /**
                              * @description Hex color (e.g. `#1e88e5`) representing the institution's brand. Null when unavailable.
                              * @example #1e88e5
-                             * @example null
                              */
                             primaryColor: string | null;
                         } | null;
                         /**
                          * @description Last 4 digits of the linked bank account number
                          * @example 6789
-                         * @example null
                          */
                         accountNumberLast4: string | null;
                         /** @enum {string} */
                         accountType: "checking" | "savings" | "business" | "unknown";
                         /** @enum {string} */
-                        status: "pending" | "active" | "review_required" | "ineligible" | "disabled";
-                        /** @description Why the funding source is not active, or null when no reason applies. */
-                        statusReason: ("ownership_mismatch" | "ownership_review_required" | "user_not_verified" | "duplicate_bank_account" | "returned" | "manually_disabled") | null;
-                        /** @description Ownership match result for the linked bank account, or null when unavailable. */
-                        ownershipMatchStatus: ("matched" | "mismatch" | "review_required") | null;
+                        status: "pending" | "active" | "review_required" | "ineligible" | "disabled" | "deleted";
+                        /**
+                         * @description Why the funding source is not active, or null when no reason applies.
+                         * @example ownership_mismatch
+                         */
+                        statusReason: ("ownership_mismatch" | null) | ("ownership_review_required" | null) | ("user_not_verified" | null) | ("duplicate_bank_account" | null) | ("returned" | null) | ("risk_blocked" | null) | ("manually_disabled" | null);
+                        /**
+                         * @description Ownership match result for the linked bank account, or null when unavailable.
+                         * @example matched
+                         */
+                        ownershipMatchStatus: ("matched" | null) | ("mismatch" | null) | ("review_required" | null);
+                        /**
+                         * Format: date-time
+                         * @description When the funding source was removed by the user, or null while it remains linked. Removed funding sources stay retrievable by id for historical reference.
+                         * @example null
+                         */
+                        deletedAt: string | null;
                         /**
                          * Format: date-time
                          * @description When the funding source was created
@@ -7466,25 +7687,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -7497,7 +7714,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -7529,8 +7745,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -7549,21 +7763,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -7603,7 +7812,7 @@ export interface operations {
                     /**
                      * @description Asset sent to the deposit destination
                      * @example USDC
-                     * @constant
+                     * @enum {string}
                      */
                     asset: "USDC";
                     /** @enum {string} */
@@ -7644,7 +7853,7 @@ export interface operations {
                     /**
                      * @description Asset sent to the deposit destination
                      * @example USDC
-                     * @constant
+                     * @enum {string}
                      */
                     asset: "USDC";
                     /** @enum {string} */
@@ -7685,7 +7894,7 @@ export interface operations {
                     /**
                      * @description Asset sent to the deposit destination
                      * @example USDC
-                     * @constant
+                     * @enum {string}
                      */
                     asset: "USDC";
                     /** @enum {string} */
@@ -7725,11 +7934,11 @@ export interface operations {
                          * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                          */
                         preparationId: string;
-                        /** @constant */
+                        /** @enum {string} */
                         kind: "deposit_authorization";
                         /** Format: date-time */
                         expiresAt: string;
-                        /** @constant */
+                        /** @enum {string} */
                         messageVersion: "v1";
                         /** @description Display-ready ACH authorization message */
                         message: string;
@@ -7757,7 +7966,7 @@ export interface operations {
                             /**
                              * @description Asset sent to the deposit destination
                              * @example USDC
-                             * @constant
+                             * @enum {string}
                              */
                             asset: "USDC";
                             assetAddress: string;
@@ -7777,25 +7986,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -7808,7 +8013,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -7840,8 +8044,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -7860,21 +8062,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -7963,6 +8160,11 @@ export interface operations {
                          * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                          */
                         sourceId: string;
+                        /**
+                         * @description Identifier of the on-ramp created for this deposit, or null until the on-ramp record exists.
+                         * @example onramp_xyz789
+                         */
+                        onRampId: string | null;
                         /** @enum {string} */
                         status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "failed";
                         /** @enum {string} */
@@ -7987,7 +8189,7 @@ export interface operations {
                         /**
                          * @description Asset sent to the deposit destination
                          * @example USDC
-                         * @constant
+                         * @enum {string}
                          */
                         asset: "USDC";
                         assetAddress: string;
@@ -8006,8 +8208,11 @@ export interface operations {
                         authorizedAt: string;
                         /** Format: date-time */
                         createdAt: string;
+                        /** Format: date-time */
                         settledAt: string | null;
+                        /** Format: date-time */
                         returnedAt: string | null;
+                        /** Format: date-time */
                         completedAt: string | null;
                         returnCode: string | null;
                         returnReason: string | null;
@@ -8030,25 +8235,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -8061,7 +8262,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -8093,8 +8293,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -8113,21 +8311,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -8155,26 +8348,23 @@ export interface operations {
                     /**
                      * @description Plaid OAuth target. For web or iOS, pass an https:// URL (web return URL or iOS universal link). For Android, pass the package name (e.g. com.example.app) — values without an https:// prefix are forwarded to Plaid as android_package_name with redirect_uri left blank, per Plaid's per-platform requirements.
                      * @example https://app.example.com/plaid/oauth-return
-                     * @example com.example.app
                      */
                     redirectUri?: string;
-                } | Record<string, never>;
+                };
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Plaid OAuth target. For web or iOS, pass an https:// URL (web return URL or iOS universal link). For Android, pass the package name (e.g. com.example.app) — values without an https:// prefix are forwarded to Plaid as android_package_name with redirect_uri left blank, per Plaid's per-platform requirements.
                      * @example https://app.example.com/plaid/oauth-return
-                     * @example com.example.app
                      */
                     redirectUri?: string;
-                } | Record<string, never>;
+                };
                 "multipart/form-data": {
                     /**
                      * @description Plaid OAuth target. For web or iOS, pass an https:// URL (web return URL or iOS universal link). For Android, pass the package name (e.g. com.example.app) — values without an https:// prefix are forwarded to Plaid as android_package_name with redirect_uri left blank, per Plaid's per-platform requirements.
                      * @example https://app.example.com/plaid/oauth-return
-                     * @example com.example.app
                      */
                     redirectUri?: string;
-                } | Record<string, never>;
+                };
             };
         };
         responses: {
@@ -8205,25 +8395,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -8236,7 +8422,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -8253,21 +8438,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -8375,9 +8555,9 @@ export interface operations {
                             createdAt: string;
                             /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                             fundingSourceId: string | null;
-                            /** @constant */
+                            /** @enum {string} */
                             type: "us";
-                            /** @constant */
+                            /** @enum {string} */
                             currency: "USD";
                             /**
                              * @description Last 4 digits of account number
@@ -8443,9 +8623,9 @@ export interface operations {
                             createdAt: string;
                             /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                             fundingSourceId: string | null;
-                            /** @constant */
+                            /** @enum {string} */
                             type: "ca";
-                            /** @constant */
+                            /** @enum {string} */
                             currency: "CAD";
                             /**
                              * @description Last 4 digits of account number
@@ -8516,9 +8696,9 @@ export interface operations {
                             createdAt: string;
                             /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                             fundingSourceId: string | null;
-                            /** @constant */
+                            /** @enum {string} */
                             type: "uk";
-                            /** @constant */
+                            /** @enum {string} */
                             currency: "GBP";
                             /**
                              * @description Last 4 digits of account number
@@ -8579,7 +8759,7 @@ export interface operations {
                             createdAt: string;
                             /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
                             fundingSourceId: string | null;
-                            /** @constant */
+                            /** @enum {string} */
                             type: "iban";
                             /**
                              * @description Fiat currency code
@@ -8611,25 +8791,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -8642,7 +8818,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -8659,21 +8834,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -8707,11 +8877,10 @@ export interface operations {
                         /** @description Unique identifier for the bill */
                         id: string;
                         /** @enum {string} */
-                        status: "active" | "pending" | "inactive" | "rejected";
+                        status: "active" | "pending" | "inactive" | "rejected" | "action_required";
                         /**
                          * @description Provider bill name or generated fallback label
                          * @example Chase Sapphire Card
-                         * @example Credit Card ··· 1234
                          */
                         name: string;
                         /** @description Financial institution details */
@@ -8771,11 +8940,31 @@ export interface operations {
                              */
                             nextPaymentDueDate?: string;
                             /**
-                             * @description Amount currently past due
+                             * @description Amount currently due
                              * @example 0.00
                              */
-                            amountPastDue?: string;
+                            amountDue?: string;
                         };
+                        /** @description Actions the user must complete before the bill is payable. Present (non-empty) when status is action_required. */
+                        requirements?: {
+                            /**
+                             * @description The action the user must complete to make the bill payable
+                             * @example card_details
+                             */
+                            type: string;
+                            /**
+                             * @description Fields the user must supply to satisfy the requirement
+                             * @example [
+                             *       "credit_card_number"
+                             *     ]
+                             */
+                            fields?: string[];
+                            /**
+                             * @description Human-readable explanation of the requirement
+                             * @example This card is expired
+                             */
+                            reason?: string;
+                        }[];
                         /**
                          * Format: date-time
                          * @description When the bill was linked
@@ -8795,25 +8984,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -8826,7 +9011,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -8858,8 +9042,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -8878,21 +9060,158 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    deleteV1BillsByBillId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                billId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Unique identifier for the deleted bill
+                         * @example bill_abc123
+                         */
+                        id: string;
+                        /**
+                         * @description Always true for a deleted bill response
+                         * @enum {boolean}
+                         */
+                        deleted: true;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
                          * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
                          * @example 404
-                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -8984,7 +9303,10 @@ export interface operations {
                                 questions: {
                                     id: string | null;
                                     prompt: string | null;
-                                    options: string[];
+                                    options: {
+                                        id: string;
+                                        text: string;
+                                    }[];
                                 }[];
                             };
                         };
@@ -9008,25 +9330,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -9039,7 +9357,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -9056,21 +9373,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -9123,7 +9435,10 @@ export interface operations {
                                 questions: {
                                     id: string | null;
                                     prompt: string | null;
-                                    options: string[];
+                                    options: {
+                                        id: string;
+                                        text: string;
+                                    }[];
                                 }[];
                             };
                         };
@@ -9147,25 +9462,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -9178,7 +9489,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -9195,21 +9505,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -9273,7 +9578,10 @@ export interface operations {
                                 questions: {
                                     id: string | null;
                                     prompt: string | null;
-                                    options: string[];
+                                    options: {
+                                        id: string;
+                                        text: string;
+                                    }[];
                                 }[];
                             };
                         };
@@ -9297,25 +9605,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -9328,7 +9632,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -9345,21 +9648,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -9428,25 +9726,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -9459,7 +9753,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -9476,21 +9769,254 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    "postV1BillsByBillIdCard-update-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                billId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Short-lived token used to launch the card-update module */
+                        token: string;
+                        /** @description Token lifetime in seconds */
+                        expiresInSec: number;
+                        /** @description Account identifier to pass to the card-update module */
+                        liabilityId: string;
+                        /**
+                         * @description Drop-in module to launch
+                         * @example credit-card-update
+                         */
+                        module: string;
+                        /**
+                         * @description Fields the drop-in module should collect
+                         * @example [
+                         *       "CREDIT_CARD_NUMBER"
+                         *     ]
+                         */
+                        fields: string[];
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
                          * @example 401
-                         * @example 404
-                         * @example 500
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    "postV1BillsByBillIdCard-update-complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                billId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Whether the bill is payable after refreshing its data */
+                        payable: boolean;
+                        /** @description Outstanding requirements, empty once the update resolves them */
+                        requirements: {
+                            /**
+                             * @description The action the user must complete to make the bill payable
+                             * @example card_details
+                             */
+                            type: string;
+                            /**
+                             * @description Fields the user must supply to satisfy the requirement
+                             * @example [
+                             *       "credit_card_number"
+                             *     ]
+                             */
+                            fields?: string[];
+                            /**
+                             * @description Human-readable explanation of the requirement
+                             * @example This card is expired
+                             */
+                            reason?: string;
+                        }[];
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -9538,13 +10064,11 @@ export interface operations {
                             /**
                              * @description The spend limit amount in USD
                              * @example 200.56
-                             * @example 100.00
                              */
                             amount: string;
                             /**
                              * @description The interval for the spend limit
                              * @example weekly
-                             * @example monthly
                              */
                             interval: "daily" | "weekly" | "monthly" | "yearly" | "all_time" | "per_transaction";
                         } | null;
@@ -9568,25 +10092,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -9599,7 +10119,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -9631,8 +10150,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -9651,21 +10168,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -9699,8 +10211,6 @@ export interface operations {
                         /**
                          * @description Card program balance in USD
                          * @example 100.00
-                         * @example 0.00
-                         * @example 1234.56
                          */
                         balance: string;
                     };
@@ -9717,25 +10227,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -9748,7 +10254,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -9780,8 +10285,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -9800,21 +10303,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -9864,13 +10362,11 @@ export interface operations {
                             /**
                              * @description The spend limit amount in USD
                              * @example 200.56
-                             * @example 100.00
                              */
                             amount: string;
                             /**
                              * @description The interval for the spend limit
                              * @example weekly
-                             * @example monthly
                              */
                             interval: "daily" | "weekly" | "monthly" | "yearly" | "all_time" | "per_transaction";
                         } | null;
@@ -9894,25 +10390,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -9925,7 +10417,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -9957,8 +10448,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -9977,21 +10466,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -10080,25 +10564,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -10111,7 +10591,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -10143,8 +10622,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -10163,21 +10640,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -10245,25 +10717,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -10276,7 +10744,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -10308,8 +10775,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -10328,21 +10793,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -10426,25 +10886,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -10457,7 +10913,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -10489,8 +10944,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -10509,21 +10962,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -10588,13 +11036,11 @@ export interface operations {
                             /**
                              * @description The spend limit amount in USD
                              * @example 200.56
-                             * @example 100.00
                              */
                             amount: string;
                             /**
                              * @description The interval for the spend limit
                              * @example weekly
-                             * @example monthly
                              */
                             interval: "daily" | "weekly" | "monthly" | "yearly" | "all_time" | "per_transaction";
                         } | null;
@@ -10618,25 +11064,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -10649,7 +11091,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -10681,8 +11122,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -10701,21 +11140,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -10746,8 +11180,6 @@ export interface operations {
                         /**
                          * @description The spend limit amount in USD as a decimal string
                          * @example 200.56
-                         * @example 100.00
-                         * @example 1.00
                          */
                         amount: string;
                         /** @enum {string} */
@@ -10759,8 +11191,6 @@ export interface operations {
                         /**
                          * @description The spend limit amount in USD as a decimal string
                          * @example 200.56
-                         * @example 100.00
-                         * @example 1.00
                          */
                         amount: string;
                         /** @enum {string} */
@@ -10772,8 +11202,6 @@ export interface operations {
                         /**
                          * @description The spend limit amount in USD as a decimal string
                          * @example 200.56
-                         * @example 100.00
-                         * @example 1.00
                          */
                         amount: string;
                         /** @enum {string} */
@@ -10807,13 +11235,11 @@ export interface operations {
                             /**
                              * @description The spend limit amount in USD
                              * @example 200.56
-                             * @example 100.00
                              */
                             amount: string;
                             /**
                              * @description The interval for the spend limit
                              * @example weekly
-                             * @example monthly
                              */
                             interval: "daily" | "weekly" | "monthly" | "yearly" | "all_time" | "per_transaction";
                         } | null;
@@ -10837,25 +11263,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -10868,7 +11290,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -10900,8 +11321,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -10920,21 +11339,859 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    "getV1Debit-cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /**
+                             * @description Unique identifier for the debit card
+                             * @example 6a4b441ca9931c9d1ac48c86
+                             */
+                            id: string;
+                            /** @enum {string} */
+                            status: "active" | "pending" | "inactive" | "rejected";
+                            /** @enum {string} */
+                            network: "visa" | "mastercard";
+                            /**
+                             * @description Last 4 digits of card number
+                             * @example 1111
+                             */
+                            cardNumberLast4: string;
+                            /** @example 12 */
+                            expiryMonth: number;
+                            /** @example 2027 */
+                            expiryYear: number;
+                            label?: string;
+                            /** @enum {string} */
+                            currency: "USD" | "CAD" | "EUR" | "GBP";
+                            /**
+                             * @description Whether this card has been tokenized via Evervault for secure storage
+                             * @example true
+                             */
+                            isTokenized: boolean;
+                            /** Format: date-time */
+                            createdAt: string;
+                        }[];
+                        hasMore: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
                          * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
                          * @example 404
-                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    "postV1Debit-cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Evervault-encrypted card number token (opaque string from the Card iframe)
+                     * @example ev:SWFSS:...
+                     */
+                    encryptedCardNumber: string;
+                    /**
+                     * @description Evervault-encrypted expiry month token (opaque string from the Card iframe)
+                     * @example ev:SWFSS:...
+                     */
+                    expiryMonth: string;
+                    /**
+                     * @description Evervault-encrypted expiry year token (opaque string from the Card iframe)
+                     * @example ev:SWFSS:...
+                     */
+                    expiryYear: string;
+                    /**
+                     * @description Last 4 digits of the card number (plaintext from iframe)
+                     * @example 4321
+                     */
+                    cardLastFour: string;
+                    /**
+                     * @description Card BIN / first 6-8 digits (plaintext from iframe)
+                     * @example 411111
+                     */
+                    cardBin: string;
+                    /** @enum {string} */
+                    cardBrand: "visa" | "mastercard";
+                    /**
+                     * @description Cardholder's first name
+                     * @example John
+                     */
+                    cardholderFirstName: string;
+                    /**
+                     * @description Cardholder's last name
+                     * @example Doe
+                     */
+                    cardholderLastName: string;
+                    billingAddress: {
+                        /**
+                         * @description Street address line 1
+                         * @example 123 Main St
+                         */
+                        line1: string;
+                        /**
+                         * @description Street address line 2
+                         * @example Apt 4
+                         */
+                        line2?: string;
+                        /**
+                         * @description City
+                         * @example New York
+                         */
+                        city: string;
+                        /**
+                         * @description State / province code
+                         * @example NY
+                         */
+                        state: string;
+                        /**
+                         * @description Postal / ZIP code
+                         * @example 10001
+                         */
+                        postalCode: string;
+                        /**
+                         * @description ISO 3166-1 alpha-2 country code
+                         * @example US
+                         */
+                        country: string;
+                    };
+                    /**
+                     * @description Friendly name for the card
+                     * @example My Visa Debit
+                     */
+                    label?: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    /**
+                     * @description Evervault-encrypted card number token (opaque string from the Card iframe)
+                     * @example ev:SWFSS:...
+                     */
+                    encryptedCardNumber: string;
+                    /**
+                     * @description Evervault-encrypted expiry month token (opaque string from the Card iframe)
+                     * @example ev:SWFSS:...
+                     */
+                    expiryMonth: string;
+                    /**
+                     * @description Evervault-encrypted expiry year token (opaque string from the Card iframe)
+                     * @example ev:SWFSS:...
+                     */
+                    expiryYear: string;
+                    /**
+                     * @description Last 4 digits of the card number (plaintext from iframe)
+                     * @example 4321
+                     */
+                    cardLastFour: string;
+                    /**
+                     * @description Card BIN / first 6-8 digits (plaintext from iframe)
+                     * @example 411111
+                     */
+                    cardBin: string;
+                    /** @enum {string} */
+                    cardBrand: "visa" | "mastercard";
+                    /**
+                     * @description Cardholder's first name
+                     * @example John
+                     */
+                    cardholderFirstName: string;
+                    /**
+                     * @description Cardholder's last name
+                     * @example Doe
+                     */
+                    cardholderLastName: string;
+                    billingAddress: {
+                        /**
+                         * @description Street address line 1
+                         * @example 123 Main St
+                         */
+                        line1: string;
+                        /**
+                         * @description Street address line 2
+                         * @example Apt 4
+                         */
+                        line2?: string;
+                        /**
+                         * @description City
+                         * @example New York
+                         */
+                        city: string;
+                        /**
+                         * @description State / province code
+                         * @example NY
+                         */
+                        state: string;
+                        /**
+                         * @description Postal / ZIP code
+                         * @example 10001
+                         */
+                        postalCode: string;
+                        /**
+                         * @description ISO 3166-1 alpha-2 country code
+                         * @example US
+                         */
+                        country: string;
+                    };
+                    /**
+                     * @description Friendly name for the card
+                     * @example My Visa Debit
+                     */
+                    label?: string;
+                };
+                "multipart/form-data": {
+                    /**
+                     * @description Evervault-encrypted card number token (opaque string from the Card iframe)
+                     * @example ev:SWFSS:...
+                     */
+                    encryptedCardNumber: string;
+                    /**
+                     * @description Evervault-encrypted expiry month token (opaque string from the Card iframe)
+                     * @example ev:SWFSS:...
+                     */
+                    expiryMonth: string;
+                    /**
+                     * @description Evervault-encrypted expiry year token (opaque string from the Card iframe)
+                     * @example ev:SWFSS:...
+                     */
+                    expiryYear: string;
+                    /**
+                     * @description Last 4 digits of the card number (plaintext from iframe)
+                     * @example 4321
+                     */
+                    cardLastFour: string;
+                    /**
+                     * @description Card BIN / first 6-8 digits (plaintext from iframe)
+                     * @example 411111
+                     */
+                    cardBin: string;
+                    /** @enum {string} */
+                    cardBrand: "visa" | "mastercard";
+                    /**
+                     * @description Cardholder's first name
+                     * @example John
+                     */
+                    cardholderFirstName: string;
+                    /**
+                     * @description Cardholder's last name
+                     * @example Doe
+                     */
+                    cardholderLastName: string;
+                    billingAddress: {
+                        /**
+                         * @description Street address line 1
+                         * @example 123 Main St
+                         */
+                        line1: string;
+                        /**
+                         * @description Street address line 2
+                         * @example Apt 4
+                         */
+                        line2?: string;
+                        /**
+                         * @description City
+                         * @example New York
+                         */
+                        city: string;
+                        /**
+                         * @description State / province code
+                         * @example NY
+                         */
+                        state: string;
+                        /**
+                         * @description Postal / ZIP code
+                         * @example 10001
+                         */
+                        postalCode: string;
+                        /**
+                         * @description ISO 3166-1 alpha-2 country code
+                         * @example US
+                         */
+                        country: string;
+                    };
+                    /**
+                     * @description Friendly name for the card
+                     * @example My Visa Debit
+                     */
+                    label?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 201 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Unique identifier for the debit card
+                         * @example 6a4b441ca9931c9d1ac48c86
+                         */
+                        id: string;
+                        /** @enum {string} */
+                        status: "active" | "pending" | "inactive" | "rejected";
+                        /** @enum {string} */
+                        network: "visa" | "mastercard";
+                        /**
+                         * @description Last 4 digits of card number
+                         * @example 1111
+                         */
+                        cardNumberLast4: string;
+                        /** @example 12 */
+                        expiryMonth: number;
+                        /** @example 2027 */
+                        expiryYear: number;
+                        label?: string;
+                        /** @enum {string} */
+                        currency: "USD" | "CAD" | "EUR" | "GBP";
+                        /**
+                         * @description Whether this card has been tokenized via Evervault for secure storage
+                         * @example true
+                         */
+                        isTokenized: boolean;
+                        /** Format: date-time */
+                        createdAt: string;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    "getV1Debit-cardsByCardId": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cardId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Unique identifier for the debit card
+                         * @example 6a4b441ca9931c9d1ac48c86
+                         */
+                        id: string;
+                        /** @enum {string} */
+                        status: "active" | "pending" | "inactive" | "rejected";
+                        /** @enum {string} */
+                        network: "visa" | "mastercard";
+                        /**
+                         * @description Last 4 digits of card number
+                         * @example 1111
+                         */
+                        cardNumberLast4: string;
+                        /** @example 12 */
+                        expiryMonth: number;
+                        /** @example 2027 */
+                        expiryYear: number;
+                        label?: string;
+                        /** @enum {string} */
+                        currency: "USD" | "CAD" | "EUR" | "GBP";
+                        /**
+                         * @description Whether this card has been tokenized via Evervault for secure storage
+                         * @example true
+                         */
+                        isTokenized: boolean;
+                        /** Format: date-time */
+                        createdAt: string;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    "deleteV1Debit-cardsByCardId": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cardId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -11004,25 +12261,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -11035,7 +12288,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -11067,8 +12319,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -11087,21 +12337,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -11167,25 +12412,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -11198,7 +12439,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -11230,8 +12470,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -11250,21 +12488,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -11317,25 +12550,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -11348,7 +12577,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -11365,21 +12593,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -11432,25 +12655,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -11463,7 +12682,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -11480,21 +12698,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -11528,8 +12741,6 @@ export interface operations {
                      * @description Token lifetime in seconds (default: 3600, max: 3600)
                      * @default 3600
                      * @example 3600
-                     * @example 1800
-                     * @example 600
                      */
                     expiresIn?: number;
                 };
@@ -11543,8 +12754,6 @@ export interface operations {
                      * @description Token lifetime in seconds (default: 3600, max: 3600)
                      * @default 3600
                      * @example 3600
-                     * @example 1800
-                     * @example 600
                      */
                     expiresIn?: number;
                 };
@@ -11558,8 +12767,6 @@ export interface operations {
                      * @description Token lifetime in seconds (default: 3600, max: 3600)
                      * @default 3600
                      * @example 3600
-                     * @example 1800
-                     * @example 600
                      */
                     expiresIn?: number;
                 };
@@ -11580,12 +12787,12 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6a0d5f1bc3aa49d4f16d072b
+                         * @example 6a4b441ca9931c9d1ac48c8a
                          */
                         userId: string;
                         /**
                          * @description Token type (always 'Bearer')
-                         * @constant
+                         * @enum {string}
                          */
                         tokenType: "Bearer";
                         /**
@@ -11596,7 +12803,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-05-20T08:13:31.080Z
+                         * @example 2026-07-06T06:58:52.241Z
                          */
                         expiresAt: string;
                     };
@@ -11613,25 +12820,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -11644,7 +12847,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -11676,8 +12878,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -11696,21 +12896,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -11771,7 +12966,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-05-20T07:13:31.080Z
+                         * @example 2026-07-06T05:58:52.240Z
                          */
                         createdAt: string;
                     };
@@ -11788,25 +12983,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -11819,7 +13010,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -11851,8 +13041,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -11871,21 +13059,237 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    postV1IntegratorUsers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Format: email
+                     * @description Email address for the new user
+                     * @example user@example.com
+                     */
+                    email: string;
+                    /**
+                     * @description IANA timezone identifier for the new user
+                     * @example America/New_York
+                     */
+                    timezone?: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    /**
+                     * Format: email
+                     * @description Email address for the new user
+                     * @example user@example.com
+                     */
+                    email: string;
+                    /**
+                     * @description IANA timezone identifier for the new user
+                     * @example America/New_York
+                     */
+                    timezone?: string;
+                };
+                "multipart/form-data": {
+                    /**
+                     * Format: email
+                     * @description Email address for the new user
+                     * @example user@example.com
+                     */
+                    email: string;
+                    /**
+                     * @description IANA timezone identifier for the new user
+                     * @example America/New_York
+                     */
+                    timezone?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description The internal ID of the newly created user
+                         * @example 6a4b441ca9931c9d1ac48c8c
+                         */
+                        userId: string;
+                        /**
+                         * Format: email
+                         * @description Email address of the newly created user
+                         * @example user@example.com
+                         */
+                        email: string;
+                        /**
+                         * @description The user's API key (`ak_...`). Returned only once at creation - store it securely.
+                         * @example ak_N2FjZTk3ZjMtsTWiZF00MGU0LWIxYTMtMTY0ZmM3MzJiNTdm
+                         */
+                        apiKey: string;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
                          * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
                          * @example 404
-                         * @example 500
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -11942,7 +13346,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6a0d5f1bc3aa49d4f16d072a
+                             * @example 6a4b441ca9931c9d1ac48c89
                              */
                             userId: string;
                             /**
@@ -11961,7 +13365,7 @@ export interface operations {
                             cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
                             lossAmountUsd: string;
                             atRiskAmountUsd: string;
-                            /** @constant */
+                            /** @enum {string} */
                             sourceAction: "disabled";
                             /** @enum {string} */
                             userAction: "none" | "review_required" | "disabled";
@@ -11988,25 +13392,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -12019,7 +13419,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -12051,8 +13450,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -12071,21 +13468,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -12130,7 +13522,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6a0d5f1bc3aa49d4f16d072a
+                         * @example 6a4b441ca9931c9d1ac48c89
                          */
                         userId: string;
                         /**
@@ -12149,7 +13541,7 @@ export interface operations {
                         cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
                         lossAmountUsd: string;
                         atRiskAmountUsd: string;
-                        /** @constant */
+                        /** @enum {string} */
                         sourceAction: "disabled";
                         /** @enum {string} */
                         userAction: "none" | "review_required" | "disabled";
@@ -12169,25 +13561,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -12200,7 +13588,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -12232,8 +13619,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -12252,21 +13637,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -12299,7 +13679,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a0d5f1bc3aa49d4f16d072c
+                         * @example 6a4b441ca9931c9d1ac48c8b
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -12334,25 +13714,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -12365,7 +13741,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -12397,8 +13772,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -12417,21 +13790,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -12506,7 +13874,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a0d5f1bc3aa49d4f16d072c
+                         * @example 6a4b441ca9931c9d1ac48c8b
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -12541,25 +13909,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -12572,7 +13936,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -12604,8 +13967,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -12624,21 +13985,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -12678,7 +14034,7 @@ export interface operations {
                         id: string;
                         /**
                          * @description Always true for a deleted webhook response
-                         * @constant
+                         * @enum {boolean}
                          */
                         deleted: true;
                     };
@@ -12695,25 +14051,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -12726,7 +14078,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -12758,8 +14109,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -12778,21 +14127,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -12842,7 +14186,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a0d5f1bc3aa49d4f16d072c
+                         * @example 6a4b441ca9931c9d1ac48c8b
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -12877,25 +14221,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -12908,7 +14248,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -12940,8 +14279,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -12960,21 +14297,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -13031,7 +14363,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Always true after the webhook secret is configured
-                         * @constant
+                         * @enum {boolean}
                          */
                         secretConfigured: true;
                     };
@@ -13048,25 +14380,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -13079,7 +14407,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -13111,8 +14438,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -13131,21 +14456,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -13174,8 +14494,6 @@ export interface operations {
                      * @description Grace period in seconds during which the old secret remains valid. Allows for safe rotation without service disruption. Default: 0 (immediate invalidation), Maximum: 3600 (1 hour).
                      * @default 0
                      * @example 300
-                     * @example 600
-                     * @example 3600
                      */
                     oldSecretValidForSeconds?: number;
                 };
@@ -13184,8 +14502,6 @@ export interface operations {
                      * @description Grace period in seconds during which the old secret remains valid. Allows for safe rotation without service disruption. Default: 0 (immediate invalidation), Maximum: 3600 (1 hour).
                      * @default 0
                      * @example 300
-                     * @example 600
-                     * @example 3600
                      */
                     oldSecretValidForSeconds?: number;
                 };
@@ -13194,8 +14510,6 @@ export interface operations {
                      * @description Grace period in seconds during which the old secret remains valid. Allows for safe rotation without service disruption. Default: 0 (immediate invalidation), Maximum: 3600 (1 hour).
                      * @default 0
                      * @example 300
-                     * @example 600
-                     * @example 3600
                      */
                     oldSecretValidForSeconds?: number;
                 };
@@ -13217,7 +14531,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-05-20T07:18:31.080Z
+                         * @example 2026-07-06T06:03:52.241Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -13234,25 +14548,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -13265,7 +14575,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -13297,8 +14606,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -13317,21 +14624,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -13364,18 +14666,31 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a0d5f1bc3aa49d4f16d0728
+                         * @example 6a4b441ca9931c9d1ac48c87
                          */
                         id: string;
-                        email: (string | null) | null;
-                        firstName: (string | null) | null;
+                        /**
+                         * Format: email
+                         * @description User's email address
+                         * @example user@example.com
+                         */
+                        email: string | null;
+                        /**
+                         * @description User's first name
+                         * @example John
+                         */
+                        firstName: string | null;
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-05-20T07:13:31.075Z
+                         * @example 2026-07-06T05:58:52.166Z
                          */
                         signedUpAt: string;
-                        timezone: (string | null) | null;
+                        /**
+                         * @description User's timezone in IANA format
+                         * @example America/New_York
+                         */
+                        timezone: string | null;
                         /** @description User's notification preferences by type */
                         notificationPreferences: {
                             /** @enum {string} */
@@ -13395,7 +14710,11 @@ export interface operations {
                         verification: {
                             /** @enum {string} */
                             status: "not_started" | "verified" | "failed" | "disabled" | "retry";
-                            country: (string | null) | null;
+                            /**
+                             * @description ISO 3166-1 alpha-2 country code where user was verified
+                             * @example US
+                             */
+                            country: string | null;
                             /** @description A requirement that must be fulfilled to access certain features */
                             requirement?: {
                                 /** @enum {string} */
@@ -13405,7 +14724,11 @@ export interface operations {
                                  * @example Verify your identity to unlock payment features
                                  */
                                 description?: string;
-                                actionUrl?: (string | null) | null;
+                                /**
+                                 * @description URL where the user can complete this requirement
+                                 * @example https://verify.example.com/start
+                                 */
+                                actionUrl?: string | null;
                                 /**
                                  * @description Whether this requirement can be retried after failure
                                  * @example true
@@ -13424,7 +14747,6 @@ export interface operations {
                             /**
                              * @description Human-readable name for this capability
                              * @example ACH Bank Transfer
-                             * @example Bill Pay
                              */
                             name: string;
                             /**
@@ -13448,7 +14770,11 @@ export interface operations {
                                  * @example Verify your identity to unlock payment features
                                  */
                                 description?: string;
-                                actionUrl?: (string | null) | null;
+                                /**
+                                 * @description URL where the user can complete this requirement
+                                 * @example https://verify.example.com/start
+                                 */
+                                actionUrl?: string | null;
                                 /**
                                  * @description Whether this requirement can be retried after failure
                                  * @example true
@@ -13472,25 +14798,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -13503,7 +14825,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -13535,8 +14856,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -13555,21 +14874,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -13598,7 +14912,6 @@ export interface operations {
                     /**
                      * @description User's timezone in IANA format
                      * @example America/New_York
-                     * @example Europe/London
                      */
                     timezone?: string;
                     /**
@@ -13630,7 +14943,6 @@ export interface operations {
                     /**
                      * @description User's timezone in IANA format
                      * @example America/New_York
-                     * @example Europe/London
                      */
                     timezone?: string;
                     /**
@@ -13662,7 +14974,6 @@ export interface operations {
                     /**
                      * @description User's timezone in IANA format
                      * @example America/New_York
-                     * @example Europe/London
                      */
                     timezone?: string;
                     /**
@@ -13702,18 +15013,31 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a0d5f1bc3aa49d4f16d0728
+                         * @example 6a4b441ca9931c9d1ac48c87
                          */
                         id: string;
-                        email: (string | null) | null;
-                        firstName: (string | null) | null;
+                        /**
+                         * Format: email
+                         * @description User's email address
+                         * @example user@example.com
+                         */
+                        email: string | null;
+                        /**
+                         * @description User's first name
+                         * @example John
+                         */
+                        firstName: string | null;
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-05-20T07:13:31.075Z
+                         * @example 2026-07-06T05:58:52.166Z
                          */
                         signedUpAt: string;
-                        timezone: (string | null) | null;
+                        /**
+                         * @description User's timezone in IANA format
+                         * @example America/New_York
+                         */
+                        timezone: string | null;
                         /** @description User's notification preferences by type */
                         notificationPreferences: {
                             /** @enum {string} */
@@ -13733,7 +15057,11 @@ export interface operations {
                         verification: {
                             /** @enum {string} */
                             status: "not_started" | "verified" | "failed" | "disabled" | "retry";
-                            country: (string | null) | null;
+                            /**
+                             * @description ISO 3166-1 alpha-2 country code where user was verified
+                             * @example US
+                             */
+                            country: string | null;
                             /** @description A requirement that must be fulfilled to access certain features */
                             requirement?: {
                                 /** @enum {string} */
@@ -13743,7 +15071,11 @@ export interface operations {
                                  * @example Verify your identity to unlock payment features
                                  */
                                 description?: string;
-                                actionUrl?: (string | null) | null;
+                                /**
+                                 * @description URL where the user can complete this requirement
+                                 * @example https://verify.example.com/start
+                                 */
+                                actionUrl?: string | null;
                                 /**
                                  * @description Whether this requirement can be retried after failure
                                  * @example true
@@ -13762,7 +15094,6 @@ export interface operations {
                             /**
                              * @description Human-readable name for this capability
                              * @example ACH Bank Transfer
-                             * @example Bill Pay
                              */
                             name: string;
                             /**
@@ -13786,7 +15117,11 @@ export interface operations {
                                  * @example Verify your identity to unlock payment features
                                  */
                                 description?: string;
-                                actionUrl?: (string | null) | null;
+                                /**
+                                 * @description URL where the user can complete this requirement
+                                 * @example https://verify.example.com/start
+                                 */
+                                actionUrl?: string | null;
                                 /**
                                  * @description Whether this requirement can be retried after failure
                                  * @example true
@@ -13810,25 +15145,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -13841,7 +15172,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -13873,8 +15203,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -13893,21 +15221,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -13973,7 +15296,7 @@ export interface operations {
                         sessionId: string;
                         /**
                          * @description How the one-time confirmation code is delivered.
-                         * @constant
+                         * @enum {string}
                          */
                         deliveryMethod: "email";
                     };
@@ -13990,25 +15313,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -14021,7 +15340,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -14038,21 +15356,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -14112,18 +15425,31 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a0d5f1bc3aa49d4f16d0728
+                         * @example 6a4b441ca9931c9d1ac48c87
                          */
                         id: string;
-                        email: (string | null) | null;
-                        firstName: (string | null) | null;
+                        /**
+                         * Format: email
+                         * @description User's email address
+                         * @example user@example.com
+                         */
+                        email: string | null;
+                        /**
+                         * @description User's first name
+                         * @example John
+                         */
+                        firstName: string | null;
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-05-20T07:13:31.075Z
+                         * @example 2026-07-06T05:58:52.166Z
                          */
                         signedUpAt: string;
-                        timezone: (string | null) | null;
+                        /**
+                         * @description User's timezone in IANA format
+                         * @example America/New_York
+                         */
+                        timezone: string | null;
                         /** @description User's notification preferences by type */
                         notificationPreferences: {
                             /** @enum {string} */
@@ -14143,7 +15469,11 @@ export interface operations {
                         verification: {
                             /** @enum {string} */
                             status: "not_started" | "verified" | "failed" | "disabled" | "retry";
-                            country: (string | null) | null;
+                            /**
+                             * @description ISO 3166-1 alpha-2 country code where user was verified
+                             * @example US
+                             */
+                            country: string | null;
                             /** @description A requirement that must be fulfilled to access certain features */
                             requirement?: {
                                 /** @enum {string} */
@@ -14153,7 +15483,11 @@ export interface operations {
                                  * @example Verify your identity to unlock payment features
                                  */
                                 description?: string;
-                                actionUrl?: (string | null) | null;
+                                /**
+                                 * @description URL where the user can complete this requirement
+                                 * @example https://verify.example.com/start
+                                 */
+                                actionUrl?: string | null;
                                 /**
                                  * @description Whether this requirement can be retried after failure
                                  * @example true
@@ -14172,7 +15506,6 @@ export interface operations {
                             /**
                              * @description Human-readable name for this capability
                              * @example ACH Bank Transfer
-                             * @example Bill Pay
                              */
                             name: string;
                             /**
@@ -14196,7 +15529,11 @@ export interface operations {
                                  * @example Verify your identity to unlock payment features
                                  */
                                 description?: string;
-                                actionUrl?: (string | null) | null;
+                                /**
+                                 * @description URL where the user can complete this requirement
+                                 * @example https://verify.example.com/start
+                                 */
+                                actionUrl?: string | null;
                                 /**
                                  * @description Whether this requirement can be retried after failure
                                  * @example true
@@ -14220,25 +15557,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -14251,7 +15584,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -14268,21 +15600,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -14316,14 +15643,23 @@ export interface operations {
                         /**
                          * @description Provider-issued identifier for the current verification session.
                          * @example inq_2Q3x7k9m1n
-                         * @example flwses_c25ACZysrTfA9Q
                          */
                         sessionId: string;
                         /** @enum {string} */
                         provider: "persona" | "plaid";
-                        sessionToken: (string | null) | null;
-                        verificationUrl: (string | null) | null;
-                        verificationUrlExpiresAt: (string | null) | null;
+                        /** @description Provider-issued token for embedded or resumed verification flows. Null when not required. */
+                        sessionToken: string | null;
+                        /**
+                         * Format: uri
+                         * @description Hosted URL to start or continue verification. For Persona this may be a fresh one-time link.
+                         * @example https://withpersona.com/verify?inquiry-id=inq_2Q3x7k9m1n
+                         */
+                        verificationUrl: string | null;
+                        /**
+                         * Format: date-time
+                         * @description Expiration time for `verificationUrl` when the provider returns an expiring link.
+                         */
+                        verificationUrlExpiresAt: string | null;
                     };
                 };
             };
@@ -14338,25 +15674,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -14369,7 +15701,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -14386,21 +15717,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -14432,13 +15758,16 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        name: (string | null) | null;
+                        name: string | null;
                         keyPrefix: string;
                         permissions: string[];
                         status: string;
-                        expiresAt: ((Record<string, never> | string | number) | null) | null;
-                        createdAt: Record<string, never> | string | number;
-                        lastUsedAt: ((Record<string, never> | string | number) | null) | null;
+                        /** Format: date-time */
+                        expiresAt: string | null;
+                        /** Format: date-time */
+                        createdAt: string;
+                        /** Format: date-time */
+                        lastUsedAt: string | null;
                     }[];
                 };
             };
@@ -14453,25 +15782,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -14484,7 +15809,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -14501,21 +15825,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -14581,9 +15900,11 @@ export interface operations {
                         /** @description The raw API key. Store securely — it will not be shown again. */
                         rawKey: string;
                         permissions: string[];
-                        name: (string | null) | null;
-                        expiresAt: ((Record<string, never> | string | number) | null) | null;
-                        createdAt: Record<string, never> | string | number;
+                        name: string | null;
+                        /** Format: date-time */
+                        expiresAt: string | null;
+                        /** Format: date-time */
+                        createdAt: string;
                         warning: string;
                     };
                 };
@@ -14599,25 +15920,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -14630,7 +15947,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -14647,21 +15963,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -14709,25 +16020,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -14740,7 +16047,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -14772,8 +16078,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -14792,21 +16096,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -14894,8 +16193,8 @@ export interface operations {
                         apiKey: string;
                         keyId: string;
                         permissions: string[];
-                        expiresAt: (string | null) | null;
-                        keyName: (string | null) | null;
+                        expiresAt: string | null;
+                        keyName: string | null;
                     };
                 };
             };
@@ -14936,25 +16235,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -14967,7 +16262,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -14984,21 +16278,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -15065,7 +16354,7 @@ export interface operations {
                         approved: boolean;
                         clientId: string;
                         permissions: string[];
-                        expiresAt: (string | null) | null;
+                        expiresAt: string | null;
                     };
                 };
             };
@@ -15080,25 +16369,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -15111,7 +16396,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -15128,21 +16412,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -15175,7 +16454,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description An embedded wallet has been provisioned for this user.
-                         * @constant
+                         * @enum {string}
                          */
                         status: "active";
                         /** @description An embedded wallet for the authenticated user. Backed by a Turnkey sub-organization that holds the user's keys. */
@@ -15200,7 +16479,7 @@ export interface operations {
                     } | {
                         /**
                          * @description No embedded wallet has been provisioned for this user yet. Call POST /v1/wallet-kit to provision one.
-                         * @constant
+                         * @enum {string}
                          */
                         status: "not_provisioned";
                     };
@@ -15217,25 +16496,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -15248,7 +16523,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -15265,21 +16539,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -15328,7 +16597,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description An embedded wallet has been provisioned for this user.
-                         * @constant
+                         * @enum {string}
                          */
                         status: "active";
                         /** @description An embedded wallet for the authenticated user. Backed by a Turnkey sub-organization that holds the user's keys. */
@@ -15364,25 +16633,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -15395,7 +16660,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -15412,21 +16676,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -15450,21 +16709,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -15505,13 +16759,11 @@ export interface operations {
                             /**
                              * @description Turnkey address format identifier
                              * @example ADDRESS_FORMAT_ETHEREUM
-                             * @example ADDRESS_FORMAT_SOLANA
                              */
                             addressFormat: string;
                             /**
                              * @description Turnkey curve identifier used to derive the address
                              * @example CURVE_SECP256K1
-                             * @example CURVE_ED25519
                              */
                             curve: string;
                             /**
@@ -15542,25 +16794,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -15573,7 +16821,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -15590,21 +16837,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -15642,8 +16884,6 @@ export interface operations {
                             /**
                              * @description Chain the token lives on
                              * @example ethereum
-                             * @example polygon
-                             * @example solana
                              */
                             chain: string;
                             /**
@@ -15718,25 +16958,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -15749,7 +16985,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -15766,21 +17001,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -15941,25 +17171,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -15972,7 +17198,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -15989,21 +17214,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -16056,13 +17276,11 @@ export interface operations {
                             /**
                              * @description Token symbol.
                              * @example SOL
-                             * @example USDC
                              */
                             symbol: string;
                             /**
                              * @description Token decimals.
                              * @example 9
-                             * @example 6
                              */
                             decimals: string | number;
                             /**
@@ -16077,7 +17295,7 @@ export interface operations {
                             amountRaw: string;
                             /**
                              * @description Source chain. Always `solana` for this resource.
-                             * @constant
+                             * @enum {string}
                              */
                             chain: "solana";
                         }[];
@@ -16099,25 +17317,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -16130,7 +17344,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -16147,21 +17360,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -16192,7 +17400,7 @@ export interface operations {
                     /**
                      * @description Version of the intent schema. Production prepare currently expects exactly `1`.
                      * @example 1
-                     * @constant
+                     * @enum {number}
                      */
                     intentVersion: 1;
                     /** @enum {string} */
@@ -16201,7 +17409,7 @@ export interface operations {
                     intent: {
                         /**
                          * @description Intent kind for a native SOL or SPL token transfer.
-                         * @constant
+                         * @enum {string}
                          */
                         kind: "transfer";
                         /**
@@ -16227,7 +17435,7 @@ export interface operations {
                     } | {
                         /**
                          * @description Intent kind for a Spritz off-ramp quote payment.
-                         * @constant
+                         * @enum {string}
                          */
                         kind: "payment";
                         /**
@@ -16243,12 +17451,12 @@ export interface operations {
                     } | {
                         /**
                          * @description Intent kind for depositing USDC into a Kamino vault.
-                         * @constant
+                         * @enum {string}
                          */
                         kind: "yield.deposit";
                         /**
                          * @description Yield protocol that will construct the deposit instructions. Only Kamino is supported for Solana yield transactions today.
-                         * @constant
+                         * @enum {string}
                          */
                         protocol: "kamino";
                         /**
@@ -16274,12 +17482,12 @@ export interface operations {
                     } | {
                         /**
                          * @description Intent kind for withdrawing from a Kamino vault.
-                         * @constant
+                         * @enum {string}
                          */
                         kind: "yield.withdraw";
                         /**
                          * @description Yield protocol that will construct the withdraw instructions. Only Kamino is supported for Solana yield transactions today.
-                         * @constant
+                         * @enum {string}
                          */
                         protocol: "kamino";
                         /**
@@ -16294,7 +17502,7 @@ export interface operations {
                         vault: string;
                         /**
                          * @description Withdraw the user's full available position from this vault. Partial withdraws are not exposed by Wallet Kit yet.
-                         * @constant
+                         * @enum {boolean}
                          */
                         withdrawAll: true;
                         /**
@@ -16310,7 +17518,7 @@ export interface operations {
                     /**
                      * @description Version of the intent schema. Production prepare currently expects exactly `1`.
                      * @example 1
-                     * @constant
+                     * @enum {number}
                      */
                     intentVersion: 1;
                     /** @enum {string} */
@@ -16319,7 +17527,7 @@ export interface operations {
                     intent: {
                         /**
                          * @description Intent kind for a native SOL or SPL token transfer.
-                         * @constant
+                         * @enum {string}
                          */
                         kind: "transfer";
                         /**
@@ -16345,7 +17553,7 @@ export interface operations {
                     } | {
                         /**
                          * @description Intent kind for a Spritz off-ramp quote payment.
-                         * @constant
+                         * @enum {string}
                          */
                         kind: "payment";
                         /**
@@ -16361,12 +17569,12 @@ export interface operations {
                     } | {
                         /**
                          * @description Intent kind for depositing USDC into a Kamino vault.
-                         * @constant
+                         * @enum {string}
                          */
                         kind: "yield.deposit";
                         /**
                          * @description Yield protocol that will construct the deposit instructions. Only Kamino is supported for Solana yield transactions today.
-                         * @constant
+                         * @enum {string}
                          */
                         protocol: "kamino";
                         /**
@@ -16392,12 +17600,12 @@ export interface operations {
                     } | {
                         /**
                          * @description Intent kind for withdrawing from a Kamino vault.
-                         * @constant
+                         * @enum {string}
                          */
                         kind: "yield.withdraw";
                         /**
                          * @description Yield protocol that will construct the withdraw instructions. Only Kamino is supported for Solana yield transactions today.
-                         * @constant
+                         * @enum {string}
                          */
                         protocol: "kamino";
                         /**
@@ -16412,7 +17620,7 @@ export interface operations {
                         vault: string;
                         /**
                          * @description Withdraw the user's full available position from this vault. Partial withdraws are not exposed by Wallet Kit yet.
-                         * @constant
+                         * @enum {boolean}
                          */
                         withdrawAll: true;
                         /**
@@ -16428,7 +17636,7 @@ export interface operations {
                     /**
                      * @description Version of the intent schema. Production prepare currently expects exactly `1`.
                      * @example 1
-                     * @constant
+                     * @enum {number}
                      */
                     intentVersion: 1;
                     /** @enum {string} */
@@ -16437,7 +17645,7 @@ export interface operations {
                     intent: {
                         /**
                          * @description Intent kind for a native SOL or SPL token transfer.
-                         * @constant
+                         * @enum {string}
                          */
                         kind: "transfer";
                         /**
@@ -16463,7 +17671,7 @@ export interface operations {
                     } | {
                         /**
                          * @description Intent kind for a Spritz off-ramp quote payment.
-                         * @constant
+                         * @enum {string}
                          */
                         kind: "payment";
                         /**
@@ -16479,12 +17687,12 @@ export interface operations {
                     } | {
                         /**
                          * @description Intent kind for depositing USDC into a Kamino vault.
-                         * @constant
+                         * @enum {string}
                          */
                         kind: "yield.deposit";
                         /**
                          * @description Yield protocol that will construct the deposit instructions. Only Kamino is supported for Solana yield transactions today.
-                         * @constant
+                         * @enum {string}
                          */
                         protocol: "kamino";
                         /**
@@ -16510,12 +17718,12 @@ export interface operations {
                     } | {
                         /**
                          * @description Intent kind for withdrawing from a Kamino vault.
-                         * @constant
+                         * @enum {string}
                          */
                         kind: "yield.withdraw";
                         /**
                          * @description Yield protocol that will construct the withdraw instructions. Only Kamino is supported for Solana yield transactions today.
-                         * @constant
+                         * @enum {string}
                          */
                         protocol: "kamino";
                         /**
@@ -16530,7 +17738,7 @@ export interface operations {
                         vault: string;
                         /**
                          * @description Withdraw the user's full available position from this vault. Partial withdraws are not exposed by Wallet Kit yet.
-                         * @constant
+                         * @enum {boolean}
                          */
                         withdrawAll: true;
                         /**
@@ -16556,7 +17764,7 @@ export interface operations {
                         messageBytes: string;
                         /**
                          * @description Format of `messageBytes`. `solana_message_v0` means the bytes are a Solana v0 message, not a serialized transaction.
-                         * @constant
+                         * @enum {string}
                          */
                         messageFormat: "solana_message_v0";
                         /**
@@ -16604,25 +17812,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -16635,7 +17839,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -16652,21 +17855,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -16690,21 +17888,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -16728,21 +17921,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -16766,21 +17954,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -16804,21 +17987,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -16901,25 +18079,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -16932,7 +18106,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -16949,21 +18122,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -16987,21 +18155,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -17025,21 +18188,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -17063,21 +18221,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -17101,21 +18254,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -17194,25 +18342,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -17225,7 +18369,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -17242,21 +18385,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -17280,21 +18418,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -17318,21 +18451,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -17356,21 +18484,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -17394,21 +18517,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -17476,25 +18594,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -17507,7 +18621,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -17524,21 +18637,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -17621,25 +18729,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -17652,7 +18756,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -17669,21 +18772,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -17707,21 +18805,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -17747,7 +18840,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /** @constant */
+                    /** @enum {string} */
                     kind: "passkey";
                     /** @description Passkey/WebAuthn challenge produced by the client SDK. */
                     challenge: string;
@@ -17760,7 +18853,7 @@ export interface operations {
                     /** @description Optional label for this method. */
                     label?: string;
                 } | {
-                    /** @constant */
+                    /** @enum {string} */
                     kind: "email";
                     /**
                      * Format: email
@@ -17777,7 +18870,7 @@ export interface operations {
                     label?: string;
                 };
                 "application/x-www-form-urlencoded": {
-                    /** @constant */
+                    /** @enum {string} */
                     kind: "passkey";
                     /** @description Passkey/WebAuthn challenge produced by the client SDK. */
                     challenge: string;
@@ -17790,7 +18883,7 @@ export interface operations {
                     /** @description Optional label for this method. */
                     label?: string;
                 } | {
-                    /** @constant */
+                    /** @enum {string} */
                     kind: "email";
                     /**
                      * Format: email
@@ -17807,7 +18900,7 @@ export interface operations {
                     label?: string;
                 };
                 "multipart/form-data": {
-                    /** @constant */
+                    /** @enum {string} */
                     kind: "passkey";
                     /** @description Passkey/WebAuthn challenge produced by the client SDK. */
                     challenge: string;
@@ -17820,7 +18913,7 @@ export interface operations {
                     /** @description Optional label for this method. */
                     label?: string;
                 } | {
-                    /** @constant */
+                    /** @enum {string} */
                     kind: "email";
                     /**
                      * Format: email
@@ -17846,7 +18939,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @constant */
+                        /** @enum {string} */
                         status: "intent_required";
                         /** @description Prepared activity that the embedded wallet must stamp before commit. */
                         intent: {
@@ -17863,7 +18956,7 @@ export interface operations {
                             expiresAt: string;
                         };
                     } | {
-                        /** @constant */
+                        /** @enum {string} */
                         status: "already_exists";
                         /** @description An authentication method registered on the user's embedded wallet sub-organization. */
                         data: {
@@ -17895,25 +18988,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -17926,7 +19015,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -17943,21 +19031,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -17981,21 +19064,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -18019,21 +19097,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -18117,25 +19190,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -18148,7 +19217,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -18165,21 +19233,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -18203,21 +19266,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -18293,25 +19351,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -18324,7 +19378,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -18341,21 +19394,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -18379,21 +19427,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -18454,25 +19497,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -18485,7 +19524,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -18502,21 +19540,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -18540,21 +19573,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -18578,21 +19606,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -18645,9 +19668,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    type: unknown;
-                };
+                content?: never;
             };
             /** @description Response for status 401 */
             401: {
@@ -18660,25 +19681,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -18691,7 +19708,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -18708,21 +19724,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -18746,21 +19757,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -18784,21 +19790,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -18835,9 +19836,9 @@ export interface operations {
                         data: {
                             /** @description Kamino vault identifier. */
                             id: string;
-                            /** @constant */
+                            /** @enum {string} */
                             protocol: "kamino";
-                            /** @constant */
+                            /** @enum {string} */
                             chain: "solana";
                             name: string;
                             isListed: boolean;
@@ -18875,7 +19876,7 @@ export interface operations {
                             };
                             sharePrice: string | null;
                             tokensPerShare: string | null;
-                            numberOfHolders: (string | number) | null;
+                            numberOfHolders: (string | null) | (number | null);
                             fees: {
                                 performanceFeeBps: string | number;
                                 managementFeeBps: string | number;
@@ -18923,21 +19924,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -18961,25 +19957,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -18992,7 +19984,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -19009,21 +20000,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -19047,21 +20033,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -19099,9 +20080,9 @@ export interface operations {
                     "application/json": {
                         /** @description Kamino vault identifier. */
                         id: string;
-                        /** @constant */
+                        /** @enum {string} */
                         protocol: "kamino";
-                        /** @constant */
+                        /** @enum {string} */
                         chain: "solana";
                         name: string;
                         isListed: boolean;
@@ -19139,7 +20120,7 @@ export interface operations {
                         };
                         sharePrice: string | null;
                         tokensPerShare: string | null;
-                        numberOfHolders: (string | number) | null;
+                        numberOfHolders: (string | null) | (number | null);
                         fees: {
                             performanceFeeBps: string | number;
                             managementFeeBps: string | number;
@@ -19179,21 +20160,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -19217,25 +20193,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -19248,7 +20220,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -19265,21 +20236,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -19303,21 +20269,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -19341,21 +20302,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -19392,6 +20348,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: {
+                            /** Format: date-time */
                             createdAt: string | null;
                             tvlUsd: string | null;
                             apy: string | null;
@@ -19422,21 +20379,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -19460,25 +20412,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -19491,7 +20439,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -19508,21 +20455,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -19546,21 +20488,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -19584,21 +20521,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -19645,7 +20577,7 @@ export interface operations {
                                 /** @enum {string} */
                                 symbol: "USDC" | "UNKNOWN";
                                 mint: string | null;
-                                decimals: (string | number) | null;
+                                decimals: (string | null) | (number | null);
                             };
                             shares: {
                                 staked: string;
@@ -19684,21 +20616,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -19722,25 +20649,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -19753,7 +20676,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -19770,21 +20692,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -19808,21 +20725,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -19869,7 +20781,7 @@ export interface operations {
                             depositToken: {
                                 symbol: "USDC" | "UNKNOWN";
                                 mint: string | null;
-                                decimals: (string | number) | null;
+                                decimals: (string | null) | (number | null);
                             };
                             shares: {
                                 staked: string;
@@ -19901,21 +20813,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -19939,25 +20846,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -19970,7 +20873,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -19987,21 +20889,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -20025,21 +20922,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -20063,21 +20955,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -20115,6 +21002,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: {
+                            /** Format: date-time */
                             createdAt: string | null;
                             tvlUsd: string | null;
                             apy: string | null;
@@ -20145,21 +21033,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -20183,25 +21066,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -20214,7 +21093,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -20231,21 +21109,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -20269,21 +21142,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -20307,21 +21175,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -20386,21 +21249,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -20424,25 +21282,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -20455,7 +21309,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -20472,21 +21325,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -20510,21 +21358,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -20548,21 +21391,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -20608,6 +21446,7 @@ export interface operations {
                             vaultId: string | null;
                             kind: string | null;
                             signature: string | null;
+                            /** Format: date-time */
                             createdAt: string | null;
                             tokenMint: string | null;
                             tokenAmount: string | null;
@@ -20643,21 +21482,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -20681,25 +21515,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -20712,7 +21542,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -20729,21 +21558,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -20767,21 +21591,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -20855,25 +21674,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -20886,7 +21701,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -20903,21 +21717,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -21027,6 +21836,11 @@ export interface operations {
                          * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                          */
                         sourceId: string;
+                        /**
+                         * @description Identifier of the on-ramp created for this deposit, or null until the on-ramp record exists.
+                         * @example onramp_xyz789
+                         */
+                        onRampId: string | null;
                         /** @enum {string} */
                         status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "failed";
                         /** @enum {string} */
@@ -21051,7 +21865,7 @@ export interface operations {
                         /**
                          * @description Asset sent to the deposit destination
                          * @example USDC
-                         * @constant
+                         * @enum {string}
                          */
                         asset: "USDC";
                         assetAddress: string;
@@ -21070,8 +21884,11 @@ export interface operations {
                         authorizedAt: string;
                         /** Format: date-time */
                         createdAt: string;
+                        /** Format: date-time */
                         settledAt: string | null;
+                        /** Format: date-time */
                         returnedAt: string | null;
+                        /** Format: date-time */
                         completedAt: string | null;
                         returnCode: string | null;
                         returnReason: string | null;
@@ -21094,25 +21911,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -21125,7 +21938,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -21142,21 +21954,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -21195,8 +22002,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -21215,21 +22020,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -21336,7 +22136,10 @@ export interface operations {
                                 questions: {
                                     id: string | null;
                                     prompt: string | null;
-                                    options: string[];
+                                    options: {
+                                        id: string;
+                                        text: string;
+                                    }[];
                                 }[];
                             };
                         };
@@ -21360,25 +22163,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -21391,7 +22190,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -21408,21 +22206,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -21446,21 +22239,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -21513,7 +22301,10 @@ export interface operations {
                                 questions: {
                                     id: string | null;
                                     prompt: string | null;
-                                    options: string[];
+                                    options: {
+                                        id: string;
+                                        text: string;
+                                    }[];
                                 }[];
                             };
                         };
@@ -21537,25 +22328,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -21568,7 +22355,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -21585,21 +22371,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -21623,21 +22404,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -21701,7 +22477,10 @@ export interface operations {
                                 questions: {
                                     id: string | null;
                                     prompt: string | null;
-                                    options: string[];
+                                    options: {
+                                        id: string;
+                                        text: string;
+                                    }[];
                                 }[];
                             };
                         };
@@ -21725,25 +22504,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -21756,7 +22531,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -21773,21 +22547,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -21811,21 +22580,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -21865,7 +22629,7 @@ export interface operations {
                         id: string;
                         /**
                          * @description Always true for a removed funding source response
-                         * @constant
+                         * @enum {boolean}
                          */
                         deleted: true;
                     };
@@ -21882,25 +22646,21 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:auth:token-expired
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Token Expired
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 401
-                         * @example 403
                          */
                         status: number;
                         /**
                          * @description A human-readable explanation specific to this occurrence
                          * @example Bearer token required
-                         * @example Invalid token
                          */
                         detail?: string;
                         /** @description A URI reference that identifies the specific occurrence */
@@ -21913,7 +22673,6 @@ export interface operations {
                         /**
                          * @description The required scope for this resource
                          * @example read:users
-                         * @example write:orders
                          */
                         scope?: string;
                     };
@@ -21930,21 +22689,16 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
-                         * @example 401
-                         * @example 404
-                         * @example 500
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
@@ -21983,8 +22737,6 @@ export interface operations {
                         /**
                          * @description The type of resource that was not found
                          * @example user
-                         * @example account
-                         * @example transaction
                          */
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
@@ -22003,21 +22755,150 @@ export interface operations {
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
                          * @example urn:problem-type:auth:unauthorized
-                         * @example urn:problem-type:system:internal-error
                          */
                         type: string;
                         /**
                          * @description A short, human-readable summary of the problem type
                          * @example Unauthorized
-                         * @example Internal Server Error
                          */
                         title: string;
                         /**
                          * @description The HTTP status code
                          * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    postV1SandboxBillsReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {boolean} */
+                        reset: true;
+                        hadSpinwheelUser: boolean;
+                        deletedBillCount: number;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
                          * @example 401
-                         * @example 404
-                         * @example 500
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
                          */
                         status: number;
                         /** @description A human-readable explanation specific to this occurrence */
