@@ -331,6 +331,133 @@ interface CABankAccountInput {
 }
 ```
 
+#### Link a US Bank Account with Plaid
+
+Rather than collecting raw account and routing numbers, link a US bank account through [Plaid Link](https://plaid.com/docs/link/). Plaid verifies account ownership, returns institution metadata, and — for ACH-eligible accounts — provisions the **funding source** required for [ACH onramp](#ach-onramp-direct-debit).
+
+> **Plaid Link must be enabled on your integration.** It is gated per account. If `createLinkToken()` returns `403`, contact Spritz to enable it, and fall back to [Create US Bank Account](#create-us-bank-account) in the meantime (see [Fall back to manual entry](#fall-back-to-manual-entry) below).
+
+Linking is a two-part flow: create a link token on your **server**, then run the Plaid Link UI on the **client**. The SDK is server-side only — only the Plaid Link UI runs in the browser.
+
+**1. Create a link token (server)**
+
+```typescript
+const { linkToken, hostedLinkUrl, expiration } = await client.bankAccount.createLinkToken()
+```
+
+| Field           | Type             | Description                                                  |
+| --------------- | ---------------- | ----------------------------------------------------------- |
+| `linkToken`     | `string`         | Token for initializing the Plaid Link SDK                   |
+| `hostedLinkUrl` | `string \| null` | Plaid-hosted linking URL (alternative to running the SDK)   |
+| `expiration`    | `string`         | Token expiry (ISO 8601)                                     |
+
+If a bank uses OAuth, pass the OAuth target as `redirectUri` (see [Handle OAuth redirects](#handle-oauth-redirects)):
+
+```typescript
+await client.bankAccount.createLinkToken({
+    // Web / iOS: an https:// return URL or iOS universal link
+    // Android: your package name (e.g. 'com.example.app')
+    redirectUri: 'https://app.example.com/plaid/oauth-return',
+})
+```
+
+**2. Run Plaid Link (client)**
+
+Hand the `linkToken` to the Plaid Link SDK ([React Native](https://plaid.com/docs/link/react-native/), [Web](https://plaid.com/docs/link/web/), [iOS](https://plaid.com/docs/link/ios/), [Android](https://plaid.com/docs/link/android/)). On success, send the public token and selected account IDs back to your server.
+
+React Native ([`react-native-plaid-link-sdk`](https://github.com/plaid/react-native-plaid-link-sdk) v11+):
+
+```typescript
+import { create, open } from 'react-native-plaid-link-sdk'
+
+create({
+    token: linkToken,
+    onSuccess: async (success) => {
+        await yourServer.completePlaidLink({
+            publicToken: success.publicToken,
+            accountIds: success.metadata.accounts.map((a) => a.id),
+            institutionId: success.metadata.institution?.id,
+            institutionName: success.metadata.institution?.name,
+        })
+    },
+    onExit: (exit) => {
+        if (exit.error) console.error('Plaid error:', exit.error)
+    },
+})
+
+open()
+```
+
+Web ([`react-plaid-link`](https://github.com/plaid/react-plaid-link) or the vanilla JS SDK):
+
+```typescript
+const handler = Plaid.create({
+    token: linkToken,
+    onSuccess: async (publicToken, metadata) => {
+        await yourServer.completePlaidLink({
+            publicToken,
+            accountIds: metadata.accounts.map((a) => a.id),
+            // Web SDK uses institution_id; the RN SDK uses id
+            institutionId: metadata.institution?.institution_id,
+            institutionName: metadata.institution?.name,
+        })
+    },
+})
+handler.open()
+```
+
+**3. Complete linking (server)**
+
+```typescript
+const { bankAccounts } = await client.bankAccount.completeLinking({
+    publicToken,
+    accountIds,
+    institutionId,
+    institutionName,
+})
+
+// A funding source is provisioned for ACH-eligible accounts. Its presence is
+// the signal that the account can be used for ACH onramp.
+const onrampable = bankAccounts.find((b) => b.fundingSourceId)
+```
+
+`completeLinking` exchanges the public token, stores the linked bank account(s), and provisions a funding source for ACH-eligible accounts. A `null` `fundingSourceId` means the account is usable for off-ramp only. See the [ACH Onramp Integration Guide](docs/ach-onramp-guide.md#bank-accounts-vs-funding-sources) for the bank-account-vs-funding-source model.
+
+##### Handle OAuth redirects
+
+Some institutions send the user out to their bank's OAuth page and redirect back when auth completes. Because Spritz creates the link token, the redirect targets must be **allowlisted on Spritz's Plaid account** — send them to Spritz before going live:
+
+| Platform | What to register                                                                                     |
+| -------- | ---------------------------------------------------------------------------------------------------- |
+| Web      | An HTTPS return URL on a domain you control (e.g. `https://app.example.com/plaid/oauth-return`)       |
+| iOS      | The universal link URL you receive the redirect on — custom URL schemes (`yourapp://`) are not accepted |
+| Android  | Your app's package name (e.g. `com.example.app`)                                                     |
+
+Pass the same value as `redirectUri` when creating the link token. The client-side work to resume the flow differs per platform (web requires re-initializing Link with `receivedRedirectUri`; native iOS/Android forward the redirect into the in-memory SDK). See [Handle OAuth redirects](docs/ach-onramp-guide.md#1c-handle-oauth-redirects) in the ACH Onramp guide for the full per-platform breakdown.
+
+##### Fall back to manual entry
+
+Plaid Link can be unavailable — it may not be enabled on your integration yet, `createLinkToken()` can fail, or the user may abandon or hit an error in the Link UI. Treat manual account/routing entry as a fallback so users can always add a bank account:
+
+```typescript
+import { BankAccountType, BankAccountSubType } from '@spritz-finance/api-client'
+
+try {
+    const { linkToken } = await client.bankAccount.createLinkToken()
+    // hand linkToken to Plaid Link on the client, then completeLinking(...)
+} catch {
+    // Plaid unavailable — collect account + routing numbers and create directly
+    const bankAccount = await client.bankAccount.create(BankAccountType.USBankAccount, {
+        accountNumber: '123456789',
+        routingNumber: '987654321',
+        subType: BankAccountSubType.Checking,
+        ownedByUser: true,
+    })
+}
+```
+
+A manually added account is immediately usable for **off-ramp**. **ACH on-ramp** additionally requires a funding source, and the Plaid link flow is what provisions it — so prefer Plaid Link whenever ACH onramp is in scope, and use manual entry as the off-ramp fallback.
+
 ### Debit Cards
 
 Supported networks: **Visa** and **Mastercard**.
