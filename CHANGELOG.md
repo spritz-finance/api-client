@@ -1,5 +1,11 @@
 # @spritz-finance/api-client
 
+## 0.7.5
+
+### Patch Changes
+
+- Add `client.offramp.refund(offRampId, input)` for refunding failed off-ramp payments. Pass `{ method: 'account', accountId }` to reissue the payout to a different bank account, omit `accountId` to reuse the off-ramp's original destination, or pass `{ method: 'credit' }` to return the funds to the user's Spritz balance. Only failed Modern Treasury and Checkbook off-ramps are refundable. Regenerated REST types against the platform OpenAPI spec. Backport of the main line.
+
 ## 0.7.4
 
 ### Patch Changes
