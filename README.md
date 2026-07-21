@@ -345,11 +345,11 @@ Linking is a two-part flow: create a link token on your **server**, then run the
 const { linkToken, hostedLinkUrl, expiration } = await client.bankAccount.createLinkToken()
 ```
 
-| Field           | Type             | Description                                                  |
-| --------------- | ---------------- | ----------------------------------------------------------- |
-| `linkToken`     | `string`         | Token for initializing the Plaid Link SDK                   |
-| `hostedLinkUrl` | `string \| null` | Plaid-hosted linking URL (alternative to running the SDK)   |
-| `expiration`    | `string`         | Token expiry (ISO 8601)                                     |
+| Field           | Type             | Description                                               |
+| --------------- | ---------------- | --------------------------------------------------------- |
+| `linkToken`     | `string`         | Token for initializing the Plaid Link SDK                 |
+| `hostedLinkUrl` | `string \| null` | Plaid-hosted linking URL (alternative to running the SDK) |
+| `expiration`    | `string`         | Token expiry (ISO 8601)                                   |
 
 If a bank uses OAuth, pass the OAuth target as `redirectUri` (see [Handle OAuth redirects](#handle-oauth-redirects)):
 
@@ -427,11 +427,11 @@ const onrampable = bankAccounts.find((b) => b.fundingSourceId)
 
 Some institutions send the user out to their bank's OAuth page and redirect back when auth completes. Because Spritz creates the link token, the redirect targets must be **allowlisted on Spritz's Plaid account** — send them to Spritz before going live:
 
-| Platform | What to register                                                                                     |
-| -------- | ---------------------------------------------------------------------------------------------------- |
-| Web      | An HTTPS return URL on a domain you control (e.g. `https://app.example.com/plaid/oauth-return`)       |
+| Platform | What to register                                                                                        |
+| -------- | ------------------------------------------------------------------------------------------------------- |
+| Web      | An HTTPS return URL on a domain you control (e.g. `https://app.example.com/plaid/oauth-return`)         |
 | iOS      | The universal link URL you receive the redirect on — custom URL schemes (`yourapp://`) are not accepted |
-| Android  | Your app's package name (e.g. `com.example.app`)                                                     |
+| Android  | Your app's package name (e.g. `com.example.app`)                                                        |
 
 Pass the same value as `redirectUri` when creating the link token. The client-side work to resume the flow differs per platform (web requires re-initializing Link with `receivedRedirectUri`; native iOS/Android forward the redirect into the in-memory SDK). See [Handle OAuth redirects](docs/ach-onramp-guide.md#1c-handle-oauth-redirects) in the ACH Onramp guide for the full per-platform breakdown.
 

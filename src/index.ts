@@ -88,6 +88,7 @@ export type {
     OnRampListQuery,
     OnRampDetail,
 } from './modules/onrampPayment/onrampPaymentService'
+export type { OffRampRefundRequest, OffRampRefundResponse } from './modules/offramp/offrampService'
 export type {
     paths as RestApiPaths,
     operations as RestApiOperations,
