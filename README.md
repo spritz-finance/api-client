@@ -82,6 +82,7 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
     - [Transaction Fees](#transaction-fees)
     - [Retrieving Payments](#retrieving-payments)
     - [Payment Limits](#payment-limits)
+    - [Refunding a Payment](#refunding-a-payment)
 - [On-ramp](#on-ramp)
     - [Prerequisites](#prerequisites)
     - [Checking User Access](#checking-user-access)
@@ -691,6 +692,33 @@ const limits = await client.payment.getPaymentLimits(account.id)
   dailyRemainingVolume: 150000,
 }
 ```
+
+### Refunding a Payment
+
+A **failed** off-ramp payment can be refunded, either by returning the funds to the user's Spritz balance or by reissuing the payout to a bank account.
+
+```typescript
+// Reissue the payout to a different bank account
+await client.offramp.refund(offRampId, {
+    method: 'account',
+    accountId: '6a5f75585a936eb477232f05',
+})
+
+// Reissue to the off-ramp's original destination account
+await client.offramp.refund(offRampId, { method: 'account' })
+
+// Return the funds to the user's Spritz balance
+await client.offramp.refund(offRampId, { method: 'credit' })
+```
+
+| Field       | Type                    | Description                                                                              |
+| ----------- | ----------------------- | ---------------------------------------------------------------------------------------- |
+| `method`    | `'account' \| 'credit'` | `account` reissues the payout to a bank account; `credit` returns funds to the balance   |
+| `accountId` | `string` (optional)     | Only with `method: 'account'`. Omit to reuse the off-ramp's original destination account |
+
+Only failed off-ramps settled through Modern Treasury or Checkbook are refundable — anything else is rejected. The response is the updated off-ramp record, with `status` moving to `refunded`.
+
+> **Retries:** the platform recommends an `Idempotency-Key` header so a retried request replays the original response rather than returning a stale "not refundable" error. The client does not currently send one, so if a refund request times out, re-fetch the off-ramp and check its `status` before issuing another.
 
 ## On-ramp
 
