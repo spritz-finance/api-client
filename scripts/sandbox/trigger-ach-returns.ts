@@ -40,7 +40,9 @@ async function main() {
     const sources = await client.fundingSource.list()
     const source = sources.find((s) => s.status === 'active') ?? sources[0]
     if (!source) {
-        console.error('No funding sources found for this user. Link and verify a bank account first.')
+        console.error(
+            'No funding sources found for this user. Link and verify a bank account first.'
+        )
         process.exit(1)
     }
     if (source.status !== 'active') {
