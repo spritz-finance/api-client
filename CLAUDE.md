@@ -33,6 +33,7 @@ When `main` ships a breaking change but we still need to patch an older minor (e
 
 - A breaking change is about to land on `main` AND at least one consumer can't upgrade soon.
 - Cut the branch _before_ merging the breaking change, from the last commit of the soon-to-be-old minor (the `Version Packages` merge commit for that version is the canonical fork point).
+- A minor having published versions does NOT mean it's maintained. `npm view @spritz-finance/api-client dist-tags` is the authority: a line is only being consumed if it has a `legacy-0.X` tag. Absent that, those versions were ordinary main-line releases that a later minor superseded — don't cut a branch for them.
 
 ### Branch naming
 
@@ -42,9 +43,10 @@ When `main` ships a breaking change but we still need to patch an older minor (e
 ### Authoring a patch on a maintenance branch
 
 1. Check out `release/0.X`, branch off, apply the fix.
-2. **Hand-bump `package.json`** (`0.7.1` → `0.7.2`). Maintenance branches do NOT use changesets — changesets' `baseBranch` is `main` and trying to share its machinery across branches breaks. `package.json` is the source of truth here.
-3. No `.changeset/*.md` file. CHANGELOG can be hand-edited if you want a record (optional).
-4. PR against `release/0.X`, get review, merge.
+2. **Hand-bump `package.json`** (`0.7.1` → `0.7.2`). Maintenance branches do NOT use changesets to determine the version — changesets' `baseBranch` is `main` and trying to share its machinery across branches breaks. `package.json` is the source of truth here.
+3. **Add an empty changeset** (`yarn changeset --empty`). The required `changeset` PR check runs against `release/0.X` too and fails the PR without one. It is never consumed — `release/0.X` never runs `version-packages` — it exists purely to satisfy the check, so say so in the body along with the version being shipped.
+4. **Hand-edit `CHANGELOG.md`** with an entry for the new version. Follow the existing entries: `## 0.7.5` → `### Patch Changes` → a bullet describing the change, noting it's a backport.
+5. PR against `release/0.X`, get review, merge.
 
 ### Publishing
 
