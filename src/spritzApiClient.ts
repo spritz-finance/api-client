@@ -9,6 +9,7 @@ import { DepositService } from './modules/deposit/depositService'
 import { FundingSourceService } from './modules/fundingSource/fundingSourceService'
 import { InstitutionService } from './modules/institution/institutionService'
 import { SandboxService } from './modules/sandbox/sandboxService'
+import { OfframpService } from './modules/offramp/offrampService'
 import { OnrampPaymentService } from './modules/onrampPayment/onrampPaymentService'
 import { OnrampService } from './modules/onramp/onrampService'
 import { VirtualAccountsService } from './modules/virtualAccounts/virtualAccountsService'
@@ -70,6 +71,7 @@ export class SpritzApiClient {
     public payment: PaymentService
     public onrampPayment: OnrampPaymentService
     public onramp: OnrampService
+    public offramp: OfframpService
     public virtualAccounts: VirtualAccountsService
     public virtualCard: VirtualCardService
     public bill: BillService
@@ -141,6 +143,7 @@ export class SpritzApiClient {
         this.payment = new PaymentService(this.client)
         this.onrampPayment = new OnrampPaymentService(this.client)
         this.onramp = new OnrampService(this.client)
+        this.offramp = new OfframpService(this.client)
         this.virtualAccounts = new VirtualAccountsService(this.client)
         this.virtualCard = new VirtualCardService(this.client)
         this.bill = new BillService(this.client)

@@ -187,6 +187,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/off-ramps/{offRampId}/refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refund an off-ramp
+         * @description Refunds a **failed** off-ramp payment. Choose how the funds are returned:
+         *
+         *     - `credit`: Return the funds to the user's Spritz balance.
+         *     - `account`: Reissue the payout to a bank account — pass `accountId`, or omit it to reuse the original destination account.
+         *
+         *     Only failed Modern Treasury and Checkbook off-ramps can be refunded.
+         *
+         *     **Recommended:** send an `Idempotency-Key` header (a unique key per refund, reused verbatim on retries) so a timed-out request that is retried replays the original response instead of returning a stale "not refundable" error.
+         */
+        post: operations["postV1Off-rampsByOffRampIdRefund"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/on-ramps/": {
         parameters: {
             query?: never;
@@ -952,6 +979,26 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v1/debit-cards/{cardId}/cardholder-info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Complete debit card details
+         * @description Supplies the cardholder name and billing address for an existing debit card that is missing them (recapture). Clears the card's action_required requirement.
+         */
+        patch: operations["patchV1Debit-cardsByCardIdCardholder-info"];
         trace?: never;
     };
     "/v1/integrator/connect/sessions": {
@@ -2875,7 +2922,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description Creation timestamp
-                         * @example 2026-07-06T05:58:52.047Z
+                         * @example 2026-07-21T13:34:16.847Z
                          */
                         createdAt?: string;
                     }[];
@@ -3004,7 +3051,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6a4b441ba9931c9d1ac48c80
+                     * @example 6a5f75585a936eb477232f02
                      */
                     accountId: string;
                     /**
@@ -3032,7 +3079,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6a4b441ba9931c9d1ac48c80
+                     * @example 6a5f75585a936eb477232f02
                      */
                     accountId: string;
                     /**
@@ -3060,7 +3107,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6a4b441ba9931c9d1ac48c80
+                     * @example 6a5f75585a936eb477232f02
                      */
                     accountId: string;
                     /**
@@ -3107,7 +3154,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-07-06T05:58:51.973Z
+                         * @example 2026-07-21T13:34:16.781Z
                          */
                         createdAt: string;
                         /** @description What the user pays — total USD cost and token used. */
@@ -3146,7 +3193,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6a4b441ba9931c9d1ac48c81
+                             * @example 6a5f75585a936eb477232f03
                              */
                             accountId: string;
                         };
@@ -3343,7 +3390,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-07-06T05:58:51.973Z
+                         * @example 2026-07-21T13:34:16.781Z
                          */
                         createdAt: string;
                         /** @description What the user pays — total USD cost and token used. */
@@ -3382,7 +3429,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6a4b441ba9931c9d1ac48c81
+                             * @example 6a5f75585a936eb477232f03
                              */
                             accountId: string;
                         };
@@ -3798,7 +3845,7 @@ export interface operations {
     "getV1Off-ramps": {
         parameters: {
             query?: {
-                limit?: string | number;
+                limit?: number;
                 cursor?: string;
                 status?: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
                 chain?: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
@@ -3865,7 +3912,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6a4b441ba9931c9d1ac48c82
+                                 * @example 6a5f75585a936eb477232f04
                                  */
                                 accountId: string;
                                 /**
@@ -4112,7 +4159,306 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6a4b441ba9931c9d1ac48c82
+                             * @example 6a5f75585a936eb477232f04
+                             */
+                            accountId: string;
+                            /**
+                             * @description Display name of the destination account
+                             * @example Chase Checking ••4567
+                             */
+                            accountName: string | null;
+                            /**
+                             * @description Fiat delivery rail.
+                             *
+                             *     - `ach_standard`: ACH bank transfer, next business day.
+                             *     - `ach_same_day`: ACH same-day transfer, delivered same business day.
+                             *     - `rtp`: Real-time payment, seconds, 24/7.
+                             *     - `wire`: Wire transfer, same/next day.
+                             *     - `eft`: Electronic funds transfer, 1-2 business days.
+                             *     - `sepa`: SEPA transfer (EU), 1-2 business days.
+                             *     - `faster_payments`: UK Faster Payments, near-instant.
+                             *     - `push_to_card`: Push to debit card, minutes.
+                             *     - `bill_pay`: Bill payment rail.
+                             *     - `card_deposit`: Deposit to crypto card.
+                             * @example ach_standard
+                             */
+                            rail: ("ach_standard" | null) | ("ach_same_day" | null) | ("rtp" | null) | ("wire" | null) | ("eft" | null) | ("sepa" | null) | ("faster_payments" | null) | ("push_to_card" | null) | ("bill_pay" | null) | ("card_deposit" | null);
+                        };
+                        /**
+                         * @description Type of fiat destination.
+                         *
+                         *     - `bank_account`: Bank account (includes debit card destinations).
+                         *     - `bill`: Bill payment.
+                         *     - `crypto_card`: Crypto card deposit.
+                         * @example bank_account
+                         */
+                        fiatDestination: ("bank_account" | null) | ("bill" | null) | ("crypto_card" | null);
+                        fees: {
+                            /**
+                             * @description Fee amount
+                             * @example 1.25
+                             */
+                            amount: string;
+                            /**
+                             * @description Fee currency code
+                             * @example USD
+                             */
+                            currency: string;
+                        } | null;
+                        transaction: {
+                            /**
+                             * @description Blockchain transaction hash
+                             * @example 0xabc123...
+                             */
+                            hash: string | null;
+                            /**
+                             * @description Block explorer transaction URL
+                             * @example https://etherscan.io/tx/0xabc123...
+                             */
+                            explorerUrl: string | null;
+                        } | null;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    "postV1Off-rampsByOffRampIdRefund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                offRampId: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * @description How to refund the off-ramp.
+         *
+         *     - `credit`: Return the funds to the user's Spritz balance.
+         *     - `account`: Reissue the payout to a bank account (`accountId`, or the original account if omitted).
+         */
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Return the funds to the user's Spritz balance as credit.
+                     * @enum {string}
+                     */
+                    method: "credit";
+                } | {
+                    /**
+                     * @description Reissue the payout to a bank account.
+                     * @enum {string}
+                     */
+                    method: "account";
+                    /**
+                     * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
+                     * @example 6a5f75585a936eb477232f05
+                     */
+                    accountId?: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    /**
+                     * @description Return the funds to the user's Spritz balance as credit.
+                     * @enum {string}
+                     */
+                    method: "credit";
+                } | {
+                    /**
+                     * @description Reissue the payout to a bank account.
+                     * @enum {string}
+                     */
+                    method: "account";
+                    /**
+                     * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
+                     * @example 6a5f75585a936eb477232f05
+                     */
+                    accountId?: string;
+                };
+                "multipart/form-data": {
+                    /**
+                     * @description Return the funds to the user's Spritz balance as credit.
+                     * @enum {string}
+                     */
+                    method: "credit";
+                } | {
+                    /**
+                     * @description Reissue the payout to a bank account.
+                     * @enum {string}
+                     */
+                    method: "account";
+                    /**
+                     * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
+                     * @example 6a5f75585a936eb477232f05
+                     */
+                    accountId?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Unique off-ramp identifier
+                         * @example offramp_xyz789
+                         */
+                        id: string;
+                        /** @enum {string} */
+                        status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
+                        /** Format: date-time */
+                        createdAt: string;
+                        /**
+                         * Format: date-time
+                         * @description When the off-ramp was completed. Null until status is completed.
+                         */
+                        completedAt: string | null;
+                        /** @description What the user paid — crypto asset and chain. */
+                        input: {
+                            /**
+                             * @description Crypto amount sent
+                             * @example 0.25
+                             */
+                            amount: string;
+                            /**
+                             * @description Token symbol
+                             * @example USDC
+                             */
+                            token: string;
+                            /**
+                             * @description Blockchain network the crypto transaction occurs on
+                             * @example ethereum
+                             */
+                            chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
+                        } | null;
+                        /** @description What the destination receives — fiat delivery details. */
+                        output: {
+                            /**
+                             * @description Fiat amount delivered
+                             * @example 100.00
+                             */
+                            amount: string;
+                            /**
+                             * @description Fiat currency code
+                             * @example USD
+                             */
+                            currency: string;
+                            /**
+                             * @description Destination account ID
+                             * @example 6a5f75585a936eb477232f04
                              */
                             accountId: string;
                             /**
@@ -4287,7 +4633,7 @@ export interface operations {
     "getV1On-ramps": {
         parameters: {
             query?: {
-                limit?: string | number;
+                limit?: number;
                 cursor?: string;
                 network?: "ethereum" | "polygon" | "base" | "arbitrum" | "avalanche" | "optimism" | "solana" | "tron" | "bitcoin";
                 token?: string;
@@ -5108,6 +5454,11 @@ export interface operations {
                          */
                         status: "active" | "pending" | "inactive" | "rejected";
                         /**
+                         * @description Why the account is not usable, or null when no reason applies.
+                         * @example account_invalid
+                         */
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        /**
                          * @description Name of the account holder
                          * @example John Doe
                          */
@@ -5175,6 +5526,11 @@ export interface operations {
                          * @example active
                          */
                         status: "active" | "pending" | "inactive" | "rejected";
+                        /**
+                         * @description Why the account is not usable, or null when no reason applies.
+                         * @example account_invalid
+                         */
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -5249,6 +5605,11 @@ export interface operations {
                          */
                         status: "active" | "pending" | "inactive" | "rejected";
                         /**
+                         * @description Why the account is not usable, or null when no reason applies.
+                         * @example account_invalid
+                         */
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        /**
                          * @description Name of the account holder
                          * @example John Doe
                          */
@@ -5311,6 +5672,11 @@ export interface operations {
                          * @example active
                          */
                         status: "active" | "pending" | "inactive" | "rejected";
+                        /**
+                         * @description Why the account is not usable, or null when no reason applies.
+                         * @example account_invalid
+                         */
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -6207,6 +6573,11 @@ export interface operations {
                          */
                         status: "active" | "pending" | "inactive" | "rejected";
                         /**
+                         * @description Why the account is not usable, or null when no reason applies.
+                         * @example account_invalid
+                         */
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        /**
                          * @description Name of the account holder
                          * @example John Doe
                          */
@@ -6274,6 +6645,11 @@ export interface operations {
                          * @example active
                          */
                         status: "active" | "pending" | "inactive" | "rejected";
+                        /**
+                         * @description Why the account is not usable, or null when no reason applies.
+                         * @example account_invalid
+                         */
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -6348,6 +6724,11 @@ export interface operations {
                          */
                         status: "active" | "pending" | "inactive" | "rejected";
                         /**
+                         * @description Why the account is not usable, or null when no reason applies.
+                         * @example account_invalid
+                         */
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        /**
                          * @description Name of the account holder
                          * @example John Doe
                          */
@@ -6410,6 +6791,11 @@ export interface operations {
                          * @example active
                          */
                         status: "active" | "pending" | "inactive" | "rejected";
+                        /**
+                         * @description Why the account is not usable, or null when no reason applies.
+                         * @example account_invalid
+                         */
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -6608,6 +6994,11 @@ export interface operations {
                          */
                         status: "active" | "pending" | "inactive" | "rejected";
                         /**
+                         * @description Why the account is not usable, or null when no reason applies.
+                         * @example account_invalid
+                         */
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        /**
                          * @description Name of the account holder
                          * @example John Doe
                          */
@@ -6675,6 +7066,11 @@ export interface operations {
                          * @example active
                          */
                         status: "active" | "pending" | "inactive" | "rejected";
+                        /**
+                         * @description Why the account is not usable, or null when no reason applies.
+                         * @example account_invalid
+                         */
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -6749,6 +7145,11 @@ export interface operations {
                          */
                         status: "active" | "pending" | "inactive" | "rejected";
                         /**
+                         * @description Why the account is not usable, or null when no reason applies.
+                         * @example account_invalid
+                         */
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        /**
                          * @description Name of the account holder
                          * @example John Doe
                          */
@@ -6811,6 +7212,11 @@ export interface operations {
                          * @example active
                          */
                         status: "active" | "pending" | "inactive" | "rejected";
+                        /**
+                         * @description Why the account is not usable, or null when no reason applies.
+                         * @example account_invalid
+                         */
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -7289,7 +7695,7 @@ export interface operations {
                          * @description Why the funding source is not active, or null when no reason applies.
                          * @example ownership_mismatch
                          */
-                        statusReason: ("ownership_mismatch" | null) | ("ownership_review_required" | null) | ("user_not_verified" | null) | ("duplicate_bank_account" | null) | ("returned" | null) | ("risk_blocked" | null) | ("manually_disabled" | null);
+                        statusReason: ("ownership_mismatch" | null) | ("ownership_review_required" | null) | ("user_not_verified" | null) | ("duplicate_bank_account" | null) | ("returned" | null) | ("risk_blocked" | null) | ("rerouted" | null) | ("manually_disabled" | null);
                         /**
                          * @description Ownership match result for the linked bank account, or null when unavailable.
                          * @example matched
@@ -7656,7 +8062,7 @@ export interface operations {
                          * @description Why the funding source is not active, or null when no reason applies.
                          * @example ownership_mismatch
                          */
-                        statusReason: ("ownership_mismatch" | null) | ("ownership_review_required" | null) | ("user_not_verified" | null) | ("duplicate_bank_account" | null) | ("returned" | null) | ("risk_blocked" | null) | ("manually_disabled" | null);
+                        statusReason: ("ownership_mismatch" | null) | ("ownership_review_required" | null) | ("user_not_verified" | null) | ("duplicate_bank_account" | null) | ("returned" | null) | ("risk_blocked" | null) | ("rerouted" | null) | ("manually_disabled" | null);
                         /**
                          * @description Ownership match result for the linked bank account, or null when unavailable.
                          * @example matched
@@ -8518,6 +8924,11 @@ export interface operations {
                              */
                             status: "active" | "pending" | "inactive" | "rejected";
                             /**
+                             * @description Why the account is not usable, or null when no reason applies.
+                             * @example account_invalid
+                             */
+                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                            /**
                              * @description Name of the account holder
                              * @example John Doe
                              */
@@ -8585,6 +8996,11 @@ export interface operations {
                              * @example active
                              */
                             status: "active" | "pending" | "inactive" | "rejected";
+                            /**
+                             * @description Why the account is not usable, or null when no reason applies.
+                             * @example account_invalid
+                             */
+                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
                             /**
                              * @description Name of the account holder
                              * @example John Doe
@@ -8659,6 +9075,11 @@ export interface operations {
                              */
                             status: "active" | "pending" | "inactive" | "rejected";
                             /**
+                             * @description Why the account is not usable, or null when no reason applies.
+                             * @example account_invalid
+                             */
+                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                            /**
                              * @description Name of the account holder
                              * @example John Doe
                              */
@@ -8721,6 +9142,11 @@ export interface operations {
                              * @example active
                              */
                             status: "active" | "pending" | "inactive" | "rejected";
+                            /**
+                             * @description Why the account is not usable, or null when no reason applies.
+                             * @example account_invalid
+                             */
+                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
                             /**
                              * @description Name of the account holder
                              * @example John Doe
@@ -9301,7 +9727,7 @@ export interface operations {
                             status: "information_required" | "challenge_required";
                             challenge?: {
                                 questions: {
-                                    id: string | null;
+                                    id: string;
                                     prompt: string | null;
                                     options: {
                                         id: string;
@@ -9433,7 +9859,7 @@ export interface operations {
                             status: "information_required" | "challenge_required";
                             challenge?: {
                                 questions: {
-                                    id: string | null;
+                                    id: string;
                                     prompt: string | null;
                                     options: {
                                         id: string;
@@ -9576,7 +10002,7 @@ export interface operations {
                             status: "information_required" | "challenge_required";
                             challenge?: {
                                 questions: {
-                                    id: string | null;
+                                    id: string;
                                     prompt: string | null;
                                     options: {
                                         id: string;
@@ -10493,7 +10919,7 @@ export interface operations {
     getV1CardsByCardIdTransactions: {
         parameters: {
             query?: {
-                limit?: string | number;
+                limit?: number;
                 cursor?: string;
                 sort?: "desc" | "asc";
                 status?: "pending" | "posted" | "declined" | "reversed" | "expired";
@@ -11382,11 +11808,11 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique identifier for the debit card
-                             * @example 6a4b441ca9931c9d1ac48c86
+                             * @example 6a5f75585a936eb477232f09
                              */
                             id: string;
                             /** @enum {string} */
-                            status: "active" | "pending" | "inactive" | "rejected";
+                            status: "active" | "pending" | "inactive" | "rejected" | "action_required";
                             /** @enum {string} */
                             network: "visa" | "mastercard";
                             /**
@@ -11406,6 +11832,27 @@ export interface operations {
                              * @example true
                              */
                             isTokenized: boolean;
+                            /** @description Actions the user must complete before the card can be used for payouts. Present (non-empty) when status is action_required. */
+                            requirements?: {
+                                /**
+                                 * @description The action the user must complete to enable payouts
+                                 * @example card_details
+                                 */
+                                type: string;
+                                /**
+                                 * @description Fields the user must supply to satisfy the requirement
+                                 * @example [
+                                 *       "cardholder_name",
+                                 *       "billing_address"
+                                 *     ]
+                                 */
+                                fields?: string[];
+                                /**
+                                 * @description Human-readable explanation of the requirement
+                                 * @example Cardholder name and billing address are required to enable payouts.
+                                 */
+                                reason?: string;
+                            }[];
                             /** Format: date-time */
                             createdAt: string;
                         }[];
@@ -11773,11 +12220,11 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6a4b441ca9931c9d1ac48c86
+                         * @example 6a5f75585a936eb477232f09
                          */
                         id: string;
                         /** @enum {string} */
-                        status: "active" | "pending" | "inactive" | "rejected";
+                        status: "active" | "pending" | "inactive" | "rejected" | "action_required";
                         /** @enum {string} */
                         network: "visa" | "mastercard";
                         /**
@@ -11797,6 +12244,27 @@ export interface operations {
                          * @example true
                          */
                         isTokenized: boolean;
+                        /** @description Actions the user must complete before the card can be used for payouts. Present (non-empty) when status is action_required. */
+                        requirements?: {
+                            /**
+                             * @description The action the user must complete to enable payouts
+                             * @example card_details
+                             */
+                            type: string;
+                            /**
+                             * @description Fields the user must supply to satisfy the requirement
+                             * @example [
+                             *       "cardholder_name",
+                             *       "billing_address"
+                             *     ]
+                             */
+                            fields?: string[];
+                            /**
+                             * @description Human-readable explanation of the requirement
+                             * @example Cardholder name and billing address are required to enable payouts.
+                             */
+                            reason?: string;
+                        }[];
                         /** Format: date-time */
                         createdAt: string;
                     };
@@ -11933,11 +12401,11 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6a4b441ca9931c9d1ac48c86
+                         * @example 6a5f75585a936eb477232f09
                          */
                         id: string;
                         /** @enum {string} */
-                        status: "active" | "pending" | "inactive" | "rejected";
+                        status: "active" | "pending" | "inactive" | "rejected" | "action_required";
                         /** @enum {string} */
                         network: "visa" | "mastercard";
                         /**
@@ -11957,6 +12425,27 @@ export interface operations {
                          * @example true
                          */
                         isTokenized: boolean;
+                        /** @description Actions the user must complete before the card can be used for payouts. Present (non-empty) when status is action_required. */
+                        requirements?: {
+                            /**
+                             * @description The action the user must complete to enable payouts
+                             * @example card_details
+                             */
+                            type: string;
+                            /**
+                             * @description Fields the user must supply to satisfy the requirement
+                             * @example [
+                             *       "cardholder_name",
+                             *       "billing_address"
+                             *     ]
+                             */
+                            fields?: string[];
+                            /**
+                             * @description Human-readable explanation of the requirement
+                             * @example Cardholder name and billing address are required to enable payouts.
+                             */
+                            reason?: string;
+                        }[];
                         /** Format: date-time */
                         createdAt: string;
                     };
@@ -12092,6 +12581,322 @@ export interface operations {
                 content: {
                     "application/json": {
                         success: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                    };
+                };
+            };
+        };
+    };
+    "patchV1Debit-cardsByCardIdCardholder-info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cardId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Cardholder's first name
+                     * @example John
+                     */
+                    cardholderFirstName: string;
+                    /**
+                     * @description Cardholder's last name
+                     * @example Doe
+                     */
+                    cardholderLastName: string;
+                    billingAddress: {
+                        /**
+                         * @description Street address line 1
+                         * @example 123 Main St
+                         */
+                        line1: string;
+                        /**
+                         * @description Street address line 2
+                         * @example Apt 4
+                         */
+                        line2?: string;
+                        /**
+                         * @description City
+                         * @example New York
+                         */
+                        city: string;
+                        /**
+                         * @description State / province code
+                         * @example NY
+                         */
+                        state: string;
+                        /**
+                         * @description Postal / ZIP code
+                         * @example 10001
+                         */
+                        postalCode: string;
+                        /**
+                         * @description ISO 3166-1 alpha-2 country code
+                         * @example US
+                         */
+                        country: string;
+                    };
+                };
+                "application/x-www-form-urlencoded": {
+                    /**
+                     * @description Cardholder's first name
+                     * @example John
+                     */
+                    cardholderFirstName: string;
+                    /**
+                     * @description Cardholder's last name
+                     * @example Doe
+                     */
+                    cardholderLastName: string;
+                    billingAddress: {
+                        /**
+                         * @description Street address line 1
+                         * @example 123 Main St
+                         */
+                        line1: string;
+                        /**
+                         * @description Street address line 2
+                         * @example Apt 4
+                         */
+                        line2?: string;
+                        /**
+                         * @description City
+                         * @example New York
+                         */
+                        city: string;
+                        /**
+                         * @description State / province code
+                         * @example NY
+                         */
+                        state: string;
+                        /**
+                         * @description Postal / ZIP code
+                         * @example 10001
+                         */
+                        postalCode: string;
+                        /**
+                         * @description ISO 3166-1 alpha-2 country code
+                         * @example US
+                         */
+                        country: string;
+                    };
+                };
+                "multipart/form-data": {
+                    /**
+                     * @description Cardholder's first name
+                     * @example John
+                     */
+                    cardholderFirstName: string;
+                    /**
+                     * @description Cardholder's last name
+                     * @example Doe
+                     */
+                    cardholderLastName: string;
+                    billingAddress: {
+                        /**
+                         * @description Street address line 1
+                         * @example 123 Main St
+                         */
+                        line1: string;
+                        /**
+                         * @description Street address line 2
+                         * @example Apt 4
+                         */
+                        line2?: string;
+                        /**
+                         * @description City
+                         * @example New York
+                         */
+                        city: string;
+                        /**
+                         * @description State / province code
+                         * @example NY
+                         */
+                        state: string;
+                        /**
+                         * @description Postal / ZIP code
+                         * @example 10001
+                         */
+                        postalCode: string;
+                        /**
+                         * @description ISO 3166-1 alpha-2 country code
+                         * @example US
+                         */
+                        country: string;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Unique identifier for the debit card
+                         * @example 6a5f75585a936eb477232f09
+                         */
+                        id: string;
+                        /** @enum {string} */
+                        status: "active" | "pending" | "inactive" | "rejected" | "action_required";
+                        /** @enum {string} */
+                        network: "visa" | "mastercard";
+                        /**
+                         * @description Last 4 digits of card number
+                         * @example 1111
+                         */
+                        cardNumberLast4: string;
+                        /** @example 12 */
+                        expiryMonth: number;
+                        /** @example 2027 */
+                        expiryYear: number;
+                        label?: string;
+                        /** @enum {string} */
+                        currency: "USD" | "CAD" | "EUR" | "GBP";
+                        /**
+                         * @description Whether this card has been tokenized via Evervault for secure storage
+                         * @example true
+                         */
+                        isTokenized: boolean;
+                        /** @description Actions the user must complete before the card can be used for payouts. Present (non-empty) when status is action_required. */
+                        requirements?: {
+                            /**
+                             * @description The action the user must complete to enable payouts
+                             * @example card_details
+                             */
+                            type: string;
+                            /**
+                             * @description Fields the user must supply to satisfy the requirement
+                             * @example [
+                             *       "cardholder_name",
+                             *       "billing_address"
+                             *     ]
+                             */
+                            fields?: string[];
+                            /**
+                             * @description Human-readable explanation of the requirement
+                             * @example Cardholder name and billing address are required to enable payouts.
+                             */
+                            reason?: string;
+                        }[];
+                        /** Format: date-time */
+                        createdAt: string;
                     };
                 };
             };
@@ -12787,7 +13592,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6a4b441ca9931c9d1ac48c8a
+                         * @example 6a5f75595a936eb477232f0d
                          */
                         userId: string;
                         /**
@@ -12803,7 +13608,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-07-06T06:58:52.241Z
+                         * @example 2026-07-21T14:34:17.046Z
                          */
                         expiresAt: string;
                     };
@@ -12966,7 +13771,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-07-06T05:58:52.240Z
+                         * @example 2026-07-21T13:34:17.045Z
                          */
                         createdAt: string;
                     };
@@ -13143,7 +13948,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description The internal ID of the newly created user
-                         * @example 6a4b441ca9931c9d1ac48c8c
+                         * @example 6a5f75595a936eb477232f0f
                          */
                         userId: string;
                         /**
@@ -13307,7 +14112,7 @@ export interface operations {
     "getV1IntegratorAch-debitReturns": {
         parameters: {
             query?: {
-                limit?: string | number;
+                limit?: number;
                 cursor?: string;
                 userId?: string;
                 userIds?: string;
@@ -13346,7 +14151,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6a4b441ca9931c9d1ac48c89
+                             * @example 6a5f75595a936eb477232f0c
                              */
                             userId: string;
                             /**
@@ -13522,7 +14327,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6a4b441ca9931c9d1ac48c89
+                         * @example 6a5f75595a936eb477232f0c
                          */
                         userId: string;
                         /**
@@ -13679,7 +14484,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a4b441ca9931c9d1ac48c8b
+                         * @example 6a5f75595a936eb477232f0e
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -13874,7 +14679,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a4b441ca9931c9d1ac48c8b
+                         * @example 6a5f75595a936eb477232f0e
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -14186,7 +14991,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a4b441ca9931c9d1ac48c8b
+                         * @example 6a5f75595a936eb477232f0e
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -14531,7 +15336,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-07-06T06:03:52.241Z
+                         * @example 2026-07-21T13:39:17.046Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -14666,7 +15471,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a4b441ca9931c9d1ac48c87
+                         * @example 6a5f75585a936eb477232f0a
                          */
                         id: string;
                         /**
@@ -14683,7 +15488,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-07-06T05:58:52.166Z
+                         * @example 2026-07-21T13:34:16.966Z
                          */
                         signedUpAt: string;
                         /**
@@ -15013,7 +15818,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a4b441ca9931c9d1ac48c87
+                         * @example 6a5f75585a936eb477232f0a
                          */
                         id: string;
                         /**
@@ -15030,7 +15835,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-07-06T05:58:52.166Z
+                         * @example 2026-07-21T13:34:16.966Z
                          */
                         signedUpAt: string;
                         /**
@@ -15425,7 +16230,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a4b441ca9931c9d1ac48c87
+                         * @example 6a5f75585a936eb477232f0a
                          */
                         id: string;
                         /**
@@ -15442,7 +16247,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-07-06T05:58:52.166Z
+                         * @example 2026-07-21T13:34:16.966Z
                          */
                         signedUpAt: string;
                         /**
@@ -15859,7 +16664,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:write")[];
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
                     /**
                      * Format: date-time
                      * @description ISO 8601 expiration timestamp
@@ -15868,7 +16673,7 @@ export interface operations {
                     name?: string;
                 };
                 "application/x-www-form-urlencoded": {
-                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:write")[];
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
                     /**
                      * Format: date-time
                      * @description ISO 8601 expiration timestamp
@@ -15877,7 +16682,7 @@ export interface operations {
                     name?: string;
                 };
                 "multipart/form-data": {
-                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:write")[];
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
                     /**
                      * Format: date-time
                      * @description ISO 8601 expiration timestamp
@@ -16313,7 +17118,7 @@ export interface operations {
             content: {
                 "application/json": {
                     userCode: string;
-                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:write")[];
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
                     /**
                      * Format: date-time
                      * @description ISO 8601 expiration timestamp
@@ -16323,7 +17128,7 @@ export interface operations {
                 };
                 "application/x-www-form-urlencoded": {
                     userCode: string;
-                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:write")[];
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
                     /**
                      * Format: date-time
                      * @description ISO 8601 expiration timestamp
@@ -16333,7 +17138,7 @@ export interface operations {
                 };
                 "multipart/form-data": {
                     userCode: string;
-                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:write")[];
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
                     /**
                      * Format: date-time
                      * @description ISO 8601 expiration timestamp
@@ -16910,7 +17715,7 @@ export interface operations {
                              * @description Token decimals
                              * @example 6
                              */
-                            decimals: string | number;
+                            decimals: number;
                             /**
                              * @description Decimal-formatted token balance
                              * @example 100.5
@@ -17067,17 +17872,17 @@ export interface operations {
                              */
                             totalBalanceUsd: string;
                             /** @description Distinct asset count at this point. */
-                            assetCount: string | number;
+                            assetCount: number;
                             /** @description Distinct chain count at this point. */
-                            chainCount: string | number;
+                            chainCount: number;
                             /** @description Total wallet count considered for this point. */
-                            walletCount: string | number;
+                            walletCount: number;
                             /** @description Number of wallets that were captured successfully. */
-                            capturedWalletCount: string | number;
+                            capturedWalletCount: number;
                             /** @description Number of wallets skipped because their chain is not yet supported. */
-                            unsupportedWalletCount: string | number;
+                            unsupportedWalletCount: number;
                             /** @description Number of wallets that failed to capture. */
-                            failedWalletCount: string | number;
+                            failedWalletCount: number;
                         } | null;
                         /** @description Oldest snapshot inside the requested range, or null when no snapshots exist. */
                         baseline: {
@@ -17101,17 +17906,17 @@ export interface operations {
                              */
                             totalBalanceUsd: string;
                             /** @description Distinct asset count at this point. */
-                            assetCount: string | number;
+                            assetCount: number;
                             /** @description Distinct chain count at this point. */
-                            chainCount: string | number;
+                            chainCount: number;
                             /** @description Total wallet count considered for this point. */
-                            walletCount: string | number;
+                            walletCount: number;
                             /** @description Number of wallets that were captured successfully. */
-                            capturedWalletCount: string | number;
+                            capturedWalletCount: number;
                             /** @description Number of wallets skipped because their chain is not yet supported. */
-                            unsupportedWalletCount: string | number;
+                            unsupportedWalletCount: number;
                             /** @description Number of wallets that failed to capture. */
-                            failedWalletCount: string | number;
+                            failedWalletCount: number;
                         } | null;
                         /**
                          * @description Simple USD balance delta between baseline and latest, formatted to two decimal places. Not P&L. Null when history is empty.
@@ -17145,17 +17950,17 @@ export interface operations {
                              */
                             totalBalanceUsd: string;
                             /** @description Distinct asset count at this point. */
-                            assetCount: string | number;
+                            assetCount: number;
                             /** @description Distinct chain count at this point. */
-                            chainCount: string | number;
+                            chainCount: number;
                             /** @description Total wallet count considered for this point. */
-                            walletCount: string | number;
+                            walletCount: number;
                             /** @description Number of wallets that were captured successfully. */
-                            capturedWalletCount: string | number;
+                            capturedWalletCount: number;
                             /** @description Number of wallets skipped because their chain is not yet supported. */
-                            unsupportedWalletCount: string | number;
+                            unsupportedWalletCount: number;
                             /** @description Number of wallets that failed to capture. */
-                            failedWalletCount: string | number;
+                            failedWalletCount: number;
                         }[];
                     };
                 };
@@ -17242,7 +18047,7 @@ export interface operations {
         parameters: {
             query: {
                 address: string;
-                limit?: string | number;
+                limit?: number;
                 cursor?: string;
             };
             header?: never;
@@ -17282,7 +18087,7 @@ export interface operations {
                              * @description Token decimals.
                              * @example 9
                              */
-                            decimals: string | number;
+                            decimals: number;
                             /**
                              * @description Decimal-formatted token amount in display units (not USD). Precision matches the token's decimals.
                              * @example 1.5
@@ -17782,13 +18587,13 @@ export interface operations {
                          * @description Estimated Solana network fee in lamports for the prepared message.
                          * @example 5000
                          */
-                        estimatedFeeLamports: string | number;
+                        estimatedFeeLamports: number;
                         /** @description Address lookup table accounts used by the v0 message. Empty when the message does not use lookup tables. */
                         addressLookupTableAddresses: string[];
                         /** @description Recent blockhash embedded in the prepared message. This blockhash is what makes the prepared message expire. */
                         blockhash: string;
                         /** @description Last Solana block height at which the prepared message can still be submitted. */
-                        lastValidBlockHeight: string | number;
+                        lastValidBlockHeight: number;
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp at which this prepared transaction expires. Solana blockhashes expire quickly; if submit fails with `TX_EXPIRED`, call prepare again and sign the new `messageBytes`.
@@ -19846,11 +20651,11 @@ export interface operations {
                                 /** @enum {string} */
                                 symbol: "USDC" | "UNKNOWN";
                                 mint: string;
-                                decimals: string | number;
+                                decimals: number;
                             };
                             receiptToken: {
                                 mint: string;
-                                decimals: string | number;
+                                decimals: number;
                             };
                             apy: {
                                 current: string | null;
@@ -19876,11 +20681,11 @@ export interface operations {
                             };
                             sharePrice: string | null;
                             tokensPerShare: string | null;
-                            numberOfHolders: (string | null) | (number | null);
+                            numberOfHolders: number | null;
                             fees: {
-                                performanceFeeBps: string | number;
-                                managementFeeBps: string | number;
-                                withdrawalPenaltyBps: string | number;
+                                performanceFeeBps: number;
+                                managementFeeBps: number;
+                                withdrawalPenaltyBps: number;
                             };
                             limits: {
                                 minDepositAmount: string;
@@ -20090,11 +20895,11 @@ export interface operations {
                             /** @enum {string} */
                             symbol: "USDC" | "UNKNOWN";
                             mint: string;
-                            decimals: string | number;
+                            decimals: number;
                         };
                         receiptToken: {
                             mint: string;
-                            decimals: string | number;
+                            decimals: number;
                         };
                         apy: {
                             current: string | null;
@@ -20120,11 +20925,11 @@ export interface operations {
                         };
                         sharePrice: string | null;
                         tokensPerShare: string | null;
-                        numberOfHolders: (string | null) | (number | null);
+                        numberOfHolders: number | null;
                         fees: {
-                            performanceFeeBps: string | number;
-                            managementFeeBps: string | number;
-                            withdrawalPenaltyBps: string | number;
+                            performanceFeeBps: number;
+                            managementFeeBps: number;
+                            withdrawalPenaltyBps: number;
                         };
                         limits: {
                             minDepositAmount: string;
@@ -20577,7 +21382,7 @@ export interface operations {
                                 /** @enum {string} */
                                 symbol: "USDC" | "UNKNOWN";
                                 mint: string | null;
-                                decimals: (string | null) | (number | null);
+                                decimals: number | null;
                             };
                             shares: {
                                 staked: string;
@@ -20781,7 +21586,7 @@ export interface operations {
                             depositToken: {
                                 symbol: "USDC" | "UNKNOWN";
                                 mint: string | null;
-                                decimals: (string | null) | (number | null);
+                                decimals: number | null;
                             };
                             shares: {
                                 staked: string;
@@ -22134,7 +22939,7 @@ export interface operations {
                             status: "information_required" | "challenge_required";
                             challenge?: {
                                 questions: {
-                                    id: string | null;
+                                    id: string;
                                     prompt: string | null;
                                     options: {
                                         id: string;
@@ -22299,7 +23104,7 @@ export interface operations {
                             status: "information_required" | "challenge_required";
                             challenge?: {
                                 questions: {
-                                    id: string | null;
+                                    id: string;
                                     prompt: string | null;
                                     options: {
                                         id: string;
@@ -22475,7 +23280,7 @@ export interface operations {
                             status: "information_required" | "challenge_required";
                             challenge?: {
                                 questions: {
-                                    id: string | null;
+                                    id: string;
                                     prompt: string | null;
                                     options: {
                                         id: string;
