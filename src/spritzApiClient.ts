@@ -95,7 +95,7 @@ export class SpritzApiClient {
     ) {
         if (apiKey === undefined && integrationKey === undefined) {
             throw new Error(
-                'The integrationKey or apiKey variable appears to be missing or empty. Please ensure you provide it, or when initializing the SpritzApiClient, opt for the integratorKey option.'
+                'The integrationKey or apiKey variable appears to be missing or empty. Please ensure you provide it, or when initializing the SpritzApiClient, opt for the integrationKey option.'
             )
         }
         if (integratorSecret && !integrationKey) {

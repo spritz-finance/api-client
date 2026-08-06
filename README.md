@@ -14,35 +14,42 @@ yarn add @spritz-finance/api-client
 
 ## Developer Access
 
-[Create one Developer workspace](https://console.spritz.finance) for the responsible
-business. An authorized person accepts the current Developer Terms and creates a
-Sandbox integrator key and one-time HMAC secret. Human developers and AI coding
-assistants use this same organization-owned credential model; there is no separate
-agent signup.
+[Create one Developer workspace](https://console.spritz.finance/register) as an
+individual or organization with a verified email. Initial registration does not ask for
+intended use; an authorized person provides it only when requesting Live Test. The
+individual, or a person authorized for the organization, accepts the current Developer
+Terms before Sandbox credential issuance. Human developers and AI coding assistants use
+this same Developer-owned credential model; there is no separate agent signup.
 
-Developer Access covers Sandbox and Live Test. Production is a separate
-commercial state with new agreements and credentials:
+The target Developer Access design covers Sandbox and Live Test. Production is a
+separate commercial state with new agreements and credentials:
 
-| State          | Purpose                                                                                      | Gate                                                                                  |
-| -------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| **Sandbox**    | Build against simulated users, verification, rails, and failures.                            | Developer Terms acceptance by an authorized person.                                   |
-| **Live Test**  | Validate a narrow real-money flow with your own funds/accounts or approved internal testers. | Preliminary business verification and written compliance approval.                    |
-| **Production** | Serve customers under an approved program.                                                   | Full business verification, production contracts, rail approval, and new credentials. |
+| State          | Purpose                                                                                                                | Gate                                                                                            |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Sandbox**    | Test simulated rails and fixtures Spritz identifies as available; availability varies by rail, capability, and region. | Developer Terms acceptance by the individual or an authorized person.                           |
+| **Live Test**  | Follow an approved narrow real-money test plan.                                                                        | An authorized person obtains approval, then Spritz separately issues an allowlisted credential. |
+| **Production** | Serve customers under an approved program.                                                                             | Full business verification, Production contracting, rail approval, and new credentials.         |
 
-Sandbox, Live Test, and Production credentials are separate. A credential is never
-promoted between environments. See the
+The target design requires separate Sandbox, Live Test, and Production credentials. A
+credential must never be promoted between environments. Live Test remains unavailable
+until its credential, allowlist, test-plan approval, server-cap, and replay controls are
+deployed and verified. See the
 [Developer Access guide](https://docs.spritz.finance/guides/developer-access) for the
 current gates and Live Test limits.
 
 This client does not expose `Environment.LiveTest` yet. Do not infer a Live Test host
 from a Sandbox or Production URL. The Developer Console must provide the approved
-credential and connection instructions after compliance approval; Sandbox remains the
-only self-serve development target in this release.
+credential and connection instructions after approval; Sandbox is the only planned
+self-serve development target in this release.
 
 If an AI coding assistant runs the tests, inject the Sandbox credential into an
 isolated process. Do not give the agent permission to print its environment or secret
-store. The CLI's End User device flow is for a person's own Spritz account and cannot
-replace integrator HMAC authentication. See the
+store. Pause for an authorized person to request and obtain Live Test approval. Resume
+only with the separately issued, allowlisted Live Test credential and approved test plan.
+No customer-facing, revenue-generating, production, or unapproved third-party activity.
+Stop before Production contracting or credential issuance. The CLI's End User device
+flow is for a person's own Spritz account and cannot replace integrator HMAC
+authentication. See the
 [AI agent guide](https://docs.spritz.finance/guides/agents).
 
 ## Sandbox quickstart
@@ -70,8 +77,8 @@ console.log(`Connected to ${profile.name} (${profile.id})`)
 ```
 
 This integrator-only call does not need an End User Bearer key and cannot move money.
-Continue with [Sandbox](#sandbox) to create synthetic users and exercise complete
-success and failure paths.
+Continue with [Sandbox](#sandbox) to create synthetic users and exercise the rails and
+fixtures Spritz identifies as available.
 
 ## Table of Contents
 
@@ -120,7 +127,7 @@ success and failure paths.
 Spritz uses two levels of authentication:
 
 - **Integration key** — identifies your application. Create the Sandbox key in the
-  [Developer Console](https://console.spritz.finance) after terms acceptance.
+  [Developer Console](https://console.spritz.finance/register) after terms acceptance.
 - **User API key** — scoped to a single user. Returned when you create a user.
 
 Keep integration credentials on your backend or in a secrets manager. Never put them
@@ -1019,11 +1026,13 @@ Use `Environment.Sandbox` for development and testing. The sandbox environment i
 value `staging` remains accepted as a deprecated compatibility alias; use `Sandbox`
 in all new code, configuration, logs, and documentation.
 
-Sandbox calls are simulated and use Sandbox-only credentials. Request a distinct Live
-Test credential from the Developer Console only when you need to validate a small
-real-money flow. Production requires full business verification, production
-contracts, operational approval, and newly issued Production credentials. Do not
-reuse or copy a Sandbox credential into another environment.
+Sandbox calls are simulated and use Sandbox-only credentials. Use only the rails and
+fixtures Spritz identifies as available; availability varies by rail, capability, and
+region. Pause for an authorized person to request and obtain Live Test approval. Resume
+only with the separately issued, allowlisted Live Test credential and approved test plan.
+No customer-facing, revenue-generating, production, or unapproved third-party activity.
+Stop before Production contracting or credential issuance. Do not reuse or copy a
+Sandbox credential into another environment.
 
 `Environment.LiveTest` is intentionally absent until Spritz publishes the Live Test
 data-plane contract. Never point a Live Test credential at a host selected by local
