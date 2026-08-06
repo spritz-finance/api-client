@@ -33,6 +33,11 @@ promoted between environments. See the
 [Developer Access guide](https://docs.spritz.finance/guides/developer-access) for the
 current gates and Live Test limits.
 
+This client does not expose `Environment.LiveTest` yet. Do not infer a Live Test host
+from a Sandbox or Production URL. The Developer Console must provide the approved
+credential and connection instructions after compliance approval; Sandbox remains the
+only self-serve development target in this release.
+
 <details>
 <summary>Building through an AI development agent?</summary>
 
@@ -1041,6 +1046,11 @@ Test credential from the Developer Console only when you need to validate a smal
 real-money flow. Production requires full business verification, production
 contracts, operational approval, and newly issued Production credentials. Do not
 reuse or copy a Sandbox credential into another environment.
+
+`Environment.LiveTest` is intentionally absent until Spritz publishes the Live Test
+data-plane contract. Never point a Live Test credential at a host selected by local
+guesswork; follow the server-attested instructions supplied with the approved
+credential.
 
 ### Bypassing KYC
 
