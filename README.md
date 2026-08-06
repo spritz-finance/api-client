@@ -14,10 +14,11 @@ yarn add @spritz-finance/api-client
 
 ## Developer Access
 
-[Create a Developer workspace](https://console.spritz.finance) before running the
-quickstart. An authorized person for the responsible business reviews and accepts the
-current Developer Terms, then creates Sandbox credentials in the Developer Console.
-Sandbox uses simulated rails and does not move real funds.
+[Create one Developer workspace](https://console.spritz.finance) for the responsible
+business. An authorized person accepts the current Developer Terms and creates a
+Sandbox integrator key and one-time HMAC secret. Human developers and AI coding
+assistants use this same organization-owned credential model; there is no separate
+agent signup.
 
 Developer Access covers Sandbox and Live Test. Production is a separate
 commercial state with new agreements and credentials:
@@ -38,67 +39,44 @@ from a Sandbox or Production URL. The Developer Console must provide the approve
 credential and connection instructions after compliance approval; Sandbox remains the
 only self-serve development target in this release.
 
-<details>
-<summary>Building through an AI development agent?</summary>
+If an AI coding assistant runs the tests, inject the Sandbox credential into an
+isolated process. Do not give the agent permission to print its environment or secret
+store. The CLI's End User device flow is for a person's own Spritz account and cannot
+replace integrator HMAC authentication. See the
+[AI agent guide](https://docs.spritz.finance/guides/agents).
 
-A person must create the workspace, accept the terms, and own the Sandbox credentials.
-Store the integration key and HMAC secret in an approved development secret manager and
-inject them only into an isolated test process; do not paste either value into a prompt.
-The current Spritz CLI device flow authorizes an individual Spritz account, not a
-Developer workspace, so it must not be substituted for integrator authentication. See
-the [AI agent guide](https://docs.spritz.finance/guides/agents).
+## Sandbox quickstart
 
-</details>
-
-## Quick Start
+Load both Sandbox values from a development secret manager. Do not paste the secret
+into source code, a prompt, or a committed `.env` file.
 
 ```typescript
-import {
-    SpritzApiClient,
-    Environment,
-    PaymentNetwork,
-    BankAccountType,
-    BankAccountSubType,
-} from '@spritz-finance/api-client'
+import { Environment, SpritzApiClient } from '@spritz-finance/api-client'
 
-// Initialize with your integration key
+function required(name: string): string {
+    const value = process.env[name]
+    if (!value) throw new Error(`Missing ${name}`)
+    return value
+}
+
 const client = SpritzApiClient.initialize({
     environment: Environment.Sandbox,
-    integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
+    integrationKey: required('SPRITZ_INTEGRATOR_KEY'),
+    integratorSecret: required('SPRITZ_INTEGRATOR_SECRET'),
 })
 
-// Create a user and set their API key
-const user = await client.user.create({ email: 'user@example.com' })
-client.setApiKey(user.apiKey)
-
-// Add a bank account
-const bankAccount = await client.bankAccount.create(BankAccountType.USBankAccount, {
-    accountNumber: '123456789',
-    routingNumber: '987654321',
-    name: 'My Checking Account',
-    ownedByUser: true,
-    subType: BankAccountSubType.Checking,
-})
-
-// Create a payment request
-const paymentRequest = await client.paymentRequest.create({
-    amount: 100,
-    accountId: bankAccount.id,
-    network: PaymentNetwork.Ethereum,
-})
-
-// Get transaction data for the blockchain payment
-const transactionData = await client.paymentRequest.getWeb3PaymentParams({
-    paymentRequest,
-    paymentTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
-})
-
-// Execute the blockchain transaction from the user's wallet
+const profile = await client.integrator.getProfile()
+console.log(`Connected to ${profile.name} (${profile.id})`)
 ```
+
+This integrator-only call does not need an End User Bearer key and cannot move money.
+Continue with [Sandbox](#sandbox) to create synthetic users and exercise complete
+success and failure paths.
 
 ## Table of Contents
 
 - [Developer Access](#developer-access)
+- [Sandbox quickstart](#sandbox-quickstart)
 - [Authentication](#authentication)
 - [Users](#users)
     - [Creating a User](#creating-a-user)

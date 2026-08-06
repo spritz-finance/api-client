@@ -1,4 +1,5 @@
-import { Environment, EnvironmentInput, normalizeEnvironment } from './env'
+import { Environment, normalizeEnvironment } from './env'
+import type { EnvironmentInput } from './env'
 import { SpritzClient } from './lib/client'
 import { isRunningInBrowser } from './lib/util'
 import { AchDebitReturnService } from './modules/achDebitReturn/achDebitReturnService'
@@ -8,6 +9,7 @@ import { DebitCardService } from './modules/debitCard/debitCardService'
 import { DepositService } from './modules/deposit/depositService'
 import { FundingSourceService } from './modules/fundingSource/fundingSourceService'
 import { InstitutionService } from './modules/institution/institutionService'
+import { IntegratorService } from './modules/integrator/integratorService'
 import { SandboxService } from './modules/sandbox/sandboxService'
 import { OfframpService } from './modules/offramp/offrampService'
 import { OnrampPaymentService } from './modules/onrampPayment/onrampPaymentService'
@@ -80,6 +82,7 @@ export class SpritzApiClient {
     public virtualCard: VirtualCardService
     public bill: BillService
     public institution: InstitutionService
+    public integrator: IntegratorService
     public sandbox: SandboxService
     public webhook: WebhookService
 
@@ -152,6 +155,7 @@ export class SpritzApiClient {
         this.virtualCard = new VirtualCardService(this.client)
         this.bill = new BillService(this.client)
         this.institution = new InstitutionService(this.client)
+        this.integrator = new IntegratorService(this.client)
         this.sandbox = new SandboxService(this.client)
         this.webhook = new WebhookService(this.client)
     }

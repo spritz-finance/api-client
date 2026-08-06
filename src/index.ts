@@ -66,6 +66,7 @@ export type {
     AchDebitReturnListResponse,
     AchDebitReturnListQuery,
 } from './modules/achDebitReturn/achDebitReturnService'
+export type { IntegratorProfile } from './modules/integrator/integratorService'
 export type {
     BankAccount,
     BankAccountList,
