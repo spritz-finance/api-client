@@ -12,6 +12,39 @@ npm install @spritz-finance/api-client
 yarn add @spritz-finance/api-client
 ```
 
+## Developer Access
+
+[Create a Developer workspace](https://console.spritz.finance) before running the
+quickstart. An authorized person for the responsible business reviews and accepts the
+current Developer Terms, then creates Sandbox credentials in the Developer Console.
+Sandbox uses simulated rails and does not move real funds.
+
+Developer Access covers Sandbox and Live Test. Production is a separate
+commercial state with new agreements and credentials:
+
+| State          | Purpose                                                                                      | Gate                                                                                  |
+| -------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| **Sandbox**    | Build against simulated users, verification, rails, and failures.                            | Developer Terms acceptance by an authorized person.                                   |
+| **Live Test**  | Validate a narrow real-money flow with your own funds/accounts or approved internal testers. | Preliminary business verification and written compliance approval.                    |
+| **Production** | Serve customers under an approved program.                                                   | Full business verification, production contracts, rail approval, and new credentials. |
+
+Sandbox, Live Test, and Production credentials are separate. A credential is never
+promoted between environments. See the
+[Developer Access guide](https://docs.spritz.finance/guides/developer-access) for the
+current gates and Live Test limits.
+
+<details>
+<summary>Building through an AI development agent?</summary>
+
+A person must create the workspace, accept the terms, and own the Sandbox credentials.
+Store the integration key and HMAC secret in an approved development secret manager and
+inject them only into an isolated test process; do not paste either value into a prompt.
+The current Spritz CLI device flow authorizes an individual Spritz account, not a
+Developer workspace, so it must not be substituted for integrator authentication. See
+the [AI agent guide](https://docs.spritz.finance/guides/agents).
+
+</details>
+
 ## Quick Start
 
 ```typescript
@@ -60,6 +93,7 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
 
 ## Table of Contents
 
+- [Developer Access](#developer-access)
 - [Authentication](#authentication)
 - [Users](#users)
     - [Creating a User](#creating-a-user)
@@ -102,8 +136,12 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
 
 Spritz uses two levels of authentication:
 
-- **Integration key** — identifies your application. Provided by Spritz.
+- **Integration key** — identifies your application. Create the Sandbox key in the
+  [Developer Console](https://console.spritz.finance) after terms acceptance.
 - **User API key** — scoped to a single user. Returned when you create a user.
+
+Keep integration credentials on your backend or in a secrets manager. Never put them
+in browser code, a mobile bundle, an AI prompt, or a committed configuration file.
 
 ```typescript
 import { SpritzApiClient, Environment } from '@spritz-finance/api-client'
@@ -993,6 +1031,16 @@ A standalone sandbox demo is available at `scripts/sandbox/ach-onramp.html`. Run
 ## Sandbox
 
 Use `Environment.Sandbox` for development and testing. The sandbox environment is available at `https://sandbox.spritz.finance`.
+
+`Environment.Sandbox` serializes to the canonical value `sandbox`. The legacy raw
+value `staging` remains accepted as a deprecated compatibility alias; use `Sandbox`
+in all new code, configuration, logs, and documentation.
+
+Sandbox calls are simulated and use Sandbox-only credentials. Request a distinct Live
+Test credential from the Developer Console only when you need to validate a small
+real-money flow. Production requires full business verification, production
+contracts, operational approval, and newly issued Production credentials. Do not
+reuse or copy a Sandbox credential into another environment.
 
 ### Bypassing KYC
 

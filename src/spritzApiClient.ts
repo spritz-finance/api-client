@@ -1,4 +1,4 @@
-import { Environment } from './env'
+import { Environment, EnvironmentInput, normalizeEnvironment } from './env'
 import { SpritzClient } from './lib/client'
 import { isRunningInBrowser } from './lib/util'
 import { AchDebitReturnService } from './modules/achDebitReturn/achDebitReturnService'
@@ -23,7 +23,11 @@ export type ClientOptions = {
     /**
      * Defaults to Environment.Sandbox.
      */
-    environment?: Environment
+    /**
+     * Use Environment.Sandbox or Environment.Production. The raw value `staging`
+     * remains a deprecated compatibility input and is normalized to Sandbox.
+     */
+    environment?: EnvironmentInput
 
     apiKey?: string
 
@@ -80,7 +84,7 @@ export class SpritzApiClient {
     public webhook: WebhookService
 
     constructor(
-        environment: Environment,
+        environment: EnvironmentInput,
         apiKey?: string,
         integrationKey?: string,
         integratorSecret?: string,
@@ -96,7 +100,7 @@ export class SpritzApiClient {
                 'integratorSecret requires integrationKey to be provided. Both are needed for HMAC-signed REST API requests.'
             )
         }
-        this.environment = environment
+        this.environment = normalizeEnvironment(environment)
         this.apiKey = apiKey
         this.integrationKey = integrationKey
         this.integratorSecret = integratorSecret
