@@ -14,12 +14,13 @@ yarn add @spritz-finance/api-client
 
 ## Developer Access
 
-[Create one Developer workspace](https://console.spritz.finance/register) as an
-individual or organization with a verified email. Initial registration does not ask for
-intended use; an authorized person provides it only when requesting Live Test. The
-individual, or a person authorized for the organization, accepts the current Developer
-Terms before Sandbox credential issuance. Human developers and AI coding assistants use
-this same Developer-owned credential model; there is no separate agent signup.
+[Register a Developer Console account](https://console.spritz.finance/register) with a
+verified email. Account registration does not create a Developer workspace or issue a
+credential. Self-serve workspace provisioning, the individual-or-organization choice,
+terms acceptance, and Sandbox credential issuance remain release-gated. After launch,
+the individual or a person authorized for the organization accepts the current Developer
+Terms before credential issuance. Human developers and AI coding assistants use this
+same Developer-owned credential model; there is no separate agent signup.
 
 The target Developer Access design covers Sandbox and Live Test. Production is a
 separate commercial state with new agreements and credentials:
@@ -126,8 +127,9 @@ fixtures Spritz identifies as available.
 
 Spritz uses two levels of authentication:
 
-- **Integration key** — identifies your application. Create the Sandbox key in the
-  [Developer Console](https://console.spritz.finance/register) after terms acceptance.
+- **Integration key** — identifies your application. After the workspace, terms, and
+  credential gates launch, create the Sandbox key in the
+  [Developer Console](https://console.spritz.finance/register).
 - **User API key** — scoped to a single user. Returned when you create a user.
 
 Keep integration credentials on your backend or in a secrets manager. Never put them
