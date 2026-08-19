@@ -12,54 +12,79 @@ npm install @spritz-finance/api-client
 yarn add @spritz-finance/api-client
 ```
 
-## Quick Start
+## Developer Access
+
+[Register a Developer Console account](https://console.spritz.finance/register) with a
+verified email. Account registration does not create a Developer workspace or issue a
+credential. Self-serve workspace provisioning, the individual-or-organization choice,
+terms acceptance, and Sandbox credential issuance remain release-gated. After launch,
+the individual or a person authorized for the organization accepts the current Developer
+Terms before credential issuance. Human developers and AI coding assistants use this
+same Developer-owned credential model; there is no separate agent signup.
+
+The target Developer Access design covers Sandbox and Live Test. Production is a
+separate commercial state with new agreements and credentials:
+
+| State          | Purpose                                                                                                                | Gate                                                                                            |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Sandbox**    | Test simulated rails and fixtures Spritz identifies as available; availability varies by rail, capability, and region. | Developer Terms acceptance by the individual or an authorized person.                           |
+| **Live Test**  | Follow an approved narrow real-money test plan.                                                                        | An authorized person obtains approval, then Spritz separately issues an allowlisted credential. |
+| **Production** | Serve customers under an approved program.                                                                             | Full business verification, Production contracting, rail approval, and new credentials.         |
+
+The target design requires separate Sandbox, Live Test, and Production credentials. A
+credential must never be promoted between environments. Live Test remains unavailable
+until its credential, allowlist, test-plan approval, server-cap, and replay controls are
+deployed and verified. See the
+[Developer Access guide](https://docs.spritz.finance/guides/developer-access) for the
+current gates and Live Test limits.
+
+This client does not expose `Environment.LiveTest` yet. Do not infer a Live Test host
+from a Sandbox or Production URL. The Developer Console must provide the approved
+credential and connection instructions after approval; Sandbox is the only planned
+self-serve development target in this release.
+
+If an AI coding assistant runs the tests, inject the Sandbox credential into an
+isolated process. Do not give the agent permission to print its environment or secret
+store. Pause for an authorized person to request and obtain Live Test approval. Resume
+only with the separately issued, allowlisted Live Test credential and approved test plan.
+No customer-facing, revenue-generating, production, or unapproved third-party activity.
+Stop before Production contracting or credential issuance. The CLI's End User device
+flow is for a person's own Spritz account and cannot replace integrator HMAC
+authentication. See the
+[AI agent guide](https://docs.spritz.finance/guides/agents).
+
+## Sandbox quickstart
+
+Load both Sandbox values from a development secret manager. Do not paste the secret
+into source code, a prompt, or a committed `.env` file.
 
 ```typescript
-import {
-    SpritzApiClient,
-    Environment,
-    PaymentNetwork,
-    BankAccountType,
-    BankAccountSubType,
-} from '@spritz-finance/api-client'
+import { Environment, SpritzApiClient } from '@spritz-finance/api-client'
 
-// Initialize with your integration key
+function required(name: string): string {
+    const value = process.env[name]
+    if (!value) throw new Error(`Missing ${name}`)
+    return value
+}
+
 const client = SpritzApiClient.initialize({
     environment: Environment.Sandbox,
-    integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
+    integrationKey: required('SPRITZ_INTEGRATOR_KEY'),
+    integratorSecret: required('SPRITZ_INTEGRATOR_SECRET'),
 })
 
-// Create a user and set their API key
-const user = await client.user.create({ email: 'user@example.com' })
-client.setApiKey(user.apiKey)
-
-// Add a bank account
-const bankAccount = await client.bankAccount.create(BankAccountType.USBankAccount, {
-    accountNumber: '123456789',
-    routingNumber: '987654321',
-    name: 'My Checking Account',
-    ownedByUser: true,
-    subType: BankAccountSubType.Checking,
-})
-
-// Create a payment request
-const paymentRequest = await client.paymentRequest.create({
-    amount: 100,
-    accountId: bankAccount.id,
-    network: PaymentNetwork.Ethereum,
-})
-
-// Get transaction data for the blockchain payment
-const transactionData = await client.paymentRequest.getWeb3PaymentParams({
-    paymentRequest,
-    paymentTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
-})
-
-// Execute the blockchain transaction from the user's wallet
+const profile = await client.integrator.getProfile()
+console.log(`Connected to ${profile.name} (${profile.id})`)
 ```
+
+This integrator-only call does not need an End User Bearer key and cannot move money.
+Continue with [Sandbox](#sandbox) to create synthetic users and exercise the rails and
+fixtures Spritz identifies as available.
 
 ## Table of Contents
 
+- [Developer Access](#developer-access)
+- [Sandbox quickstart](#sandbox-quickstart)
 - [Authentication](#authentication)
 - [Users](#users)
     - [Creating a User](#creating-a-user)
@@ -102,8 +127,13 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
 
 Spritz uses two levels of authentication:
 
-- **Integration key** — identifies your application. Provided by Spritz.
+- **Integration key** — identifies your application. After the workspace, terms, and
+  credential gates launch, create the Sandbox key in the
+  [Developer Console](https://console.spritz.finance/register).
 - **User API key** — scoped to a single user. Returned when you create a user.
+
+Keep integration credentials on your backend or in a secrets manager. Never put them
+in browser code, a mobile bundle, an AI prompt, or a committed configuration file.
 
 ```typescript
 import { SpritzApiClient, Environment } from '@spritz-finance/api-client'
@@ -993,6 +1023,23 @@ A standalone sandbox demo is available at `scripts/sandbox/ach-onramp.html`. Run
 ## Sandbox
 
 Use `Environment.Sandbox` for development and testing. The sandbox environment is available at `https://sandbox.spritz.finance`.
+
+`Environment.Sandbox` serializes to the canonical value `sandbox`. The legacy raw
+value `staging` remains accepted as a deprecated compatibility alias; use `Sandbox`
+in all new code, configuration, logs, and documentation.
+
+Sandbox calls are simulated and use Sandbox-only credentials. Use only the rails and
+fixtures Spritz identifies as available; availability varies by rail, capability, and
+region. Pause for an authorized person to request and obtain Live Test approval. Resume
+only with the separately issued, allowlisted Live Test credential and approved test plan.
+No customer-facing, revenue-generating, production, or unapproved third-party activity.
+Stop before Production contracting or credential issuance. Do not reuse or copy a
+Sandbox credential into another environment.
+
+`Environment.LiveTest` is intentionally absent until Spritz publishes the Live Test
+data-plane contract. Never point a Live Test credential at a host selected by local
+guesswork; follow the server-attested instructions supplied with the approved
+credential.
 
 ### Bypassing KYC
 

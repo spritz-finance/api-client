@@ -57,7 +57,10 @@ Use `limits` to keep your UI inside the user's current ACH capacity before prepa
 
 ## Prerequisites
 
-- **Integration credentials** — integration key and HMAC secret (provided by Spritz)
+- **Sandbox integration credentials** — after the workspace, terms, and credential
+  gates launch, create the integration key and HMAC secret in the
+  [Developer Console](https://console.spritz.finance/register); the individual or a
+  person authorized for the organization must first accept the current Developer Terms
 - **User API key** — the authenticated user must have completed KYC
 - **Plaid Link SDK** — for bank account linking ([React Native](https://plaid.com/docs/link/react-native/), [Web](https://plaid.com/docs/link/web/), [iOS](https://plaid.com/docs/link/ios/), [Android](https://plaid.com/docs/link/android/))
 - **A Solana wallet address** for the user — Base58-encoded public key
@@ -661,6 +664,15 @@ Common error scenarios:
 ## Sandbox
 
 Use `Environment.Sandbox` for testing. The sandbox base URL is `https://sandbox.spritz.finance`.
+
+Use only the simulated rails and fixtures Spritz identifies as available; availability
+varies by rail, capability, and region. Sandbox credentials cannot reach live endpoints.
+Pause for an authorized person to request and obtain Live Test approval. Resume only with
+the separately issued, allowlisted Live Test credential and approved test plan. No
+customer-facing, revenue-generating, production, or unapproved third-party activity.
+Stop before Production contracting or credential issuance. See the
+[Developer Access guide](https://docs.spritz.finance/guides/developer-access) before
+changing environments.
 
 ### Quick start
 

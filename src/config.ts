@@ -9,7 +9,7 @@ type Config = {
 type ApiConfig = Record<Environment, Config>
 
 export const config: ApiConfig = {
-    staging: {
+    sandbox: {
         baseEndpoint: 'https://api-staging.spritz.finance',
         graphEndpoint: 'https://api-staging.spritz.finance/router/graph',
         restEndpoint: 'https://sandbox.spritz.finance',
