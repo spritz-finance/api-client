@@ -80,7 +80,7 @@ describe('BankAccountService', () => {
         }
         const response = {
             id: 'ba_456',
-            status: 'pending',
+            status: 'inactive',
             accountHolderName: 'Test User',
             supportedRails: ['ach_standard'],
             createdAt: '2026-01-01T00:00:00Z',

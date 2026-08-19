@@ -48,6 +48,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auto-ramp-accounts/{id}/estimate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Estimate the cost of a deposit
+         * @description Returns what depositing `amount` into this account is expected to cost, before
+         *     any money moves.
+         *
+         *     **An estimate, not a quote.** No rate is locked. `rate.asOf` says when the rate
+         *     was read; the figures may differ by the time funds arrive.
+         *
+         *     **The fee is this account's.** It is a percentage held against the individual
+         *     account, so two accounts can legitimately return different fees for the same
+         *     amount. Do not cache an estimate against one account and reuse it for another.
+         *
+         *     **`fees.estimated` says which parts can move.** A component listed there is an
+         *     approximation; one not listed is exact as at `rate.asOf`. Network fees are
+         *     never knowable before settlement — the chain charges what it charges at the
+         *     moment of broadcast — so `network` is always listed, including where it rounds
+         *     to `0.00` on networks that do not meaningfully charge it. `fees.maximum` and
+         *     `output.minimum` bound the estimated components against recently settled
+         *     deposits, and are what to show a user as "at most" and "at least".
+         *
+         *     **The bound can be missing.** It is drawn from deposits we have actually settled
+         *     on that network, so until enough have, `fees.maximum` and `output.minimum` are
+         *     both omitted — and a `breakdown.network` of `0.00` alongside them means
+         *     unmeasured, not free. `fees.networkFeeSamples` says how many settlements are
+         *     behind the figures; at `0` we have never seen this network settle. Do not
+         *     promise a user a ceiling on the cost, or a floor on what they receive, when
+         *     those fields are absent.
+         *
+         *     **Fees are in the account's own currency**, which is EUR on SEPA accounts.
+         *
+         *     **When an estimate cannot be produced**, branch on `code`, not on the status
+         *     alone — the codes match `GET /v1/on-ramps/exchange-rates`:
+         *
+         *     - `rate_unavailable` (503) — the pair is quotable but has no rate right now.
+         *       Transient; retry.
+         *     - `unsupported_currency_pair` (400) — the pair is not quoted at all. Permanent.
+         *     - `exchange_rate_provider_error` (502) — the rate provider failed otherwise.
+         */
+        get: operations["getV1Auto-ramp-accountsByIdEstimate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auto-ramp-addresses/": {
         parameters: {
             query?: never;
@@ -84,7 +138,7 @@ export interface paths {
          *     - `sign_transaction`: Call `POST /off-ramp-quotes/{id}/transaction` for calldata, sign, and submit on-chain.
          *     - `send_to_address`: Send crypto to `sendTo.address` before `sendTo.expiresAt`.
          *
-         *     **Amount modes:** `output` (default) = fiat the account receives. `input` = total crypto the user sends.
+         *     **Amount modes:** `output` (default) fixes the destination fiat amount and remains supported for USD destinations. EUR destinations require `input`: `amount` is the exact USD value Spritz collects, while quote output is an estimate. Actual settlement is reported by the off-ramp resource.
          */
         post: operations["postV1Off-ramp-quotes"];
         delete?: never;
@@ -284,8 +338,20 @@ export interface paths {
          *     Rates are updated approximately every 30 seconds. This endpoint provides
          *     an estimate only — rates are not locked in and may differ at transaction time.
          *
-         *     **Fiat (from):** EUR, GBP, USD
-         *     **Crypto (to):** BTC, ETH, USDC, USDT
+         *     Which tokens are quotable depends on the source currency, and matches
+         *     `GET /v1/on-ramps/supported-pairs`:
+         *
+         *     - **EUR** → EURC, USDB, USDC, USDG, USDP
+         *     - **USD** → BTC, DAI, ETH, EURC, PYUSD, USDB, USDC, USDG, USDP, USDT
+         *
+         *     **When a rate cannot be returned**, branch on `code`, not on the status alone:
+         *
+         *     - `rate_unavailable` (503) — the pair is quotable but has no rate right now.
+         *       Transient; retry.
+         *     - `unsupported_currency_pair` (400) — the pair is not quoted at all. Permanent;
+         *       retrying will not help.
+         *     - `exchange_rate_provider_error` (502) — the rate provider failed for another
+         *       reason.
          */
         get: operations["getV1On-rampsExchange-rates"];
         put?: never;
@@ -340,7 +406,11 @@ export interface paths {
          *     | `us` | United States | `routingNumber`, `accountNumber` | ACH, RTP, Wire |
          *     | `ca` | Canada | `institutionNumber`, `transitNumber`, `accountNumber` | EFT |
          *     | `uk` | United Kingdom | `sortCode`, `accountNumber` | FPS |
-         *     | `iban` | Europe / SEPA | `iban`, optionally `bic` | SEPA |
+         *     | `iban` | Europe / SEPA | `iban`, `bic` | SEPA |
+         *
+         *     For `iban` accounts the beneficiary's address is required. When `ownership` is
+         *     `personal` it is taken from your verified identity; when `thirdParty` you must
+         *     supply `accountHolder.address`, including its `country`.
          *
          *     ## Examples
          *
@@ -372,7 +442,8 @@ export interface paths {
          *     {
          *       "type": "iban",
          *       "ownership": "personal",
-         *       "iban": "DE89370400440532013000"
+         *       "iban": "DE89370400440532013000",
+         *       "bic": "COBADEFFXXX"
          *     }
          *     ```
          *
@@ -483,7 +554,11 @@ export interface paths {
         get: operations["getV1Funding-sourcesByFundingSourceId"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Remove a funding source
+         * @description Removes a funding source and releases the bank connection behind it, so the same bank account can be linked again. The underlying bank account is not deleted. An account disabled after a returned payment cannot be linked again once removed.
+         */
+        delete: operations["deleteV1Funding-sourcesByFundingSourceId"];
         options?: never;
         head?: never;
         patch?: never;
@@ -723,6 +798,26 @@ export interface paths {
          * @description Refreshes a bill after the user completes the card-update module, returning its updated payability and any remaining requirements.
          */
         post: operations["postV1BillsByBillIdCard-update-complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bills/{billId}/account-number": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update a bill's account number
+         * @description Submits an Evervault-encrypted account number for a bill in the action_required state with an account_details requirement, then returns its updated payability and any remaining requirements.
+         */
+        post: operations["postV1BillsByBillIdAccount-number"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1217,6 +1312,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/integrator/webhooks/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get webhook deliveries
+         * @description Returns recent webhook delivery attempts for the integrator, newest first.
+         *
+         *     Use this to tell **"Spritz never sent it"** apart from **"my endpoint rejected it"** — from the outside both look like silence.
+         *
+         *     Read `error` first — it is what separates the two cases.
+         *
+         *     - `success: true` — your endpoint accepted the delivery, and `responseStatus` is what it returned.
+         *     - `success: false`, **no** `error`, **with** a `responseStatus` — the request reached your endpoint and it responded with that status. Your handler is being called and is failing.
+         *     - `success: false` with **neither** `error` nor `responseStatus` — the outcome was not recorded. Only older records look like this; every delivery the current sender writes carries a status. There is nothing to diagnose from them.
+         *     - `success: false` **with** an `error` — no usable response came back: a timeout, a refused connection, a DNS or certificate problem. `error` carries the underlying reason (for example `getaddrinfo ENOTFOUND ...`). Note that `responseStatus` is still present here — 504 for a timeout, 500 otherwise — but it is our classification of the failure, **not** something your endpoint said. Do not read it as your handler's response.
+         *
+         *     > **An `error` does not prove the event was not processed.** A refused connection means it never arrived, but a timeout or a dropped connection may mean your endpoint received and fully handled the event and we simply never heard the answer. Treat these as *unknown*, not as *not delivered* — re-running non-idempotent work on the strength of an `error` is how you double-process. This is the case idempotent handlers exist for.
+         *
+         *     `payload` is the exact body that was sent, and the body the `Signature` header was computed over, so it can be replayed against your own verification code.
+         *
+         *     Cursor-paginated: pass the previous response's `nextCursor` as `cursor` to walk further back. `nextCursor` is `null` on the last page.
+         *
+         *     Deliveries are recorded for every webhook on the integrator. Scope is your own integrator only.
+         */
+        get: operations["getV1IntegratorWebhooksDeliveries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/integrator/webhooks/{webhookId}": {
         parameters: {
             query?: never;
@@ -1398,6 +1530,78 @@ export interface paths {
          * @description Creates or resumes the authenticated user's interactive enhanced identity verification session. Verification URLs and provider tokens are retrieved just in time because they may expire or need to be regenerated.
          */
         post: operations["postV1UsersMeVerification-sessions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users/me/compliance/requirements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get regional compliance requirements
+         * @description Returns the additional compliance fields the authenticated user's region requires, which of them have been collected, and the deadline for supplying the rest.
+         *
+         *     Users outside a regulated region get `required: false` with an empty `fields` array.
+         *
+         *     While `complete` is false, capabilities for the region are gated behind a `regional_compliance` requirement.
+         */
+        get: operations["getV1UsersMeComplianceRequirements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users/me/compliance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit regional compliance fields
+         * @description Submits the additional compliance fields required for the authenticated user's region.
+         *
+         *     All required fields must be supplied together — partial submissions are rejected with field-level errors rather than being stored.
+         *
+         *     If the user has accepted the provider's terms, submitting these fields creates or updates the provider customer immediately and `bridgeCustomerUpdated` is true. Otherwise, the fields are stored and included when the customer is created.
+         */
+        post: operations["postV1UsersMeCompliance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users/me/terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept terms of service
+         * @description Records acceptance of the terms a capability requires, by submitting the signed agreement id the user obtained from the provider's hosted flow.
+         *
+         *     The `agreementId` is opaque — the platform resolves which provider it belongs to from the user's outstanding `terms_acceptance` requirement. Callers never need to know the provider.
+         *
+         *     While the requirement is outstanding, the user's capabilities carry a `terms_acceptance` requirement whose `actionUrl` is the hosted flow that produces this id.
+         */
+        post: operations["postV1UsersMeTerms"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1989,7 +2193,9 @@ export interface paths {
          * Bypass KYC (sandbox only)
          * @description Simulate KYC verification for testing purposes. **Only available in sandbox environments** — returns 403 in production.
          *
-         *     To simulate a successful KYC check, pass a `country` code. To simulate a failed check, pass `failed: true`.
+         *     To simulate a successful verification, pass a `country` — the capability group to verify the user into. To simulate a failed check, pass `failed: true`. Exactly one of the two is required; an empty body is a 400.
+         *
+         *     `US` and `EU` can be simulated today. `CA` and `GB` are real capability groups with no sandbox fixture yet and return **501**, which is distinct from the **400** an unrecognised value gets.
          */
         post: operations["postV1SandboxBypass-kyc"];
         delete?: never;
@@ -2093,6 +2299,32 @@ export interface paths {
          * @description Permanently removes an ACH debit funding source for the authenticated user. **Only available in sandbox environments** — returns 403 in production. Intended for resetting funding sources during integration testing.
          */
         delete: operations["deleteV1SandboxFunding-sourcesByFundingSourceId"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sandbox/auto-ramp-accounts/{id}/deposit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulate a deposit into an auto-ramp account (sandbox only)
+         * @description Simulates a fiat deposit arriving in this auto-ramp account and settling to crypto. **Only available in sandbox environments** — returns 403 in production.
+         *
+         *     There is no other way to make an auto-ramp settle in sandbox: the provider's own sandbox cannot credit a virtual account. This drives the same ingestion path a real deposit takes, so the on-ramp it produces is an ordinary on-ramp — it appears in `GET /v1/on-ramps`, fires the same `onramp.*` webhooks, and carries the same fee breakdown.
+         *
+         *     The fee is the account's own percentage and the conversion is priced off the live rate, so the figures should agree with `GET /v1/auto-ramp-accounts/{id}/estimate` for the same amount, up to the network fee — which no estimate can know in advance and which you set here yourself.
+         *
+         *     Poll `onRampId` at `GET /v1/on-ramps/{id}`.
+         */
+        post: operations["postV1SandboxAuto-ramp-accountsByIdDeposit"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2358,6 +2590,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -2637,6 +2884,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -2872,6 +3134,414 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+        };
+    };
+    "getV1Auto-ramp-accountsByIdEstimate": {
+        parameters: {
+            query: {
+                amount: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What a deposit into this account is expected to cost. An estimate, not a quote: no rate is locked, and the figures may differ by the time funds arrive. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        input: {
+                            /**
+                             * @description Fiat amount to be deposited, before fees
+                             * @example 2525.00
+                             */
+                            amount: string;
+                            /**
+                             * @description Fiat currency the account accepts
+                             * @example USD
+                             */
+                            currency: string;
+                        };
+                        fees: {
+                            /**
+                             * @description Every fee expected on this deposit, in source currency — the sum of `breakdown`. `input.amount - fees.total` is what gets converted.
+                             * @example 27.78
+                             */
+                            total: string;
+                            /**
+                             * @description Currency of every figure under `fees`
+                             * @example USD
+                             */
+                            currency: string;
+                            /** @description Every fee the user paid, split by role, in source currency. Omitted on on-ramps created before pass-through fees were recorded — absent means unknown, not zero. */
+                            breakdown: {
+                                /**
+                                 * @description Spritz's own fee.
+                                 * @example 57.07
+                                 */
+                                platform: string;
+                                /**
+                                 * @description Total currency-conversion cost passed through to the user, whether the provider charged it as a fee or took it inside the exchange rate. `0.00` only when no conversion took place.
+                                 * @example 2.53
+                                 */
+                                exchange: string;
+                                /**
+                                 * @description On-chain settlement cost passed through to the user. `0.00` on networks that do not charge it — and, on an estimate, also where too few deposits have settled for us to have measured one. `fees.networkFeeSamples` separates the two there; on a settled on-ramp this is always the cost actually charged.
+                                 * @example 0.00
+                                 */
+                                network: string;
+                            };
+                            /**
+                             * @description Which components of `breakdown` can still move. A component listed here is an approximation; one not listed is exact as at `rate.asOf`. Network fees are never knowable before settlement, so `network` is always listed — even where it rounds to `0.00`.
+                             * @example [
+                             *       "network"
+                             *     ]
+                             */
+                            estimated: ("platform" | "exchange" | "network")[];
+                            /**
+                             * @description Upper bound on `total`, from the highest recently settled value of every estimated component. **Absent when we have not settled enough deposits on this network to bound it** — absent means unbounded, not that the total cannot move. Check `networkFeeSamples` to see how much evidence there was, and do not promise a user a ceiling when this is missing.
+                             * @example 27.78
+                             */
+                            maximum?: string;
+                            /**
+                             * @description How many settled deposits on this network the `network` figure and `maximum` rest on. `0` means we have never seen this network settle and `breakdown.network` of `0.00` is unmeasured rather than free — the distinction a chain with real gas and no history would otherwise share with one that charges nothing.
+                             * @example 40
+                             */
+                            networkFeeSamples: number;
+                        };
+                        output: {
+                            /**
+                             * @description Crypto amount expected at the destination, in whole token units. A token quantity, not a money amount: carries up to 8 decimal places, so a stablecoin reads `2497.22` while BTC reads `0.02531904`.
+                             * @example 2497.22
+                             */
+                            amount: string;
+                            /**
+                             * @description Lower bound on `amount`, the counterpart of `fees.maximum`. Safe to show a user as “you will receive at least”, subject to the rate moving. Same precision as `amount`. Absent whenever `fees.maximum` is, for the same reason.
+                             * @example 2497.22
+                             */
+                            minimum?: string;
+                            /**
+                             * @description Token the deposit will be converted to
+                             * @example USDT
+                             */
+                            token: string;
+                            /**
+                             * @description Blockchain network the converted crypto will be sent to. Matches the account's `network`.
+                             * @example ethereum
+                             */
+                            network: string;
+                            /**
+                             * @description Destination wallet address
+                             * @example 0x742d35Cc...
+                             */
+                            address: string;
+                        };
+                        rate: {
+                            /**
+                             * @description Token units per unit of source currency, applied to whatever survives the fees
+                             * @example 1.0009
+                             */
+                            value: string;
+                            /** @enum {string} */
+                            source: "provider" | "peg";
+                            /**
+                             * Format: date-time
+                             * @description When the rate was read
+                             */
+                            asOf: string;
+                        };
+                    };
+                };
+            };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 502 */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 503 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -2922,7 +3592,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description Creation timestamp
-                         * @example 2026-07-21T13:34:16.847Z
+                         * @example 2026-08-19T15:16:07.351Z
                          */
                         createdAt?: string;
                     }[];
@@ -3034,6 +3704,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -3051,11 +3736,11 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6a5f75585a936eb477232f02
+                     * @example 6a85c8b76e7637bff6a3194b
                      */
                     accountId: string;
                     /**
-                     * @description Amount as a decimal string (interpretation depends on amountMode)
+                     * @description Amount in the unit selected by amountMode: destination fiat for output, or USD for input.
                      * @example 100.00
                      */
                     amount: string;
@@ -3066,7 +3751,7 @@ export interface operations {
                     /** @enum {string} */
                     chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
                     /**
-                     * @description Token contract address. Highly recommended for EVM chains — different tokens have different fee tiers (e.g. USDC is cheapest). If omitted, the chain's native token is assumed. Not needed for Bitcoin.
+                     * @description Token contract address. **Required on every chain except Bitcoin, Dash and XRP**, which have no token layer — there is no native-token fallback, and omitting it is rejected. Different tokens carry different fee tiers (e.g. USDC is cheapest). Must be a valid address for the chain: `0x` + 40 hex on EVM, base58 on Solana; Tron and Sui accept one specific token each.
                      * @example 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
                      */
                     tokenAddress?: string;
@@ -3079,11 +3764,11 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6a5f75585a936eb477232f02
+                     * @example 6a85c8b76e7637bff6a3194b
                      */
                     accountId: string;
                     /**
-                     * @description Amount as a decimal string (interpretation depends on amountMode)
+                     * @description Amount in the unit selected by amountMode: destination fiat for output, or USD for input.
                      * @example 100.00
                      */
                     amount: string;
@@ -3094,7 +3779,7 @@ export interface operations {
                     /** @enum {string} */
                     chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
                     /**
-                     * @description Token contract address. Highly recommended for EVM chains — different tokens have different fee tiers (e.g. USDC is cheapest). If omitted, the chain's native token is assumed. Not needed for Bitcoin.
+                     * @description Token contract address. **Required on every chain except Bitcoin, Dash and XRP**, which have no token layer — there is no native-token fallback, and omitting it is rejected. Different tokens carry different fee tiers (e.g. USDC is cheapest). Must be a valid address for the chain: `0x` + 40 hex on EVM, base58 on Solana; Tron and Sui accept one specific token each.
                      * @example 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
                      */
                     tokenAddress?: string;
@@ -3107,11 +3792,11 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6a5f75585a936eb477232f02
+                     * @example 6a85c8b76e7637bff6a3194b
                      */
                     accountId: string;
                     /**
-                     * @description Amount as a decimal string (interpretation depends on amountMode)
+                     * @description Amount in the unit selected by amountMode: destination fiat for output, or USD for input.
                      * @example 100.00
                      */
                     amount: string;
@@ -3122,7 +3807,7 @@ export interface operations {
                     /** @enum {string} */
                     chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
                     /**
-                     * @description Token contract address. Highly recommended for EVM chains — different tokens have different fee tiers (e.g. USDC is cheapest). If omitted, the chain's native token is assumed. Not needed for Bitcoin.
+                     * @description Token contract address. **Required on every chain except Bitcoin, Dash and XRP**, which have no token layer — there is no native-token fallback, and omitting it is rejected. Different tokens carry different fee tiers (e.g. USDC is cheapest). Must be a valid address for the chain: `0x` + 40 hex on EVM, base58 on Solana; Tron and Sui accept one specific token each.
                      * @example 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
                      */
                     tokenAddress?: string;
@@ -3154,13 +3839,13 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-07-21T13:34:16.781Z
+                         * @example 2026-08-19T15:16:07.335Z
                          */
                         createdAt: string;
-                        /** @description What the user pays — total USD cost and token used. */
+                        /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
                         input: {
                             /**
-                             * @description Total USD cost including fees (= output.amount + fees.amount)
+                             * @description Exact total USD value Spritz collects, including the Spritz service fee and excluding blockchain gas.
                              * @example 101.50
                              */
                             amount: string;
@@ -3177,38 +3862,57 @@ export interface operations {
                             /** @enum {string} */
                             chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
                         };
-                        /** @description What the destination receives. */
+                        /** @description Destination amount. Exact for supported exact-output quotes; estimated for EUR exact-input quotes. */
                         output: {
                             /**
-                             * @description Fiat delivered to destination account
-                             * @example 100.00
+                             * @description Fiat amount delivered or estimated for the destination.
+                             * @example 89.25
                              */
                             amount: string;
                             /**
-                             * @description Fiat currency
-                             * @example USD
+                             * @description Destination fiat currency.
+                             * @example EUR
                              */
                             currency: string;
                             /** @enum {string} */
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6a5f75585a936eb477232f03
+                             * @example 6a85c8b76e7637bff6a3194c
                              */
                             accountId: string;
+                            /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
+                            estimated: boolean;
+                            exchangeRate: {
+                                /**
+                                 * @description Currency one unit of the rate is based on.
+                                 * @enum {string}
+                                 */
+                                baseCurrency: "USD";
+                                /**
+                                 * @description Destination fiat currency.
+                                 * @example EUR
+                                 */
+                                quoteCurrency: string;
+                                /**
+                                 * @description Indicative destination-currency units per USD at quote creation.
+                                 * @example 0.92010309
+                                 */
+                                rate: string;
+                            } | null;
                         };
-                        /** @description Fees charged for this quote. */
+                        /** @description Known Spritz fee. Provider FX movement and blockchain gas are not included. */
                         fees: {
                             /**
-                             * @description Fee in fiat ('0.00' if none)
+                             * @description Spritz service fee included in input.amount.
                              * @example 1.25
                              */
                             amount: string;
                             /**
-                             * @description Fee currency
-                             * @example USD
+                             * @description Service fees are USD-denominated.
+                             * @enum {string}
                              */
-                            currency: string;
+                            currency: "USD";
                         };
                         /** @description Present when `fulfillment` is `send_to_address`. Send exactly `amount` of `token` to `address` before `expiresAt`. */
                         sendTo: {
@@ -3355,6 +4059,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -3390,13 +4109,13 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-07-21T13:34:16.781Z
+                         * @example 2026-08-19T15:16:07.335Z
                          */
                         createdAt: string;
-                        /** @description What the user pays — total USD cost and token used. */
+                        /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
                         input: {
                             /**
-                             * @description Total USD cost including fees (= output.amount + fees.amount)
+                             * @description Exact total USD value Spritz collects, including the Spritz service fee and excluding blockchain gas.
                              * @example 101.50
                              */
                             amount: string;
@@ -3413,38 +4132,57 @@ export interface operations {
                             /** @enum {string} */
                             chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
                         };
-                        /** @description What the destination receives. */
+                        /** @description Destination amount. Exact for supported exact-output quotes; estimated for EUR exact-input quotes. */
                         output: {
                             /**
-                             * @description Fiat delivered to destination account
-                             * @example 100.00
+                             * @description Fiat amount delivered or estimated for the destination.
+                             * @example 89.25
                              */
                             amount: string;
                             /**
-                             * @description Fiat currency
-                             * @example USD
+                             * @description Destination fiat currency.
+                             * @example EUR
                              */
                             currency: string;
                             /** @enum {string} */
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6a5f75585a936eb477232f03
+                             * @example 6a85c8b76e7637bff6a3194c
                              */
                             accountId: string;
+                            /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
+                            estimated: boolean;
+                            exchangeRate: {
+                                /**
+                                 * @description Currency one unit of the rate is based on.
+                                 * @enum {string}
+                                 */
+                                baseCurrency: "USD";
+                                /**
+                                 * @description Destination fiat currency.
+                                 * @example EUR
+                                 */
+                                quoteCurrency: string;
+                                /**
+                                 * @description Indicative destination-currency units per USD at quote creation.
+                                 * @example 0.92010309
+                                 */
+                                rate: string;
+                            } | null;
                         };
-                        /** @description Fees charged for this quote. */
+                        /** @description Known Spritz fee. Provider FX movement and blockchain gas are not included. */
                         fees: {
                             /**
-                             * @description Fee in fiat ('0.00' if none)
+                             * @description Spritz service fee included in input.amount.
                              * @example 1.25
                              */
                             amount: string;
                             /**
-                             * @description Fee currency
-                             * @example USD
+                             * @description Service fees are USD-denominated.
+                             * @enum {string}
                              */
-                            currency: string;
+                            currency: "USD";
                         };
                         /** @description Present when `fulfillment` is `send_to_address`. Send exactly `amount` of `token` to `address` before `expiresAt`. */
                         sendTo: {
@@ -3591,6 +4329,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -3837,6 +4590,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -3912,7 +4680,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6a5f75585a936eb477232f04
+                                 * @example 6a85c8b76e7637bff6a3194d
                                  */
                                 accountId: string;
                                 /**
@@ -4090,6 +4858,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -4159,7 +4942,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6a5f75585a936eb477232f04
+                             * @example 6a85c8b76e7637bff6a3194d
                              */
                             accountId: string;
                             /**
@@ -4326,6 +5109,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -4362,7 +5160,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6a5f75585a936eb477232f05
+                     * @example 6a85c8b76e7637bff6a3194e
                      */
                     accountId?: string;
                 };
@@ -4380,7 +5178,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6a5f75585a936eb477232f05
+                     * @example 6a85c8b76e7637bff6a3194e
                      */
                     accountId?: string;
                 };
@@ -4398,7 +5196,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6a5f75585a936eb477232f05
+                     * @example 6a85c8b76e7637bff6a3194e
                      */
                     accountId?: string;
                 };
@@ -4458,7 +5256,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6a5f75585a936eb477232f04
+                             * @example 6a85c8b76e7637bff6a3194d
                              */
                             accountId: string;
                             /**
@@ -4625,6 +5423,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -4665,8 +5478,8 @@ export interface operations {
                             createdAt: string;
                             input: {
                                 /**
-                                 * @description Fiat amount sent (after fees)
-                                 * @example 5130.43
+                                 * @description Fiat amount sent, before fees
+                                 * @example 5187.50
                                  */
                                 amount: string;
                                 /** @enum {string} */
@@ -4676,8 +5489,8 @@ export interface operations {
                             };
                             fees: {
                                 /**
-                                 * @description Fee in source currency
-                                 * @example 57.07
+                                 * @description Every fee paid on this on-ramp, in source currency — the sum of `breakdown`. `input.amount - fees.amount` is what reaches the destination. On on-ramps created before pass-through fees were recorded, `breakdown` is absent and this covers Spritz's fee only.
+                                 * @example 59.60
                                  */
                                 amount: string;
                                 /**
@@ -4685,6 +5498,24 @@ export interface operations {
                                  * @example USD, EUR
                                  */
                                 currency: string;
+                                /** @description Every fee the user paid, split by role, in source currency. Omitted on on-ramps created before pass-through fees were recorded — absent means unknown, not zero. */
+                                breakdown?: {
+                                    /**
+                                     * @description Spritz's own fee.
+                                     * @example 57.07
+                                     */
+                                    platform: string;
+                                    /**
+                                     * @description Total currency-conversion cost passed through to the user, whether the provider charged it as a fee or took it inside the exchange rate. `0.00` only when no conversion took place.
+                                     * @example 2.53
+                                     */
+                                    exchange: string;
+                                    /**
+                                     * @description On-chain settlement cost passed through to the user. `0.00` on networks that do not charge it — and, on an estimate, also where too few deposits have settled for us to have measured one. `fees.networkFeeSamples` separates the two there; on a settled on-ramp this is always the cost actually charged.
+                                     * @example 0.00
+                                     */
+                                    network: string;
+                                };
                             };
                             output?: {
                                 /**
@@ -4889,6 +5720,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -5037,6 +5883,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -5066,6 +5927,54 @@ export interface operations {
                          * @example 1.0012
                          */
                         rate: string;
+                    };
+                };
+            };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -5175,6 +6084,117 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 502 */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 503 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -5209,8 +6229,8 @@ export interface operations {
                         createdAt: string;
                         input: {
                             /**
-                             * @description Fiat amount sent (after fees)
-                             * @example 5130.43
+                             * @description Fiat amount sent, before fees
+                             * @example 5187.50
                              */
                             amount: string;
                             /** @enum {string} */
@@ -5220,8 +6240,8 @@ export interface operations {
                         };
                         fees: {
                             /**
-                             * @description Fee in source currency
-                             * @example 57.07
+                             * @description Every fee paid on this on-ramp, in source currency — the sum of `breakdown`. `input.amount - fees.amount` is what reaches the destination. On on-ramps created before pass-through fees were recorded, `breakdown` is absent and this covers Spritz's fee only.
+                             * @example 59.60
                              */
                             amount: string;
                             /**
@@ -5229,6 +6249,24 @@ export interface operations {
                              * @example USD, EUR
                              */
                             currency: string;
+                            /** @description Every fee the user paid, split by role, in source currency. Omitted on on-ramps created before pass-through fees were recorded — absent means unknown, not zero. */
+                            breakdown?: {
+                                /**
+                                 * @description Spritz's own fee.
+                                 * @example 57.07
+                                 */
+                                platform: string;
+                                /**
+                                 * @description Total currency-conversion cost passed through to the user, whether the provider charged it as a fee or took it inside the exchange rate. `0.00` only when no conversion took place.
+                                 * @example 2.53
+                                 */
+                                exchange: string;
+                                /**
+                                 * @description On-chain settlement cost passed through to the user. `0.00` on networks that do not charge it — and, on an estimate, also where too few deposits have settled for us to have measured one. `fees.networkFeeSamples` separates the two there; on a settled on-ramp this is always the cost actually charged.
+                                 * @example 0.00
+                                 */
+                                network: string;
+                            };
                         };
                         output?: {
                             /**
@@ -5422,6 +6460,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -5449,15 +6502,22 @@ export interface operations {
                          */
                         id: string;
                         /**
-                         * @description Current status of the account
+                         * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
                          */
-                        status: "active" | "pending" | "inactive" | "rejected";
+                        status: "active" | "inactive";
                         /**
-                         * @description Why the account is not usable, or null when no reason applies.
+                         * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                         *
+                         *     - `account_invalid` — the receiving bank does not recognise the account details.
+                         *     - `account_closed` — the account has been closed at the bank.
+                         *     - `account_blocked` — the bank will not accept credits to this account.
+                         *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                         *
+                         *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -5522,15 +6582,22 @@ export interface operations {
                          */
                         id: string;
                         /**
-                         * @description Current status of the account
+                         * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
                          */
-                        status: "active" | "pending" | "inactive" | "rejected";
+                        status: "active" | "inactive";
                         /**
-                         * @description Why the account is not usable, or null when no reason applies.
+                         * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                         *
+                         *     - `account_invalid` — the receiving bank does not recognise the account details.
+                         *     - `account_closed` — the account has been closed at the bank.
+                         *     - `account_blocked` — the bank will not accept credits to this account.
+                         *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                         *
+                         *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -5600,15 +6667,22 @@ export interface operations {
                          */
                         id: string;
                         /**
-                         * @description Current status of the account
+                         * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
                          */
-                        status: "active" | "pending" | "inactive" | "rejected";
+                        status: "active" | "inactive";
                         /**
-                         * @description Why the account is not usable, or null when no reason applies.
+                         * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                         *
+                         *     - `account_invalid` — the receiving bank does not recognise the account details.
+                         *     - `account_closed` — the account has been closed at the bank.
+                         *     - `account_blocked` — the bank will not accept credits to this account.
+                         *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                         *
+                         *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -5668,15 +6742,22 @@ export interface operations {
                          */
                         id: string;
                         /**
-                         * @description Current status of the account
+                         * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
                          */
-                        status: "active" | "pending" | "inactive" | "rejected";
+                        status: "active" | "inactive";
                         /**
-                         * @description Why the account is not usable, or null when no reason applies.
+                         * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                         *
+                         *     - `account_invalid` — the receiving bank does not recognise the account details.
+                         *     - `account_closed` — the account has been closed at the bank.
+                         *     - `account_blocked` — the bank will not accept credits to this account.
+                         *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                         *
+                         *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -5841,6 +6922,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -6048,40 +7144,48 @@ export interface operations {
                     accountHolder?: {
                         /**
                          * @description Account holder first name
-                         * @example John
+                         * @example Hans
                          */
                         firstName: string;
                         /**
                          * @description Account holder last name
-                         * @example Doe
+                         * @example Müller
                          */
                         lastName: string;
-                        /** @description Account holder mailing address */
-                        address?: {
-                            /** @example 123 Main St */
+                        /** @description Account holder address */
+                        address: {
+                            /** @example Hauptstraße 1 */
                             street: string;
                             /** @example Apt 4B */
                             street2?: string;
-                            /** @example New York */
+                            /** @example Berlin */
                             city: string;
-                            /** @example NY */
-                            state: string;
-                            /** @example 10001 */
+                            /** @example BE */
+                            state?: string;
+                            /** @example 10115 */
                             postalCode: string;
-                            /** @example US */
-                            country?: string;
+                            /**
+                             * @description ISO 3166-1 alpha-2 country code of the account holder
+                             * @example DE
+                             */
+                            country: string;
                         };
                     };
                     /**
-                     * @description International Bank Account Number
+                     * @description International Bank Account Number. Spaces are ignored and lowercase is accepted.
                      * @example DE89370400440532013000
                      */
                     iban: string;
                     /**
-                     * @description Bank Identifier Code (SWIFT). Can often be derived from IBAN.
+                     * @description Bank Identifier Code (SWIFT) of the account's bank.
                      * @example COBADEFFXXX
                      */
-                    bic?: string;
+                    bic: string;
+                    /**
+                     * @description Name of the account's bank
+                     * @example Commerzbank
+                     */
+                    bankName?: string;
                     /**
                      * @description Friendly name for the account
                      * @example Commerzbank EUR
@@ -6280,40 +7384,48 @@ export interface operations {
                     accountHolder?: {
                         /**
                          * @description Account holder first name
-                         * @example John
+                         * @example Hans
                          */
                         firstName: string;
                         /**
                          * @description Account holder last name
-                         * @example Doe
+                         * @example Müller
                          */
                         lastName: string;
-                        /** @description Account holder mailing address */
-                        address?: {
-                            /** @example 123 Main St */
+                        /** @description Account holder address */
+                        address: {
+                            /** @example Hauptstraße 1 */
                             street: string;
                             /** @example Apt 4B */
                             street2?: string;
-                            /** @example New York */
+                            /** @example Berlin */
                             city: string;
-                            /** @example NY */
-                            state: string;
-                            /** @example 10001 */
+                            /** @example BE */
+                            state?: string;
+                            /** @example 10115 */
                             postalCode: string;
-                            /** @example US */
-                            country?: string;
+                            /**
+                             * @description ISO 3166-1 alpha-2 country code of the account holder
+                             * @example DE
+                             */
+                            country: string;
                         };
                     };
                     /**
-                     * @description International Bank Account Number
+                     * @description International Bank Account Number. Spaces are ignored and lowercase is accepted.
                      * @example DE89370400440532013000
                      */
                     iban: string;
                     /**
-                     * @description Bank Identifier Code (SWIFT). Can often be derived from IBAN.
+                     * @description Bank Identifier Code (SWIFT) of the account's bank.
                      * @example COBADEFFXXX
                      */
-                    bic?: string;
+                    bic: string;
+                    /**
+                     * @description Name of the account's bank
+                     * @example Commerzbank
+                     */
+                    bankName?: string;
                     /**
                      * @description Friendly name for the account
                      * @example Commerzbank EUR
@@ -6512,40 +7624,48 @@ export interface operations {
                     accountHolder?: {
                         /**
                          * @description Account holder first name
-                         * @example John
+                         * @example Hans
                          */
                         firstName: string;
                         /**
                          * @description Account holder last name
-                         * @example Doe
+                         * @example Müller
                          */
                         lastName: string;
-                        /** @description Account holder mailing address */
-                        address?: {
-                            /** @example 123 Main St */
+                        /** @description Account holder address */
+                        address: {
+                            /** @example Hauptstraße 1 */
                             street: string;
                             /** @example Apt 4B */
                             street2?: string;
-                            /** @example New York */
+                            /** @example Berlin */
                             city: string;
-                            /** @example NY */
-                            state: string;
-                            /** @example 10001 */
+                            /** @example BE */
+                            state?: string;
+                            /** @example 10115 */
                             postalCode: string;
-                            /** @example US */
-                            country?: string;
+                            /**
+                             * @description ISO 3166-1 alpha-2 country code of the account holder
+                             * @example DE
+                             */
+                            country: string;
                         };
                     };
                     /**
-                     * @description International Bank Account Number
+                     * @description International Bank Account Number. Spaces are ignored and lowercase is accepted.
                      * @example DE89370400440532013000
                      */
                     iban: string;
                     /**
-                     * @description Bank Identifier Code (SWIFT). Can often be derived from IBAN.
+                     * @description Bank Identifier Code (SWIFT) of the account's bank.
                      * @example COBADEFFXXX
                      */
-                    bic?: string;
+                    bic: string;
+                    /**
+                     * @description Name of the account's bank
+                     * @example Commerzbank
+                     */
+                    bankName?: string;
                     /**
                      * @description Friendly name for the account
                      * @example Commerzbank EUR
@@ -6568,15 +7688,22 @@ export interface operations {
                          */
                         id: string;
                         /**
-                         * @description Current status of the account
+                         * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
                          */
-                        status: "active" | "pending" | "inactive" | "rejected";
+                        status: "active" | "inactive";
                         /**
-                         * @description Why the account is not usable, or null when no reason applies.
+                         * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                         *
+                         *     - `account_invalid` — the receiving bank does not recognise the account details.
+                         *     - `account_closed` — the account has been closed at the bank.
+                         *     - `account_blocked` — the bank will not accept credits to this account.
+                         *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                         *
+                         *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -6641,15 +7768,22 @@ export interface operations {
                          */
                         id: string;
                         /**
-                         * @description Current status of the account
+                         * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
                          */
-                        status: "active" | "pending" | "inactive" | "rejected";
+                        status: "active" | "inactive";
                         /**
-                         * @description Why the account is not usable, or null when no reason applies.
+                         * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                         *
+                         *     - `account_invalid` — the receiving bank does not recognise the account details.
+                         *     - `account_closed` — the account has been closed at the bank.
+                         *     - `account_blocked` — the bank will not accept credits to this account.
+                         *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                         *
+                         *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -6719,15 +7853,22 @@ export interface operations {
                          */
                         id: string;
                         /**
-                         * @description Current status of the account
+                         * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
                          */
-                        status: "active" | "pending" | "inactive" | "rejected";
+                        status: "active" | "inactive";
                         /**
-                         * @description Why the account is not usable, or null when no reason applies.
+                         * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                         *
+                         *     - `account_invalid` — the receiving bank does not recognise the account details.
+                         *     - `account_closed` — the account has been closed at the bank.
+                         *     - `account_blocked` — the bank will not accept credits to this account.
+                         *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                         *
+                         *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -6787,15 +7928,22 @@ export interface operations {
                          */
                         id: string;
                         /**
-                         * @description Current status of the account
+                         * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
                          */
-                        status: "active" | "pending" | "inactive" | "rejected";
+                        status: "active" | "inactive";
                         /**
-                         * @description Why the account is not usable, or null when no reason applies.
+                         * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                         *
+                         *     - `account_invalid` — the receiving bank does not recognise the account details.
+                         *     - `account_closed` — the account has been closed at the bank.
+                         *     - `account_blocked` — the bank will not accept credits to this account.
+                         *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                         *
+                         *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -6960,6 +8108,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -6989,15 +8152,22 @@ export interface operations {
                          */
                         id: string;
                         /**
-                         * @description Current status of the account
+                         * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
                          */
-                        status: "active" | "pending" | "inactive" | "rejected";
+                        status: "active" | "inactive";
                         /**
-                         * @description Why the account is not usable, or null when no reason applies.
+                         * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                         *
+                         *     - `account_invalid` — the receiving bank does not recognise the account details.
+                         *     - `account_closed` — the account has been closed at the bank.
+                         *     - `account_blocked` — the bank will not accept credits to this account.
+                         *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                         *
+                         *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -7062,15 +8232,22 @@ export interface operations {
                          */
                         id: string;
                         /**
-                         * @description Current status of the account
+                         * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
                          */
-                        status: "active" | "pending" | "inactive" | "rejected";
+                        status: "active" | "inactive";
                         /**
-                         * @description Why the account is not usable, or null when no reason applies.
+                         * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                         *
+                         *     - `account_invalid` — the receiving bank does not recognise the account details.
+                         *     - `account_closed` — the account has been closed at the bank.
+                         *     - `account_blocked` — the bank will not accept credits to this account.
+                         *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                         *
+                         *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -7140,15 +8317,22 @@ export interface operations {
                          */
                         id: string;
                         /**
-                         * @description Current status of the account
+                         * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
                          */
-                        status: "active" | "pending" | "inactive" | "rejected";
+                        status: "active" | "inactive";
                         /**
-                         * @description Why the account is not usable, or null when no reason applies.
+                         * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                         *
+                         *     - `account_invalid` — the receiving bank does not recognise the account details.
+                         *     - `account_closed` — the account has been closed at the bank.
+                         *     - `account_blocked` — the bank will not accept credits to this account.
+                         *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                         *
+                         *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -7208,15 +8392,22 @@ export interface operations {
                          */
                         id: string;
                         /**
-                         * @description Current status of the account
+                         * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
                          */
-                        status: "active" | "pending" | "inactive" | "rejected";
+                        status: "active" | "inactive";
                         /**
-                         * @description Why the account is not usable, or null when no reason applies.
+                         * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                         *
+                         *     - `account_invalid` — the receiving bank does not recognise the account details.
+                         *     - `account_closed` — the account has been closed at the bank.
+                         *     - `account_blocked` — the bank will not accept credits to this account.
+                         *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                         *
+                         *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                         /**
                          * @description Name of the account holder
                          * @example John Doe
@@ -7381,6 +8572,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -7523,6 +8729,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -7628,6 +8849,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -7696,6 +8932,19 @@ export interface operations {
                          * @example ownership_mismatch
                          */
                         statusReason: ("ownership_mismatch" | null) | ("ownership_review_required" | null) | ("user_not_verified" | null) | ("duplicate_bank_account" | null) | ("returned" | null) | ("risk_blocked" | null) | ("rerouted" | null) | ("manually_disabled" | null);
+                        /**
+                         * Format: date-time
+                         * @description For a time-boxed block (`statusReason: rerouted`), when the funding source becomes usable again on its own. Re-linking the same account does not shorten it. Null when the source is usable or the block is not time-bound.
+                         * @example 2026-09-18T15:04:05.000Z
+                         */
+                        availableAt: string | null;
+                        /** @description True when the funding source is disabled and will not become usable again on its own; the user should link a different bank account. */
+                        permanent: boolean;
+                        /**
+                         * @description Why a disabled funding source was disabled: the ACH return code (e.g. `R10`) or `risk_customer_return`. Null unless `status` is `disabled`.
+                         * @example R10
+                         */
+                        disabledReason: string | null;
                         /**
                          * @description Ownership match result for the linked bank account, or null when unavailable.
                          * @example matched
@@ -7821,6 +9070,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -7851,26 +9115,26 @@ export interface operations {
                         minimumDepositAmountUsd: string;
                         /**
                          * @description Maximum ACH debit amount per transaction
-                         * @example 500.00
+                         * @example 750.00
                          */
                         transactionLimitUsd: string;
                         /**
-                         * @description Maximum daily ACH debit volume
+                         * @description Maximum daily ACH debit volume. Deprecated: use `limitsByPriority.normal.maxAmountUsd` for the amount that can be deposited right now.
                          * @example 1500.00
                          */
                         dailyLimitUsd: string;
                         /**
-                         * @description Remaining daily ACH debit volume
+                         * @description Remaining ACH debit capacity today across all limits. Deprecated: use `limitsByPriority.normal.maxAmountUsd`.
                          * @example 1400.00
                          */
                         dailyRemainingUsd: string;
                         /**
-                         * @description Maximum monthly ACH debit volume
+                         * @description Maximum monthly ACH debit volume. Deprecated: use `limitsByPriority.normal.maxAmountUsd` for the amount that can be deposited right now.
                          * @example 5000.00
                          */
                         monthlyLimitUsd: string;
                         /**
-                         * @description Remaining monthly ACH debit volume
+                         * @description Remaining ACH debit capacity this month across all limits. Deprecated: use `limitsByPriority.normal.maxAmountUsd`.
                          * @example 4900.00
                          */
                         monthlyRemainingUsd: string;
@@ -7884,6 +9148,76 @@ export interface operations {
                          * @example 1
                          */
                         unsettledDepositRemaining: number;
+                        /** @description Open-exposure standing for this user. Capacity frees up as deposits clear the 60-day dispute window. */
+                        exposure: {
+                            /**
+                             * @description Ceiling on the user's open exposure — deposits inside the 60-day dispute window
+                             * @example 1500.00
+                             */
+                            capUsd: string;
+                            /**
+                             * @description The user's current open exposure
+                             * @example 400.00
+                             */
+                            openUsd: string;
+                            /**
+                             * @description Exposure capacity remaining before the cap
+                             * @example 1100.00
+                             */
+                            remainingUsd: string;
+                        };
+                        /** @description Deposit availability keyed by the `priority` value sent on deposit creation. These blocks are computed by the same evaluator that gates deposit creation — an amount within `maxAmountUsd` will be accepted. */
+                        limitsByPriority: {
+                            /** @description What a `priority: normal` deposit request will accept */
+                            normal: {
+                                /** @description Whether a `priority: normal` deposit can be created right now */
+                                available: boolean;
+                                /**
+                                 * @description Minimum accepted deposit amount
+                                 * @example 10.00
+                                 */
+                                minAmountUsd: string;
+                                /**
+                                 * @description The largest single deposit amount accepted right now — all limits folded in, with headroom for the maximum fee already deducted. Build amount inputs against this value.
+                                 * @example 742.57
+                                 */
+                                maxAmountUsd: string;
+                                /** @description Why deposits are unavailable; null when available */
+                                reason: ("minimum_deposit" | null) | ("transaction_limit" | null) | ("daily_limit" | null) | ("monthly_limit" | null) | ("unsettled_deposit_limit" | null) | ("bank_unsettled_deposit_limit" | null) | ("open_exposure" | null) | ("aggregate_exposure" | null) | ("new_user_admission_paused" | null) | ("rail_halted" | null);
+                                /** @description Suggested next step when unavailable; null otherwise */
+                                suggestedAction: ("auto_ramp" | null) | ("wait_for_settlement" | null);
+                                /**
+                                 * Format: date-time
+                                 * @description Earliest instant the current `reason` can stop applying, or null when it is not time-bound. Derived from the same state that produced `reason`; another limit may bind after it, so re-fetch before submitting.
+                                 * @example 2026-08-24T15:00:00.000Z
+                                 */
+                                clearsAt: string | null;
+                                /** @description True when `clearsAt` is a forecast (expected ACH settlement, exposure ageing out) rather than a fixed boundary such as a daily window reset. */
+                                clearsAtIsEstimate: boolean;
+                            };
+                            /** @description What a `priority: high` deposit request will accept */
+                            high: {
+                                /** @description Whether a `priority: high` deposit can be created right now */
+                                available: boolean;
+                                /**
+                                 * @description The largest portion of a deposit eligible for high-priority release, with headroom for the maximum high-priority fee already deducted
+                                 * @example 0.00
+                                 */
+                                maxPortionUsd: string;
+                                /** @description Why high priority is unavailable; null when available */
+                                reason: ("not_available" | null) | ("minimum_deposit" | "transaction_limit" | "daily_limit" | "monthly_limit" | "unsettled_deposit_limit" | "bank_unsettled_deposit_limit" | "open_exposure" | "aggregate_exposure" | "new_user_admission_paused" | "rail_halted");
+                                /** @description Suggested next step when unavailable; null otherwise */
+                                suggestedAction: ("auto_ramp" | null) | ("wait_for_settlement" | null);
+                                /**
+                                 * Format: date-time
+                                 * @description Earliest instant the current `reason` can stop applying, or null when it is not time-bound. Derived from the same state that produced `reason`; another limit may bind after it, so re-fetch before submitting.
+                                 * @example 2026-08-24T15:00:00.000Z
+                                 */
+                                clearsAt: string | null;
+                                /** @description True when `clearsAt` is a forecast (expected ACH settlement, exposure ageing out) rather than a fixed boundary such as a daily window reset. */
+                                clearsAtIsEstimate: boolean;
+                            };
+                        };
                     };
                 };
             };
@@ -7993,6 +9327,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -8063,6 +9412,19 @@ export interface operations {
                          * @example ownership_mismatch
                          */
                         statusReason: ("ownership_mismatch" | null) | ("ownership_review_required" | null) | ("user_not_verified" | null) | ("duplicate_bank_account" | null) | ("returned" | null) | ("risk_blocked" | null) | ("rerouted" | null) | ("manually_disabled" | null);
+                        /**
+                         * Format: date-time
+                         * @description For a time-boxed block (`statusReason: rerouted`), when the funding source becomes usable again on its own. Re-linking the same account does not shorten it. Null when the source is usable or the block is not time-bound.
+                         * @example 2026-09-18T15:04:05.000Z
+                         */
+                        availableAt: string | null;
+                        /** @description True when the funding source is disabled and will not become usable again on its own; the user should link a different bank account. */
+                        permanent: boolean;
+                        /**
+                         * @description Why a disabled funding source was disabled: the ACH return code (e.g. `R10`) or `risk_customer_return`. Null unless `status` is `disabled`.
+                         * @example R10
+                         */
+                        disabledReason: string | null;
                         /**
                          * @description Ownership match result for the linked bank account, or null when unavailable.
                          * @example matched
@@ -8188,6 +9550,178 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+        };
+    };
+    "deleteV1Funding-sourcesByFundingSourceId": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fundingSourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Confirmation that a funding source was removed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Opaque public identifier for the removed funding source
+                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        id: string;
+                        /**
+                         * @description Always true for a removed funding source response
+                         * @enum {boolean}
+                         */
+                        deleted: true;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -8355,9 +9889,12 @@ export interface operations {
                             /** @enum {string} */
                             priority: "normal" | "high";
                             feeRateBps: number;
+                            planAdjustmentBps: number;
                             principalAmountUsd: string;
                             expectedAssetAmount: string;
                             grossFeeUsd: string;
+                            publishedFeeUsd: string;
+                            planAdjustmentFeeUsd: string;
                             feeSubsidyUsd: string;
                             userFeeUsd: string;
                             totalDebitAmountUsd: string;
@@ -8378,6 +9915,61 @@ export interface operations {
                             assetAddress: string;
                             destinationAddress: string;
                         };
+                    };
+                };
+            };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    } & {
+                        /** @description Every cause. A single-cause failure also reports it via top-level `code`/`field`/`detail`; a multi-field failure is described only here. */
+                        errors?: {
+                            field: string;
+                            message: string;
+                            code?: string;
+                        }[];
                     };
                 };
             };
@@ -8424,6 +10016,54 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
             /** @description Response for status 404 */
             404: {
                 headers: {
@@ -8457,6 +10097,54 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
             /** @description Response for status 500 */
             500: {
                 headers: {
@@ -8487,6 +10175,69 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 503 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -8572,15 +10323,21 @@ export interface operations {
                          */
                         onRampId: string | null;
                         /** @enum {string} */
-                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "failed";
+                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed";
                         /** @enum {string} */
                         quoteType: "exact_input" | "exact_output";
                         /** @enum {string} */
                         priority: "normal" | "high";
                         feeRateBps: number;
+                        planAdjustmentBps: number;
+                        integratorPricingClass: string | null;
+                        integratorPlanPhase: string | null;
+                        integratorPolicyVersion: string | null;
                         principalAmountUsd: string;
                         expectedAssetAmount: string;
                         grossFeeUsd: string;
+                        publishedFeeUsd: string;
+                        planAdjustmentFeeUsd: string;
                         feeSubsidyUsd: string;
                         userFeeUsd: string;
                         totalDebitAmountUsd: string;
@@ -8630,6 +10387,61 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    } & {
+                        /** @description Every cause. A single-cause failure also reports it via top-level `code`/`field`/`detail`; a multi-field failure is described only here. */
+                        errors?: {
+                            field: string;
+                            message: string;
+                            code?: string;
+                        }[];
+                    };
+                };
+            };
             /** @description Response for status 401 */
             401: {
                 headers: {
@@ -8673,6 +10485,54 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
             /** @description Response for status 404 */
             404: {
                 headers: {
@@ -8706,6 +10566,102 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 422 */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
             /** @description Response for status 500 */
             500: {
                 headers: {
@@ -8736,6 +10692,69 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 503 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -8863,6 +10882,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -8919,15 +10953,22 @@ export interface operations {
                              */
                             id: string;
                             /**
-                             * @description Current status of the account
+                             * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                              * @example active
                              */
-                            status: "active" | "pending" | "inactive" | "rejected";
+                            status: "active" | "inactive";
                             /**
-                             * @description Why the account is not usable, or null when no reason applies.
+                             * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                             *
+                             *     - `account_invalid` — the receiving bank does not recognise the account details.
+                             *     - `account_closed` — the account has been closed at the bank.
+                             *     - `account_blocked` — the bank will not accept credits to this account.
+                             *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                             *
+                             *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                              * @example account_invalid
                              */
-                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                             /**
                              * @description Name of the account holder
                              * @example John Doe
@@ -8992,15 +11033,22 @@ export interface operations {
                              */
                             id: string;
                             /**
-                             * @description Current status of the account
+                             * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                              * @example active
                              */
-                            status: "active" | "pending" | "inactive" | "rejected";
+                            status: "active" | "inactive";
                             /**
-                             * @description Why the account is not usable, or null when no reason applies.
+                             * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                             *
+                             *     - `account_invalid` — the receiving bank does not recognise the account details.
+                             *     - `account_closed` — the account has been closed at the bank.
+                             *     - `account_blocked` — the bank will not accept credits to this account.
+                             *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                             *
+                             *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                              * @example account_invalid
                              */
-                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                             /**
                              * @description Name of the account holder
                              * @example John Doe
@@ -9070,15 +11118,22 @@ export interface operations {
                              */
                             id: string;
                             /**
-                             * @description Current status of the account
+                             * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                              * @example active
                              */
-                            status: "active" | "pending" | "inactive" | "rejected";
+                            status: "active" | "inactive";
                             /**
-                             * @description Why the account is not usable, or null when no reason applies.
+                             * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                             *
+                             *     - `account_invalid` — the receiving bank does not recognise the account details.
+                             *     - `account_closed` — the account has been closed at the bank.
+                             *     - `account_blocked` — the bank will not accept credits to this account.
+                             *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                             *
+                             *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                              * @example account_invalid
                              */
-                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                             /**
                              * @description Name of the account holder
                              * @example John Doe
@@ -9138,15 +11193,22 @@ export interface operations {
                              */
                             id: string;
                             /**
-                             * @description Current status of the account
+                             * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                              * @example active
                              */
-                            status: "active" | "pending" | "inactive" | "rejected";
+                            status: "active" | "inactive";
                             /**
-                             * @description Why the account is not usable, or null when no reason applies.
+                             * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                             *
+                             *     - `account_invalid` — the receiving bank does not recognise the account details.
+                             *     - `account_closed` — the account has been closed at the bank.
+                             *     - `account_blocked` — the bank will not accept credits to this account.
+                             *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                             *
+                             *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                              * @example account_invalid
                              */
-                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null);
+                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
                             /**
                              * @description Name of the account holder
                              * @example John Doe
@@ -9279,6 +11341,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -9391,6 +11468,8 @@ export interface operations {
                              */
                             reason?: string;
                         }[];
+                        /** @enum {string} */
+                        unpayableCode?: "institution_not_supported" | "account_number_invalid" | "account_verification_failed" | "not_supported";
                         /**
                          * Format: date-time
                          * @description When the bill was linked
@@ -9505,6 +11584,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -9647,6 +11741,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -9818,6 +11927,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -9950,6 +12074,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -10093,6 +12232,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -10214,6 +12368,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -10331,6 +12500,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -10452,6 +12636,172 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+        };
+    };
+    "postV1BillsByBillIdAccount-number": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                billId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Evervault-encrypted account number (ev:... ciphertext). Raw account numbers are rejected. */
+                    accountNumber: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    /** @description Evervault-encrypted account number (ev:... ciphertext). Raw account numbers are rejected. */
+                    accountNumber: string;
+                };
+                "multipart/form-data": {
+                    /** @description Evervault-encrypted account number (ev:... ciphertext). Raw account numbers are rejected. */
+                    accountNumber: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Whether the bill is payable after refreshing its data */
+                        payable: boolean;
+                        /** @description Outstanding requirements, empty once the update resolves them */
+                        requirements: {
+                            /**
+                             * @description The action the user must complete to make the bill payable
+                             * @example card_details
+                             */
+                            type: string;
+                            /**
+                             * @description Fields the user must supply to satisfy the requirement
+                             * @example [
+                             *       "credit_card_number"
+                             *     ]
+                             */
+                            fields?: string[];
+                            /**
+                             * @description Human-readable explanation of the requirement
+                             * @example This card is expired
+                             */
+                            reason?: string;
+                        }[];
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -10613,6 +12963,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -10748,6 +13113,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -10911,6 +13291,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -11085,6 +13480,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -11238,6 +13648,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -11407,6 +13832,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -11585,6 +14025,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -11784,6 +14239,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -11808,7 +14278,7 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique identifier for the debit card
-                             * @example 6a5f75585a936eb477232f09
+                             * @example 6a85c8b76e7637bff6a31952
                              */
                             id: string;
                             /** @enum {string} */
@@ -11966,6 +14436,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -12220,7 +14705,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6a5f75585a936eb477232f09
+                         * @example 6a85c8b76e7637bff6a31952
                          */
                         id: string;
                         /** @enum {string} */
@@ -12376,6 +14861,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -12401,7 +14901,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6a5f75585a936eb477232f09
+                         * @example 6a85c8b76e7637bff6a31952
                          */
                         id: string;
                         /** @enum {string} */
@@ -12557,6 +15057,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -12690,6 +15205,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -12850,7 +15380,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6a5f75585a936eb477232f09
+                         * @example 6a85c8b76e7637bff6a31952
                          */
                         id: string;
                         /** @enum {string} */
@@ -13006,6 +15536,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -13161,6 +15706,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -13312,6 +15872,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -13417,6 +15992,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -13522,6 +16112,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -13592,7 +16197,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6a5f75595a936eb477232f0d
+                         * @example 6a85c8b76e7637bff6a31956
                          */
                         userId: string;
                         /**
@@ -13608,7 +16213,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-07-21T14:34:17.046Z
+                         * @example 2026-08-19T16:16:07.597Z
                          */
                         expiresAt: string;
                     };
@@ -13720,6 +16325,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -13771,7 +16391,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-07-21T13:34:17.045Z
+                         * @example 2026-08-19T15:16:07.597Z
                          */
                         createdAt: string;
                     };
@@ -13883,6 +16503,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -13948,7 +16583,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description The internal ID of the newly created user
-                         * @example 6a5f75595a936eb477232f0f
+                         * @example 6a85c8b76e7637bff6a31958
                          */
                         userId: string;
                         /**
@@ -14071,6 +16706,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -14104,6 +16754,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -14121,7 +16786,7 @@ export interface operations {
                 returnBucket?: "unauthorized" | "administrative" | "other";
                 cryptoStateAtReturn?: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
                 lossOnly?: "true" | "false";
-                userAction?: "none" | "review_required" | "disabled";
+                userAction?: "none" | "review_required" | "restricted" | "disabled";
                 occurredAfter?: string;
                 occurredBefore?: string;
             };
@@ -14151,7 +16816,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6a5f75595a936eb477232f0c
+                             * @example 6a85c8b76e7637bff6a31955
                              */
                             userId: string;
                             /**
@@ -14173,7 +16838,7 @@ export interface operations {
                             /** @enum {string} */
                             sourceAction: "disabled";
                             /** @enum {string} */
-                            userAction: "none" | "review_required" | "disabled";
+                            userAction: "none" | "review_required" | "restricted" | "disabled";
                             /** @enum {string} */
                             reportingBucket: "unauthorized" | "administrative" | "other";
                         }[];
@@ -14292,6 +16957,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -14327,7 +17007,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6a5f75595a936eb477232f0c
+                         * @example 6a85c8b76e7637bff6a31955
                          */
                         userId: string;
                         /**
@@ -14349,7 +17029,7 @@ export interface operations {
                         /** @enum {string} */
                         sourceAction: "disabled";
                         /** @enum {string} */
-                        userAction: "none" | "review_required" | "disabled";
+                        userAction: "none" | "review_required" | "restricted" | "disabled";
                         /** @enum {string} */
                         reportingBucket: "unauthorized" | "administrative" | "other";
                     };
@@ -14461,6 +17141,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -14484,7 +17179,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a5f75595a936eb477232f0e
+                         * @example 6a85c8b76e7637bff6a31957
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -14614,6 +17309,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -14679,7 +17389,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a5f75595a936eb477232f0e
+                         * @example 6a85c8b76e7637bff6a31957
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -14809,6 +17519,405 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+        };
+    };
+    getV1IntegratorWebhooksDeliveries: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Recent webhook delivery attempts, newest first */
+                        data: {
+                            /**
+                             * @description The event that was delivered
+                             * @example onramp.completed
+                             */
+                            event: string;
+                            /**
+                             * @description The URL the delivery was attempted against
+                             * @example https://api.example.com/webhooks
+                             */
+                            webhookUrl: string;
+                            /** @description The exact body that was sent, and the body the signature was computed over */
+                            payload: {
+                                [key: string]: unknown;
+                            };
+                            /**
+                             * @description Whether Spritz received a successful response. `false` alongside an `error` does not mean your endpoint rejected the event — it may have processed it and only the response was lost. `false` with neither `error` nor `responseStatus` means the outcome was never recorded, not that it failed. Read those two fields before concluding anything about delivery.
+                             * @example true
+                             */
+                            success: boolean;
+                            /**
+                             * @description HTTP status your endpoint returned — but only when `error` is absent. When `error` is set no response was received at all, and this is Spritz's classification of the failure (504 for a timeout, 500 otherwise) rather than anything your endpoint said.
+                             * @example 200
+                             */
+                            responseStatus?: number;
+                            /**
+                             * @description Set when no usable response was received — a timeout, a refused connection, a DNS or certificate problem. This does **not** prove the request never arrived: a refused connection means it did not, but a timeout or a dropped connection may mean your endpoint received and fully processed it and we never heard back. Treat delivery as unknown and rely on idempotent handling. When `error` is absent the request landed and `responseStatus` is your endpoint's own answer.
+                             * @example getaddrinfo ENOTFOUND webhooks.example.com
+                             */
+                            error?: string;
+                            /**
+                             * Format: date-time
+                             * @description When the delivery was attempted. Absent on a handful of very early records that predate the field — omitted rather than guessed.
+                             */
+                            timestamp?: string;
+                        }[];
+                        /**
+                         * @description Whether there are more results
+                         * @example true
+                         */
+                        hasMore: boolean;
+                        /** @description Pass as `cursor` to fetch the next page. Null on the last page. */
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 502 */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 503 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 504 */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -14951,6 +18060,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -14991,7 +18115,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a5f75595a936eb477232f0e
+                         * @example 6a85c8b76e7637bff6a31957
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -15121,6 +18245,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -15280,6 +18419,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -15336,7 +18490,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-07-21T13:39:17.046Z
+                         * @example 2026-08-19T15:21:07.597Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -15448,6 +18602,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -15471,7 +18640,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a5f75585a936eb477232f0a
+                         * @example 6a85c8b76e7637bff6a31953
                          */
                         id: string;
                         /**
@@ -15488,7 +18657,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-07-21T13:34:16.966Z
+                         * @example 2026-08-19T15:16:07.590Z
                          */
                         signedUpAt: string;
                         /**
@@ -15523,7 +18692,7 @@ export interface operations {
                             /** @description A requirement that must be fulfilled to access certain features */
                             requirement?: {
                                 /** @enum {string} */
-                                type: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction";
+                                type: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction" | "regional_compliance";
                                 /**
                                  * @description Human-readable description of what needs to be done
                                  * @example Verify your identity to unlock payment features
@@ -15562,14 +18731,14 @@ export interface operations {
                             /** @enum {string} */
                             status: "active" | "requirements_needed" | "not_available" | "pending";
                             /** @enum {string} */
-                            nextRequirement?: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction";
+                            nextRequirement?: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction" | "regional_compliance";
                             /**
                              * @description List of requirements that must be met to activate this capability
                              * @example []
                              */
                             requirements: {
                                 /** @enum {string} */
-                                type: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction";
+                                type: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction" | "regional_compliance";
                                 /**
                                  * @description Human-readable description of what needs to be done
                                  * @example Verify your identity to unlock payment features
@@ -15698,6 +18867,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -15818,7 +19002,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a5f75585a936eb477232f0a
+                         * @example 6a85c8b76e7637bff6a31953
                          */
                         id: string;
                         /**
@@ -15835,7 +19019,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-07-21T13:34:16.966Z
+                         * @example 2026-08-19T15:16:07.590Z
                          */
                         signedUpAt: string;
                         /**
@@ -15870,7 +19054,7 @@ export interface operations {
                             /** @description A requirement that must be fulfilled to access certain features */
                             requirement?: {
                                 /** @enum {string} */
-                                type: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction";
+                                type: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction" | "regional_compliance";
                                 /**
                                  * @description Human-readable description of what needs to be done
                                  * @example Verify your identity to unlock payment features
@@ -15909,14 +19093,14 @@ export interface operations {
                             /** @enum {string} */
                             status: "active" | "requirements_needed" | "not_available" | "pending";
                             /** @enum {string} */
-                            nextRequirement?: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction";
+                            nextRequirement?: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction" | "regional_compliance";
                             /**
                              * @description List of requirements that must be met to activate this capability
                              * @example []
                              */
                             requirements: {
                                 /** @enum {string} */
-                                type: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction";
+                                type: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction" | "regional_compliance";
                                 /**
                                  * @description Human-readable description of what needs to be done
                                  * @example Verify your identity to unlock payment features
@@ -16045,6 +19229,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -16180,6 +19379,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -16230,7 +19444,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a5f75585a936eb477232f0a
+                         * @example 6a85c8b76e7637bff6a31953
                          */
                         id: string;
                         /**
@@ -16247,7 +19461,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-07-21T13:34:16.966Z
+                         * @example 2026-08-19T15:16:07.590Z
                          */
                         signedUpAt: string;
                         /**
@@ -16282,7 +19496,7 @@ export interface operations {
                             /** @description A requirement that must be fulfilled to access certain features */
                             requirement?: {
                                 /** @enum {string} */
-                                type: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction";
+                                type: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction" | "regional_compliance";
                                 /**
                                  * @description Human-readable description of what needs to be done
                                  * @example Verify your identity to unlock payment features
@@ -16321,14 +19535,14 @@ export interface operations {
                             /** @enum {string} */
                             status: "active" | "requirements_needed" | "not_available" | "pending";
                             /** @enum {string} */
-                            nextRequirement?: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction";
+                            nextRequirement?: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction" | "regional_compliance";
                             /**
                              * @description List of requirements that must be met to activate this capability
                              * @example []
                              */
                             requirements: {
                                 /** @enum {string} */
-                                type: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction";
+                                type: "identity_verification" | "terms_acceptance" | "additional_verification" | "document_submission" | "region_restriction" | "regional_compliance";
                                 /**
                                  * @description Human-readable description of what needs to be done
                                  * @example Verify your identity to unlock payment features
@@ -16424,6 +19638,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -16541,6 +19770,659 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+        };
+    };
+    getV1UsersMeComplianceRequirements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Regional compliance fields required for the authenticated user. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Whether the user's region requires additional compliance fields. False outside the EEA. */
+                        required: boolean;
+                        /**
+                         * @description Regulatory region driving the requirement (e.g. "EEA"). Null when nothing is required.
+                         * @example EEA
+                         */
+                        region: string | null;
+                        /** @description Whether every required field has been collected. */
+                        complete: boolean;
+                        /**
+                         * @description Date by which the fields must be submitted. Differs for new versus existing customers.
+                         * @example 2026-06-15
+                         */
+                        deadline: string | null;
+                        /** @description Per-field collection status. Empty when not required. */
+                        fields: {
+                            /**
+                             * @description Field name, matching the submission request body.
+                             * @example placeOfBirth
+                             */
+                            field: string;
+                            /** @enum {string} */
+                            status: "complete" | "missing";
+                        }[];
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+        };
+    };
+    postV1UsersMeCompliance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Regional compliance fields for the authenticated user. */
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Where the user was born. */
+                    placeOfBirth: {
+                        /**
+                         * @description Country of birth as an ISO 3166-1 alpha-3 code.
+                         * @example DEU
+                         */
+                        country: string;
+                        /**
+                         * @description City of birth. Recommended now, required by EU law from 2027.
+                         * @example Berlin
+                         */
+                        city?: string;
+                    };
+                    /**
+                     * @description Every nationality the user holds, not just their primary one.
+                     * @example [
+                     *       "DEU"
+                     *     ]
+                     */
+                    nationalities: string[];
+                    /** @description What the user intends to use the account for. */
+                    accountPurpose: "charitable_donations" | "ecommerce_retail_payments" | "investment_purposes" | "operating_a_company" | "payments_to_friends_or_family_abroad" | "personal_or_living_expenses" | "protect_wealth" | "purchase_goods_and_services" | "receive_payment_for_freelancing" | "receive_salary";
+                } | {
+                    /** @description Where the user was born. */
+                    placeOfBirth: {
+                        /**
+                         * @description Country of birth as an ISO 3166-1 alpha-3 code.
+                         * @example DEU
+                         */
+                        country: string;
+                        /**
+                         * @description City of birth. Recommended now, required by EU law from 2027.
+                         * @example Berlin
+                         */
+                        city?: string;
+                    };
+                    /**
+                     * @description Every nationality the user holds, not just their primary one.
+                     * @example [
+                     *       "DEU"
+                     *     ]
+                     */
+                    nationalities: string[];
+                    /** @enum {string} */
+                    accountPurpose: "other";
+                    /** @description Free-text purpose. Required because accountPurpose is "other". */
+                    accountPurposeOther: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    /** @description Where the user was born. */
+                    placeOfBirth: {
+                        /**
+                         * @description Country of birth as an ISO 3166-1 alpha-3 code.
+                         * @example DEU
+                         */
+                        country: string;
+                        /**
+                         * @description City of birth. Recommended now, required by EU law from 2027.
+                         * @example Berlin
+                         */
+                        city?: string;
+                    };
+                    /**
+                     * @description Every nationality the user holds, not just their primary one.
+                     * @example [
+                     *       "DEU"
+                     *     ]
+                     */
+                    nationalities: string[];
+                    /** @description What the user intends to use the account for. */
+                    accountPurpose: "charitable_donations" | "ecommerce_retail_payments" | "investment_purposes" | "operating_a_company" | "payments_to_friends_or_family_abroad" | "personal_or_living_expenses" | "protect_wealth" | "purchase_goods_and_services" | "receive_payment_for_freelancing" | "receive_salary";
+                } | {
+                    /** @description Where the user was born. */
+                    placeOfBirth: {
+                        /**
+                         * @description Country of birth as an ISO 3166-1 alpha-3 code.
+                         * @example DEU
+                         */
+                        country: string;
+                        /**
+                         * @description City of birth. Recommended now, required by EU law from 2027.
+                         * @example Berlin
+                         */
+                        city?: string;
+                    };
+                    /**
+                     * @description Every nationality the user holds, not just their primary one.
+                     * @example [
+                     *       "DEU"
+                     *     ]
+                     */
+                    nationalities: string[];
+                    /** @enum {string} */
+                    accountPurpose: "other";
+                    /** @description Free-text purpose. Required because accountPurpose is "other". */
+                    accountPurposeOther: string;
+                };
+                "multipart/form-data": {
+                    /** @description Where the user was born. */
+                    placeOfBirth: {
+                        /**
+                         * @description Country of birth as an ISO 3166-1 alpha-3 code.
+                         * @example DEU
+                         */
+                        country: string;
+                        /**
+                         * @description City of birth. Recommended now, required by EU law from 2027.
+                         * @example Berlin
+                         */
+                        city?: string;
+                    };
+                    /**
+                     * @description Every nationality the user holds, not just their primary one.
+                     * @example [
+                     *       "DEU"
+                     *     ]
+                     */
+                    nationalities: string[];
+                    /** @description What the user intends to use the account for. */
+                    accountPurpose: "charitable_donations" | "ecommerce_retail_payments" | "investment_purposes" | "operating_a_company" | "payments_to_friends_or_family_abroad" | "personal_or_living_expenses" | "protect_wealth" | "purchase_goods_and_services" | "receive_payment_for_freelancing" | "receive_salary";
+                } | {
+                    /** @description Where the user was born. */
+                    placeOfBirth: {
+                        /**
+                         * @description Country of birth as an ISO 3166-1 alpha-3 code.
+                         * @example DEU
+                         */
+                        country: string;
+                        /**
+                         * @description City of birth. Recommended now, required by EU law from 2027.
+                         * @example Berlin
+                         */
+                        city?: string;
+                    };
+                    /**
+                     * @description Every nationality the user holds, not just their primary one.
+                     * @example [
+                     *       "DEU"
+                     *     ]
+                     */
+                    nationalities: string[];
+                    /** @enum {string} */
+                    accountPurpose: "other";
+                    /** @description Free-text purpose. Required because accountPurpose is "other". */
+                    accountPurposeOther: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result of a compliance field submission. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Whether the user has now supplied every required field. */
+                        complianceFieldsComplete: boolean;
+                        /** @description Whether the fields were forwarded to the provider. False when the customer does not exist yet — they are included at creation instead. */
+                        bridgeCustomerUpdated: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+        };
+    };
+    postV1UsersMeTerms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Terms acceptance for the authenticated user. */
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description The signed agreement id the user received from the provider's hosted terms flow (surfaced via the terms_acceptance requirement's actionUrl). Opaque — the platform resolves which provider it belongs to. */
+                    agreementId: string;
+                    /** @description Optional fraud-session id from the provider's client SDK (e.g. a Radar session), forwarded to the provider for fraud checks. */
+                    sessionId?: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    /** @description The signed agreement id the user received from the provider's hosted terms flow (surfaced via the terms_acceptance requirement's actionUrl). Opaque — the platform resolves which provider it belongs to. */
+                    agreementId: string;
+                    /** @description Optional fraud-session id from the provider's client SDK (e.g. a Radar session), forwarded to the provider for fraud checks. */
+                    sessionId?: string;
+                };
+                "multipart/form-data": {
+                    /** @description The signed agreement id the user received from the provider's hosted terms flow (surfaced via the terms_acceptance requirement's actionUrl). Opaque — the platform resolves which provider it belongs to. */
+                    agreementId: string;
+                    /** @description Optional fraud-session id from the provider's client SDK (e.g. a Radar session), forwarded to the provider for fraud checks. */
+                    sessionId?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result of a terms acceptance. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Whether the agreement was recorded and terms are now accepted. */
+                        termsAccepted: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -16649,6 +20531,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -16787,6 +20684,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -16920,6 +20832,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -17102,6 +21029,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -17236,6 +21178,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -17363,6 +21320,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -17500,6 +21472,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -17533,6 +21520,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -17661,6 +21663,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -17825,6 +21842,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -18038,6 +22070,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -18184,6 +22231,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -18679,6 +22741,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -18712,6 +22789,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -18745,6 +22837,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -18778,6 +22885,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -18811,6 +22933,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -18946,6 +23083,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -18979,6 +23131,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -19012,6 +23179,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -19045,6 +23227,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -19078,6 +23275,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -19209,6 +23421,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -19242,6 +23469,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -19275,6 +23517,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -19308,6 +23565,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -19341,6 +23613,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -19461,6 +23748,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -19596,6 +23898,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -19629,6 +23946,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -19855,6 +24187,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -19888,6 +24235,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -19921,6 +24283,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -20057,6 +24434,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -20090,6 +24482,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -20218,6 +24625,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -20251,6 +24673,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -20364,6 +24801,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -20397,6 +24849,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -20430,6 +24897,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -20548,6 +25030,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -20581,6 +25078,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -20614,6 +25126,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -20748,6 +25275,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -20824,6 +25366,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -20857,6 +25414,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -20984,6 +25556,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21060,6 +25647,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21093,6 +25695,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21126,6 +25743,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21203,6 +25835,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21279,6 +25926,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21312,6 +25974,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21345,6 +26022,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21440,6 +26132,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21516,6 +26223,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21549,6 +26271,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21637,6 +26374,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21713,6 +26465,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21746,6 +26513,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21779,6 +26561,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21857,6 +26654,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21933,6 +26745,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21966,6 +26793,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -21999,6 +26841,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -22073,6 +26930,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -22149,6 +27021,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -22182,6 +27069,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -22215,6 +27117,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -22306,6 +27223,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -22382,6 +27314,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -22415,6 +27362,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -22431,28 +27393,52 @@ export interface operations {
             content: {
                 "application/json": {
                     /**
-                     * @description Country code to simulate successful KYC for
-                     * @example US
+                     * @description Which capability group to verify the user into. Determines which offerings become available.
+                     *
+                     *     This is a capability group, not an ISO country code — `EU` is the EEA as a whole, since every member state gets the same offerings. Real country codes such as `DE` or `ES` are rejected.
+                     *
+                     *     `US`: ACH and wire on-ramps, ACH / RTP / push-to-card payouts, cards. Simulatable in sandbox.
+                     *     `EU`: SEPA credit transfer on-ramp and payout, gated behind EU regional compliance. Simulatable in sandbox.
+                     *     `CA`: Canadian offerings. No sandbox fixture yet — returns 501.
+                     *     `GB`: UK offerings. No sandbox fixture yet — returns 501.
+                     * @example EU
+                     * @enum {string}
                      */
-                    country?: string;
+                    country?: "US" | "CA" | "EU" | "GB";
                     /** @description Set to true to simulate a failed KYC check */
                     failed?: boolean;
                 };
                 "application/x-www-form-urlencoded": {
                     /**
-                     * @description Country code to simulate successful KYC for
-                     * @example US
+                     * @description Which capability group to verify the user into. Determines which offerings become available.
+                     *
+                     *     This is a capability group, not an ISO country code — `EU` is the EEA as a whole, since every member state gets the same offerings. Real country codes such as `DE` or `ES` are rejected.
+                     *
+                     *     `US`: ACH and wire on-ramps, ACH / RTP / push-to-card payouts, cards. Simulatable in sandbox.
+                     *     `EU`: SEPA credit transfer on-ramp and payout, gated behind EU regional compliance. Simulatable in sandbox.
+                     *     `CA`: Canadian offerings. No sandbox fixture yet — returns 501.
+                     *     `GB`: UK offerings. No sandbox fixture yet — returns 501.
+                     * @example EU
+                     * @enum {string}
                      */
-                    country?: string;
+                    country?: "US" | "CA" | "EU" | "GB";
                     /** @description Set to true to simulate a failed KYC check */
                     failed?: boolean;
                 };
                 "multipart/form-data": {
                     /**
-                     * @description Country code to simulate successful KYC for
-                     * @example US
+                     * @description Which capability group to verify the user into. Determines which offerings become available.
+                     *
+                     *     This is a capability group, not an ISO country code — `EU` is the EEA as a whole, since every member state gets the same offerings. Real country codes such as `DE` or `ES` are rejected.
+                     *
+                     *     `US`: ACH and wire on-ramps, ACH / RTP / push-to-card payouts, cards. Simulatable in sandbox.
+                     *     `EU`: SEPA credit transfer on-ramp and payout, gated behind EU regional compliance. Simulatable in sandbox.
+                     *     `CA`: Canadian offerings. No sandbox fixture yet — returns 501.
+                     *     `GB`: UK offerings. No sandbox fixture yet — returns 501.
+                     * @example EU
+                     * @enum {string}
                      */
-                    country?: string;
+                    country?: "US" | "CA" | "EU" | "GB";
                     /** @description Set to true to simulate a failed KYC check */
                     failed?: boolean;
                 };
@@ -22466,6 +27452,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    } & {
+                        /** @description Every cause. A single-cause failure also reports it via top-level `code`/`field`/`detail`; a multi-field failure is described only here. */
+                        errors?: {
+                            field: string;
+                            message: string;
+                            code?: string;
+                        }[];
+                    };
                 };
             };
             /** @description Response for status 401 */
@@ -22511,6 +27552,54 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
             /** @description Response for status 500 */
             500: {
                 headers: {
@@ -22541,6 +27630,69 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 501 */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -22647,15 +27799,21 @@ export interface operations {
                          */
                         onRampId: string | null;
                         /** @enum {string} */
-                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "failed";
+                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed";
                         /** @enum {string} */
                         quoteType: "exact_input" | "exact_output";
                         /** @enum {string} */
                         priority: "normal" | "high";
                         feeRateBps: number;
+                        planAdjustmentBps: number;
+                        integratorPricingClass: string | null;
+                        integratorPlanPhase: string | null;
+                        integratorPolicyVersion: string | null;
                         principalAmountUsd: string;
                         expectedAssetAmount: string;
                         grossFeeUsd: string;
+                        publishedFeeUsd: string;
+                        planAdjustmentFeeUsd: string;
                         feeSubsidyUsd: string;
                         userFeeUsd: string;
                         totalDebitAmountUsd: string;
@@ -22778,6 +27936,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -22844,6 +28017,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -23030,6 +28218,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -23063,6 +28266,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -23195,6 +28413,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -23228,6 +28461,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -23371,6 +28619,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -23404,6 +28667,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -23513,6 +28791,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -23579,6 +28872,453 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+        };
+    };
+    "postV1SandboxAuto-ramp-accountsByIdDeposit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Fiat amount to deposit, in the account's `currency`. Decimal string, same format as the estimate endpoint's `amount`. Up to 12 digits before the decimal point.
+                     * @example 2525.00
+                     */
+                    amount: string;
+                    /**
+                     * @description On-chain settlement cost the provider should report. Defaults to `0.00`, which is what a Solana deposit really costs. Set it to give an Ethereum deposit a realistic network fee — this is also the only way to give the estimate endpoint's `network` figure a settled sample to read.
+                     * @example 4.20
+                     */
+                    gasFee?: string;
+                    /**
+                     * @description Conversion cost the provider should itemise. Derived from the provider's live bid/ask spread when omitted.
+                     * @example 2.53
+                     */
+                    exchangeFee?: string;
+                    /**
+                     * @description Set `false` to leave the deposit at `processing` instead of delivering the crypto, for testing an on-ramp that has not settled yet. Defaults to `true`.
+                     * @example true
+                     */
+                    settle?: boolean;
+                    /** @description Reuse the `depositId` of an earlier simulated deposit to advance that on-ramp instead of creating a new one. Fresh and unique when omitted. */
+                    depositId?: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    /**
+                     * @description Fiat amount to deposit, in the account's `currency`. Decimal string, same format as the estimate endpoint's `amount`. Up to 12 digits before the decimal point.
+                     * @example 2525.00
+                     */
+                    amount: string;
+                    /**
+                     * @description On-chain settlement cost the provider should report. Defaults to `0.00`, which is what a Solana deposit really costs. Set it to give an Ethereum deposit a realistic network fee — this is also the only way to give the estimate endpoint's `network` figure a settled sample to read.
+                     * @example 4.20
+                     */
+                    gasFee?: string;
+                    /**
+                     * @description Conversion cost the provider should itemise. Derived from the provider's live bid/ask spread when omitted.
+                     * @example 2.53
+                     */
+                    exchangeFee?: string;
+                    /**
+                     * @description Set `false` to leave the deposit at `processing` instead of delivering the crypto, for testing an on-ramp that has not settled yet. Defaults to `true`.
+                     * @example true
+                     */
+                    settle?: boolean;
+                    /** @description Reuse the `depositId` of an earlier simulated deposit to advance that on-ramp instead of creating a new one. Fresh and unique when omitted. */
+                    depositId?: string;
+                };
+                "multipart/form-data": {
+                    /**
+                     * @description Fiat amount to deposit, in the account's `currency`. Decimal string, same format as the estimate endpoint's `amount`. Up to 12 digits before the decimal point.
+                     * @example 2525.00
+                     */
+                    amount: string;
+                    /**
+                     * @description On-chain settlement cost the provider should report. Defaults to `0.00`, which is what a Solana deposit really costs. Set it to give an Ethereum deposit a realistic network fee — this is also the only way to give the estimate endpoint's `network` figure a settled sample to read.
+                     * @example 4.20
+                     */
+                    gasFee?: string;
+                    /**
+                     * @description Conversion cost the provider should itemise. Derived from the provider's live bid/ask spread when omitted.
+                     * @example 2.53
+                     */
+                    exchangeFee?: string;
+                    /**
+                     * @description Set `false` to leave the deposit at `processing` instead of delivering the crypto, for testing an on-ramp that has not settled yet. Defaults to `true`.
+                     * @example true
+                     */
+                    settle?: boolean;
+                    /** @description Reuse the `depositId` of an earlier simulated deposit to advance that on-ramp instead of creating a new one. Fresh and unique when omitted. */
+                    depositId?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The result of a simulated deposit. Everything here also reaches the ordinary on-ramp endpoints. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description The on-ramp the deposit produced. Poll it at `GET /v1/on-ramps/{id}` — it is an ordinary on-ramp in every respect.
+                         * @example 507f1f77bcf86cd799439011
+                         */
+                        onRampId: string;
+                        /**
+                         * @description The provider-side deposit identifier. Pass it back to advance this same on-ramp.
+                         * @example 3f1a9c02-6c1c-4f0e-9a6a-2f9c8f6f4b21
+                         */
+                        depositId: string;
+                        /** @enum {string} */
+                        status: "awaiting_payment" | "processing" | "partially_delivered" | "completed" | "cancelled" | "failed" | "reversed" | "refunded" | "in_review";
+                        input: {
+                            /**
+                             * @description Fiat deposited, before fees
+                             * @example 2525.00
+                             */
+                            amount: string;
+                            /**
+                             * @description Fiat currency the on-ramp was booked in. Taken from the account, not the request.
+                             * @example EUR
+                             */
+                            currency: string;
+                        };
+                        fees: {
+                            /**
+                             * @description Every fee charged on the deposit, in `input.currency`.
+                             * @example 27.78
+                             */
+                            total: string;
+                            /**
+                             * @description Currency of every figure under `fees`
+                             * @example EUR
+                             */
+                            currency: string;
+                            /** @description Every fee the user paid, split by role, in source currency. Omitted on on-ramps created before pass-through fees were recorded — absent means unknown, not zero. */
+                            breakdown: {
+                                /**
+                                 * @description Spritz's own fee.
+                                 * @example 57.07
+                                 */
+                                platform: string;
+                                /**
+                                 * @description Total currency-conversion cost passed through to the user, whether the provider charged it as a fee or took it inside the exchange rate. `0.00` only when no conversion took place.
+                                 * @example 2.53
+                                 */
+                                exchange: string;
+                                /**
+                                 * @description On-chain settlement cost passed through to the user. `0.00` on networks that do not charge it — and, on an estimate, also where too few deposits have settled for us to have measured one. `fees.networkFeeSamples` separates the two there; on a settled on-ramp this is always the cost actually charged.
+                                 * @example 0.00
+                                 */
+                                network: string;
+                            };
+                        };
+                        output: {
+                            /**
+                             * @description Crypto delivered, in whole token units. Still an expectation rather than a delivery when `settle` was false, matching what the on-ramp reports at that point.
+                             * @example 2497.22
+                             */
+                            amount: string;
+                            /**
+                             * @description Token the deposit was converted to
+                             * @example USDC
+                             */
+                            token: string;
+                        };
+                    };
+                };
+            };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                    };
+                };
+            };
+            /** @description Response for status 503 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -23680,6 +29420,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
@@ -23713,6 +29468,21 @@ export interface operations {
                          * @example /errors/1234567890
                          */
                         instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
                     };
                 };
             };
