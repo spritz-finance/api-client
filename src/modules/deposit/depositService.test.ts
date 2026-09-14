@@ -27,10 +27,6 @@ describe('DepositService', () => {
                 percentage: 50,
                 maxAmountUsd: '5.00',
             },
-            clientContext: {
-                sessionId: 'session_123',
-                platform: 'ios',
-            },
         } as const
         const response = {
             preparationId: 'prep_123',
@@ -77,9 +73,6 @@ describe('DepositService', () => {
     it('creates a direct ACH deposit from a preparation', async () => {
         const input = {
             preparationId: 'prep_123',
-            clientContext: {
-                userAgent: 'test-agent',
-            },
         }
         const response = {
             id: 'dep_123',

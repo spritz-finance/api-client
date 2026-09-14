@@ -180,9 +180,33 @@ export interface paths {
          * Get transaction params for a quote
          * @description Returns transaction parameters for a `sign_transaction` quote. Use these to construct, sign, and submit the on-chain transaction.
          *
-         *     Returns either EVM calldata or a serialized Solana transaction depending on the quote's chain.
+         *     Returns EVM calldata, or a serialized Solana or Sui transaction, depending on the quote's chain. Solana and Sui transactions are built for `senderAddress`, so pass it.
          */
         post: operations["postV1Off-ramp-quotesByQuoteIdTransaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/off-ramp-quotes/{quoteId}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Report the transaction sent for a quote
+         * @description Tells Spritz which on-chain transaction you broadcast for this quote, so tracking starts immediately instead of when the chain watcher notices it.
+         *
+         *     Works for both fulfillment types: the transaction you signed from `POST /off-ramp-quotes/{id}/transaction`, or the transfer you sent to `sendTo.address`. The quote moves to `transaction_pending` and its off-ramp (fiat leg) is created right away; `confirmed` still comes from the chain.
+         *
+         *     Idempotent for the same hash. Reporting a different hash once one is on record is rejected with `400` — the chain watcher is the authority from then on.
+         */
+        post: operations["postV1Off-ramp-quotesByQuoteIdSubmit"];
         delete?: never;
         options?: never;
         head?: never;
@@ -564,6 +588,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/deposits/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List deposits
+         * @description Returns the authenticated user's ACH debit deposits newest first. Use nextCursor to retrieve subsequent pages and reconcile asynchronous debit, release, settlement, return, and failure states.
+         */
+        get: operations["getV1Deposits"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/deposits/{depositId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a deposit
+         * @description Returns the latest ACH debit and crypto release state for a deposit owned by the authenticated user.
+         */
+        get: operations["getV1DepositsByDepositId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/deposits/direct/prepare": {
         parameters: {
             query?: never;
@@ -595,7 +659,7 @@ export interface paths {
         put?: never;
         /**
          * Create a direct deposit
-         * @description Authorizes and creates a deposit against a raw wallet address prepared via /direct/prepare. Authorization is derived from the verified ACH funding source; no wallet signature is required.
+         * @description Authorizes and creates a deposit against a raw wallet address prepared via /direct/prepare. Authorization is derived from the verified ACH funding source; no wallet signature is required. Idempotency-Key is required; reuse the same key and body after a timeout to recover the original response without creating another deposit.
          */
         post: operations["postV1DepositsDirect"];
         delete?: never;
@@ -658,6 +722,46 @@ export interface paths {
         get: operations["getV1Bills"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bills/removed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List removed bills
+         * @description Returns bills the authenticated user removed that can be restored with `POST /v1/bills/{billId}/restore`, with status `deleted` and a `deletedAt`. Bills the provider deactivated, and closed accounts, are not included.
+         */
+        get: operations["getV1BillsRemoved"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bills/{billId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore a removed bill
+         * @description Brings back a bill the authenticated user previously removed. Returns 404 when the bill is not the user's and 409 when it is not removed or cannot be restored.
+         */
+        post: operations["postV1BillsByBillIdRestore"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1043,7 +1147,7 @@ export interface paths {
         put?: never;
         /**
          * Add a debit card
-         * @description Adds a new debit card for push-to-debit payouts. Card data must be encrypted via the Evervault Card iframe — send the encrypted tokens and plaintext metadata (last four, BIN, brand) returned by the iframe.
+         * @description Adds a debit card as a push-to-card payout destination. Never send a raw card number: collect it with the Evervault Card component in the user's browser (initialised with the Evervault team ID and per-environment app ID that Spritz provides during onboarding) and forward the encrypted `card.number` token together with the plaintext expiry, last four, BIN and brand it returns. Requires an active `crypto_to_fiat` / `push_to_card` capability. See the Push to debit card guide.
          */
         post: operations["postV1Debit-cards"];
         delete?: never;
@@ -1337,6 +1441,8 @@ export interface paths {
          *     `payload` is the exact body that was sent, and the body the `Signature` header was computed over, so it can be replayed against your own verification code.
          *
          *     Cursor-paginated: pass the previous response's `nextCursor` as `cursor` to walk further back. `nextCursor` is `null` on the last page.
+         *
+         *     No fixed retention period is guaranteed. Treat this endpoint as a diagnostic and prompt-recovery aid, not permanent event storage or a long-lived redelivery queue. Store accepted webhook events durably and reconcile failed deliveries promptly.
          *
          *     Deliveries are recorded for every webhook on the integrator. Scope is your own integrator only.
          */
@@ -2204,6 +2310,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/sandbox/deposits/direct/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prepare a sandbox deposit under a program-control state
+         * @description Evaluates a deterministic sandbox-only program halt or new-user pause through the normal ACH debit policy gate. Blocking simulations return the same 409 problem response an integrator must handle in production and do not create a preparation.
+         */
+        post: operations["postV1SandboxDepositsDirectPrepare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/sandbox/deposits/direct": {
         parameters: {
             query?: never;
@@ -2214,10 +2340,88 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create a sandbox direct deposit with an armed ACH return
-         * @description Creates a direct (no-signature) deposit in sandbox and routes the Modern Treasury debit through a return-code-backed receiving account for end-to-end return testing.
+         * Create a sandbox direct deposit with a simulated outcome
+         * @description Runs direct deposit creation through one deterministic sandbox simulation. Provide exactly one of `returnSimulation`, `riskSimulation`, or `lifecycleSimulation`. `Idempotency-Key` is required and must be reused with the same body after a timeout.
+         *
+         *     An ACH return simulation creates the deposit normally and applies the selected return code to its sandbox debit.
+         *
+         *     A blocking risk simulation selects a public decision outcome while keeping private provider inputs and policy rules out of the API. It returns **409** and creates no deposit:
+         *
+         *     - `review_required` → `risk_review_required`; the source remains active;
+         *     - `rejected` → `risk_rejected`; the source remains active;
+         *     - `source_temporarily_unavailable` → `risk_rerouted`; the source becomes temporarily ineligible with `statusReason: rerouted` and an `availableAt` time;
+         *     - `decision_unavailable` → `risk_evaluation_unavailable`; the source remains active.
+         *
+         *     High-priority simulations create a deposit successfully:
+         *
+         *     - `high_priority_available` → the deposit succeeds with its quoted instant portion.
+         *     - `high_priority_downgraded` → the deposit succeeds at standard timing with no instant portion.
+         *
+         *     Risk simulations force a fresh simulated decision but do not expose or call the production decision provider. Prepare a new authorization before retrying because the preparation is consumed by the create attempt.
+         *
+         *     Lifecycle simulations never call a money-movement provider. `refunded`, `release_failed`, `release_stalled`, and `full_delivery` require a normal-priority preparation and apply the selected state before execution starts. `full_delivery` records a completed deposit and `achDebit.delivered` milestone. `partial_then_full_delivery` requires a high-priority preparation with both instant and settlement portions; it records deterministic `achDebit.deliveryProgress` and `achDebit.delivered` milestones for the same deposit, then returns the completed deposit.
          */
         post: operations["postV1SandboxDepositsDirect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sandbox/ach-debit/exposure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read ACH debit sandbox exposure
+         * @description Returns the authenticated integrator's sandbox-only W1/W2 exposure and configured caps. Internal risk thresholds, reserve calculations, other integrators, and the global Spritz book are never exposed.
+         */
+        get: operations["getV1SandboxAch-debitExposure"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sandbox/ach-debit/exposure/cap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set ACH debit sandbox exposure caps
+         * @description Sets the authenticated integrator's sandbox-only W1 and W2 caps. Use the read endpoint first and restore both original values after the scenario. This control cannot address the global Spritz book or another integrator.
+         */
+        post: operations["postV1SandboxAch-debitExposureCap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sandbox/bank-accounts/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link a deterministic sandbox bank account
+         * @description Creates a Plaid custom Sandbox item without opening Link, then runs the normal Spritz token exchange, ownership evaluation, bank-account sync, funding-source creation, cache invalidation, and event paths. Query the returned account's fundingSourceId for the resulting ownership eligibility state.
+         */
+        post: operations["postV1SandboxBank-accountsLink"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2490,7 +2694,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -2533,7 +2737,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -2566,7 +2770,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -2605,6 +2809,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -2784,7 +3009,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -2827,7 +3052,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -2860,7 +3085,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -2899,6 +3124,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -3034,7 +3280,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -3077,7 +3323,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -3110,7 +3356,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -3149,6 +3395,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -3283,7 +3550,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -3322,6 +3589,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -3331,7 +3619,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -3374,7 +3662,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -3407,7 +3695,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -3446,6 +3734,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -3455,7 +3764,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -3494,6 +3803,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -3503,7 +3833,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -3542,6 +3872,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -3592,7 +3943,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description Creation timestamp
-                         * @example 2026-08-19T15:16:07.351Z
+                         * @example 2026-09-14T17:41:50.986Z
                          */
                         createdAt?: string;
                     }[];
@@ -3604,7 +3955,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -3647,7 +3998,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -3680,7 +4031,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -3719,6 +4070,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -3736,7 +4108,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6a85c8b76e7637bff6a3194b
+                     * @example 6aa831de18ffc49a16151fc7
                      */
                     accountId: string;
                     /**
@@ -3764,7 +4136,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6a85c8b76e7637bff6a3194b
+                     * @example 6aa831de18ffc49a16151fc7
                      */
                     accountId: string;
                     /**
@@ -3792,7 +4164,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6a85c8b76e7637bff6a3194b
+                     * @example 6aa831de18ffc49a16151fc7
                      */
                     accountId: string;
                     /**
@@ -3829,7 +4201,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Quote ID
-                         * @example quote_abc123
+                         * @example 6a99b7bacc18094dfe644ba6
                          */
                         id: string;
                         /** @enum {string} */
@@ -3839,7 +4211,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-08-19T15:16:07.335Z
+                         * @example 2026-09-14T17:41:50.908Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -3878,7 +4250,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6a85c8b76e7637bff6a3194c
+                             * @example 6aa831de18ffc49a16151fc8
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -3950,6 +4322,11 @@ export interface operations {
                              */
                             explorerUrl: string;
                         } | null;
+                        /**
+                         * @description The off-ramp (fiat leg) created for this quote once the crypto payment confirms. Null until then — poll the quote or watch for `payment.created` and read it back.
+                         * @example 6a99b80613a0c37251651788
+                         */
+                        offRampId: string | null;
                     };
                 };
             };
@@ -3959,7 +4336,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -4002,7 +4379,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -4035,7 +4412,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -4074,6 +4451,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -4099,7 +4497,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Quote ID
-                         * @example quote_abc123
+                         * @example 6a99b7bacc18094dfe644ba6
                          */
                         id: string;
                         /** @enum {string} */
@@ -4109,7 +4507,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-08-19T15:16:07.335Z
+                         * @example 2026-09-14T17:41:50.908Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4148,7 +4546,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6a85c8b76e7637bff6a3194c
+                             * @example 6aa831de18ffc49a16151fc8
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -4220,6 +4618,11 @@ export interface operations {
                              */
                             explorerUrl: string;
                         } | null;
+                        /**
+                         * @description The off-ramp (fiat leg) created for this quote once the crypto payment confirms. Null until then — poll the quote or watch for `payment.created` and read it back.
+                         * @example 6a99b80613a0c37251651788
+                         */
+                        offRampId: string | null;
                     };
                 };
             };
@@ -4229,7 +4632,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -4272,7 +4675,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -4305,7 +4708,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -4344,6 +4747,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -4362,7 +4786,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /**
-                     * @description Wallet address that will sign the transaction. Required for Solana.
+                     * @description Wallet address that will sign the transaction. Required for Solana and Sui, where the transaction is built for this signer.
                      * @example 0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18
                      */
                     senderAddress?: string;
@@ -4374,7 +4798,7 @@ export interface operations {
                 };
                 "application/x-www-form-urlencoded": {
                     /**
-                     * @description Wallet address that will sign the transaction. Required for Solana.
+                     * @description Wallet address that will sign the transaction. Required for Solana and Sui, where the transaction is built for this signer.
                      * @example 0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18
                      */
                     senderAddress?: string;
@@ -4386,7 +4810,7 @@ export interface operations {
                 };
                 "multipart/form-data": {
                     /**
-                     * @description Wallet address that will sign the transaction. Required for Solana.
+                     * @description Wallet address that will sign the transaction. Required for Solana and Sui, where the transaction is built for this signer.
                      * @example 0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18
                      */
                     senderAddress?: string;
@@ -4414,7 +4838,7 @@ export interface operations {
                          */
                         chain: string;
                         /**
-                         * @description Token address the user sends (contract address on EVM, mint address on Solana)
+                         * @description Token address the user sends (contract address on EVM, mint address on Solana, coin type on Sui)
                          * @example 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
                          */
                         inputToken: string;
@@ -4457,7 +4881,7 @@ export interface operations {
                          */
                         chain: string;
                         /**
-                         * @description Token address the user sends (contract address on EVM, mint address on Solana)
+                         * @description Token address the user sends (contract address on EVM, mint address on Solana, coin type on Sui)
                          * @example 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
                          */
                         inputToken: string;
@@ -4481,6 +4905,39 @@ export interface operations {
                          * @example base64EncodedTransaction...
                          */
                         transactionSerialized: string;
+                    } | {
+                        /** @enum {string} */
+                        type: "sui";
+                        /**
+                         * @description Blockchain network
+                         * @example ethereum
+                         */
+                        chain: string;
+                        /**
+                         * @description Token address the user sends (contract address on EVM, mint address on Solana, coin type on Sui)
+                         * @example 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
+                         */
+                        inputToken: string;
+                        /**
+                         * @description Token address received by the payment contract. Same as inputToken for direct payments, different for swap paths.
+                         * @example 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
+                         */
+                        outputToken: string;
+                        /**
+                         * @description Exact amount of inputToken to send, in smallest unit (e.g. 6 decimals for USDC)
+                         * @example 100000000
+                         */
+                        requiredTokenInput: string;
+                        /**
+                         * @description Address that receives the coins
+                         * @example 0x7d20dcdb2bca4f508ea9613994683eb4e76e9c4ed371169677c1be02aaf0b58e
+                         */
+                        recipientAddress: string;
+                        /**
+                         * @description Base64-encoded BCS bytes of a fully built transaction (sender set, gas selected, payment memo included). Restore it with `Transaction.from(...)` from `@mysten/sui/transactions`, sign, and execute. Built for `senderAddress`, so that field is required.
+                         * @example AAACAAgA4fUFAAAAAAAg...
+                         */
+                        transactionSerialized: string;
                     };
                 };
             };
@@ -4490,7 +4947,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -4533,7 +4990,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -4566,7 +5023,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -4605,6 +5062,347 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    "postV1Off-ramp-quotesByQuoteIdSubmit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quoteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Hash / signature / digest of the transaction you broadcast for this quote, as the chain reports it.
+                     * @example 0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060
+                     */
+                    transactionHash: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    /**
+                     * @description Hash / signature / digest of the transaction you broadcast for this quote, as the chain reports it.
+                     * @example 0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060
+                     */
+                    transactionHash: string;
+                };
+                "multipart/form-data": {
+                    /**
+                     * @description Hash / signature / digest of the transaction you broadcast for this quote, as the chain reports it.
+                     * @example 0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060
+                     */
+                    transactionHash: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Quote ID
+                         * @example 6a99b7bacc18094dfe644ba6
+                         */
+                        id: string;
+                        /** @enum {string} */
+                        fulfillment: "sign_transaction" | "send_to_address";
+                        /** @enum {string} */
+                        status: "created" | "transaction_pending" | "transaction_failed" | "insufficient_funds" | "confirmed" | "completed" | "expired" | "failed" | "refunded";
+                        /**
+                         * Format: date-time
+                         * @description When the quote was created
+                         * @example 2026-09-14T17:41:50.908Z
+                         */
+                        createdAt: string;
+                        /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
+                        input: {
+                            /**
+                             * @description Exact total USD value Spritz collects, including the Spritz service fee and excluding blockchain gas.
+                             * @example 101.50
+                             */
+                            amount: string;
+                            /**
+                             * @description Always USD
+                             * @enum {string}
+                             */
+                            currency: "USD";
+                            /**
+                             * @description Contract address (EVM/Solana/Sui/Tron) or asset symbol (BTC, DASH) for UTXO chains
+                             * @example 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
+                             */
+                            tokenAddress: string;
+                            /** @enum {string} */
+                            chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
+                        };
+                        /** @description Destination amount. Exact for supported exact-output quotes; estimated for EUR exact-input quotes. */
+                        output: {
+                            /**
+                             * @description Fiat amount delivered or estimated for the destination.
+                             * @example 89.25
+                             */
+                            amount: string;
+                            /**
+                             * @description Destination fiat currency.
+                             * @example EUR
+                             */
+                            currency: string;
+                            /** @enum {string} */
+                            rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
+                            /**
+                             * @description Destination account ID
+                             * @example 6aa831de18ffc49a16151fc8
+                             */
+                            accountId: string;
+                            /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
+                            estimated: boolean;
+                            exchangeRate: {
+                                /**
+                                 * @description Currency one unit of the rate is based on.
+                                 * @enum {string}
+                                 */
+                                baseCurrency: "USD";
+                                /**
+                                 * @description Destination fiat currency.
+                                 * @example EUR
+                                 */
+                                quoteCurrency: string;
+                                /**
+                                 * @description Indicative destination-currency units per USD at quote creation.
+                                 * @example 0.92010309
+                                 */
+                                rate: string;
+                            } | null;
+                        };
+                        /** @description Known Spritz fee. Provider FX movement and blockchain gas are not included. */
+                        fees: {
+                            /**
+                             * @description Spritz service fee included in input.amount.
+                             * @example 1.25
+                             */
+                            amount: string;
+                            /**
+                             * @description Service fees are USD-denominated.
+                             * @enum {string}
+                             */
+                            currency: "USD";
+                        };
+                        /** @description Present when `fulfillment` is `send_to_address`. Send exactly `amount` of `token` to `address` before `expiresAt`. */
+                        sendTo: {
+                            /**
+                             * @description Blockchain address to send crypto to
+                             * @example bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
+                             */
+                            address: string;
+                            /**
+                             * @description Exact crypto amount to send
+                             * @example 0.00094877
+                             */
+                            amount: string;
+                            /**
+                             * @description Token symbol to send
+                             * @example BTC
+                             */
+                            token: string;
+                            /**
+                             * Format: date-time
+                             * @description Deadline to send crypto. Quote expires after this time.
+                             */
+                            expiresAt: string;
+                        } | null;
+                        /** @description Present after on-chain transaction is detected. */
+                        confirmation: {
+                            /**
+                             * @description On-chain transaction hash
+                             * @example 0xabc123...
+                             */
+                            transactionHash: string;
+                            /**
+                             * @description Block explorer URL
+                             * @example https://etherscan.io/tx/0xabc123...
+                             */
+                            explorerUrl: string;
+                        } | null;
+                        /**
+                         * @description The off-ramp (fiat leg) created for this quote once the crypto payment confirms. Null until then — poll the quote or watch for `payment.created` and read it back.
+                         * @example 6a99b80613a0c37251651788
+                         */
+                        offRampId: string | null;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -4636,9 +5434,14 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique off-ramp identifier
-                             * @example offramp_xyz789
+                             * @example 6a99b80613a0c37251651788
                              */
                             id: string;
+                            /**
+                             * @description The quote (crypto leg) this off-ramp fulfills. Null for auto-ramp-address deposits, which have no quote.
+                             * @example 6a99b7bacc18094dfe644ba6
+                             */
+                            quoteId: string | null;
                             /** @enum {string} */
                             status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
                             /** Format: date-time */
@@ -4663,6 +5466,7 @@ export interface operations {
                                 /**
                                  * @description Blockchain network the crypto transaction occurs on
                                  * @example ethereum
+                                 * @enum {string}
                                  */
                                 chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
                             } | null;
@@ -4680,7 +5484,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6a85c8b76e7637bff6a3194d
+                                 * @example 6aa831de18ffc49a16151fc9
                                  */
                                 accountId: string;
                                 /**
@@ -4702,8 +5506,9 @@ export interface operations {
                                  *     - `bill_pay`: Bill payment rail.
                                  *     - `card_deposit`: Deposit to crypto card.
                                  * @example ach_standard
+                                 * @enum {string|null}
                                  */
-                                rail: ("ach_standard" | null) | ("ach_same_day" | null) | ("rtp" | null) | ("wire" | null) | ("eft" | null) | ("sepa" | null) | ("faster_payments" | null) | ("push_to_card" | null) | ("bill_pay" | null) | ("card_deposit" | null);
+                                rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit" | null;
                             };
                             /**
                              * @description Type of fiat destination.
@@ -4712,8 +5517,9 @@ export interface operations {
                              *     - `bill`: Bill payment.
                              *     - `crypto_card`: Crypto card deposit.
                              * @example bank_account
+                             * @enum {string|null}
                              */
-                            fiatDestination: ("bank_account" | null) | ("bill" | null) | ("crypto_card" | null);
+                            fiatDestination: "bank_account" | "bill" | "crypto_card" | null;
                             fees: {
                                 /**
                                  * @description Fee amount
@@ -4758,7 +5564,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -4801,7 +5607,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -4834,7 +5640,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -4873,6 +5679,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -4898,9 +5725,14 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique off-ramp identifier
-                         * @example offramp_xyz789
+                         * @example 6a99b80613a0c37251651788
                          */
                         id: string;
+                        /**
+                         * @description The quote (crypto leg) this off-ramp fulfills. Null for auto-ramp-address deposits, which have no quote.
+                         * @example 6a99b7bacc18094dfe644ba6
+                         */
+                        quoteId: string | null;
                         /** @enum {string} */
                         status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
                         /** Format: date-time */
@@ -4925,6 +5757,7 @@ export interface operations {
                             /**
                              * @description Blockchain network the crypto transaction occurs on
                              * @example ethereum
+                             * @enum {string}
                              */
                             chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
                         } | null;
@@ -4942,7 +5775,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6a85c8b76e7637bff6a3194d
+                             * @example 6aa831de18ffc49a16151fc9
                              */
                             accountId: string;
                             /**
@@ -4964,8 +5797,9 @@ export interface operations {
                              *     - `bill_pay`: Bill payment rail.
                              *     - `card_deposit`: Deposit to crypto card.
                              * @example ach_standard
+                             * @enum {string|null}
                              */
-                            rail: ("ach_standard" | null) | ("ach_same_day" | null) | ("rtp" | null) | ("wire" | null) | ("eft" | null) | ("sepa" | null) | ("faster_payments" | null) | ("push_to_card" | null) | ("bill_pay" | null) | ("card_deposit" | null);
+                            rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit" | null;
                         };
                         /**
                          * @description Type of fiat destination.
@@ -4974,8 +5808,9 @@ export interface operations {
                          *     - `bill`: Bill payment.
                          *     - `crypto_card`: Crypto card deposit.
                          * @example bank_account
+                         * @enum {string|null}
                          */
-                        fiatDestination: ("bank_account" | null) | ("bill" | null) | ("crypto_card" | null);
+                        fiatDestination: "bank_account" | "bill" | "crypto_card" | null;
                         fees: {
                             /**
                              * @description Fee amount
@@ -5009,7 +5844,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -5052,7 +5887,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -5085,7 +5920,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -5124,6 +5959,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -5160,7 +6016,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6a85c8b76e7637bff6a3194e
+                     * @example 6aa831de18ffc49a16151fca
                      */
                     accountId?: string;
                 };
@@ -5178,7 +6034,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6a85c8b76e7637bff6a3194e
+                     * @example 6aa831de18ffc49a16151fca
                      */
                     accountId?: string;
                 };
@@ -5196,7 +6052,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6a85c8b76e7637bff6a3194e
+                     * @example 6aa831de18ffc49a16151fca
                      */
                     accountId?: string;
                 };
@@ -5212,9 +6068,14 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique off-ramp identifier
-                         * @example offramp_xyz789
+                         * @example 6a99b80613a0c37251651788
                          */
                         id: string;
+                        /**
+                         * @description The quote (crypto leg) this off-ramp fulfills. Null for auto-ramp-address deposits, which have no quote.
+                         * @example 6a99b7bacc18094dfe644ba6
+                         */
+                        quoteId: string | null;
                         /** @enum {string} */
                         status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
                         /** Format: date-time */
@@ -5239,6 +6100,7 @@ export interface operations {
                             /**
                              * @description Blockchain network the crypto transaction occurs on
                              * @example ethereum
+                             * @enum {string}
                              */
                             chain: "ethereum" | "polygon" | "arbitrum" | "base" | "optimism" | "avalanche" | "binance-smart-chain" | "solana" | "bitcoin" | "dash" | "tron" | "sui" | "hyperevm" | "monad" | "sonic" | "unichain";
                         } | null;
@@ -5256,7 +6118,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6a85c8b76e7637bff6a3194d
+                             * @example 6aa831de18ffc49a16151fc9
                              */
                             accountId: string;
                             /**
@@ -5278,8 +6140,9 @@ export interface operations {
                              *     - `bill_pay`: Bill payment rail.
                              *     - `card_deposit`: Deposit to crypto card.
                              * @example ach_standard
+                             * @enum {string|null}
                              */
-                            rail: ("ach_standard" | null) | ("ach_same_day" | null) | ("rtp" | null) | ("wire" | null) | ("eft" | null) | ("sepa" | null) | ("faster_payments" | null) | ("push_to_card" | null) | ("bill_pay" | null) | ("card_deposit" | null);
+                            rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit" | null;
                         };
                         /**
                          * @description Type of fiat destination.
@@ -5288,8 +6151,9 @@ export interface operations {
                          *     - `bill`: Bill payment.
                          *     - `crypto_card`: Crypto card deposit.
                          * @example bank_account
+                         * @enum {string|null}
                          */
-                        fiatDestination: ("bank_account" | null) | ("bill" | null) | ("crypto_card" | null);
+                        fiatDestination: "bank_account" | "bill" | "crypto_card" | null;
                         fees: {
                             /**
                              * @description Fee amount
@@ -5323,7 +6187,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -5366,7 +6230,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -5399,7 +6263,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -5438,6 +6302,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -5544,6 +6429,11 @@ export interface operations {
                             /** @description Where the fiat for this on-ramp originated. Present when the on-ramp was funded by debiting a linked funding source (ACH debit); null when funds were pushed from an external bank account (ach_credit, wire, sepa_credit_transfer). */
                             source: {
                                 /**
+                                 * @description Opaque public identifier of the ACH debit deposit that funded this on-ramp
+                                 * @example dep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                                 */
+                                depositId: string;
+                                /**
                                  * @description Opaque public identifier of the funding source that was debited
                                  * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                                  */
@@ -5620,7 +6510,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -5663,7 +6553,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -5696,7 +6586,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -5735,6 +6625,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -5783,7 +6694,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -5826,7 +6737,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -5859,7 +6770,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -5898,6 +6809,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -5936,7 +6868,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -5975,6 +6907,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -5984,7 +6937,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -6027,7 +6980,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -6060,7 +7013,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -6099,6 +7052,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -6108,7 +7082,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -6147,6 +7121,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -6156,7 +7151,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -6195,6 +7190,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -6295,6 +7311,11 @@ export interface operations {
                         /** @description Where the fiat for this on-ramp originated. Present when the on-ramp was funded by debiting a linked funding source (ACH debit); null when funds were pushed from an external bank account (ach_credit, wire, sepa_credit_transfer). */
                         source: {
                             /**
+                             * @description Opaque public identifier of the ACH debit deposit that funded this on-ramp
+                             * @example dep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                             */
+                            depositId: string;
+                            /**
                              * @description Opaque public identifier of the funding source that was debited
                              * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                              */
@@ -6360,7 +7381,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -6403,7 +7424,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -6436,7 +7457,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -6475,6 +7496,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -6504,6 +7546,7 @@ export interface operations {
                         /**
                          * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
+                         * @enum {string}
                          */
                         status: "active" | "inactive";
                         /**
@@ -6516,10 +7559,11 @@ export interface operations {
                          *
                          *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
+                         * @enum {string|null}
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                        statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                         /**
-                         * @description Name of the account holder
+                         * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                          * @example John Doe
                          */
                         accountHolderName: string;
@@ -6573,6 +7617,7 @@ export interface operations {
                         /**
                          * @description Type of bank account (checking or savings)
                          * @example checking
+                         * @enum {string}
                          */
                         accountSubtype?: "checking" | "savings";
                     } | {
@@ -6584,6 +7629,7 @@ export interface operations {
                         /**
                          * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
+                         * @enum {string}
                          */
                         status: "active" | "inactive";
                         /**
@@ -6596,10 +7642,11 @@ export interface operations {
                          *
                          *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
+                         * @enum {string|null}
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                        statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                         /**
-                         * @description Name of the account holder
+                         * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                          * @example John Doe
                          */
                         accountHolderName: string;
@@ -6658,6 +7705,7 @@ export interface operations {
                         /**
                          * @description Type of bank account (checking or savings)
                          * @example checking
+                         * @enum {string}
                          */
                         accountSubtype?: "checking" | "savings";
                     } | {
@@ -6669,6 +7717,7 @@ export interface operations {
                         /**
                          * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
+                         * @enum {string}
                          */
                         status: "active" | "inactive";
                         /**
@@ -6681,10 +7730,11 @@ export interface operations {
                          *
                          *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
+                         * @enum {string|null}
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                        statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                         /**
-                         * @description Name of the account holder
+                         * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                          * @example John Doe
                          */
                         accountHolderName: string;
@@ -6744,6 +7794,7 @@ export interface operations {
                         /**
                          * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
+                         * @enum {string}
                          */
                         status: "active" | "inactive";
                         /**
@@ -6756,10 +7807,11 @@ export interface operations {
                          *
                          *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
+                         * @enum {string|null}
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                        statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                         /**
-                         * @description Name of the account holder
+                         * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                          * @example John Doe
                          */
                         accountHolderName: string;
@@ -6801,6 +7853,7 @@ export interface operations {
                         /**
                          * @description Fiat currency code
                          * @example USD
+                         * @enum {string}
                          */
                         currency: "USD" | "CAD" | "EUR" | "GBP";
                         /**
@@ -6822,7 +7875,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -6865,7 +7918,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -6898,7 +7951,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -6937,6 +7990,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -6961,6 +8035,7 @@ export interface operations {
                     /**
                      * @description Who owns this bank account. "personal" = the authenticated user (holder info inferred from profile). "thirdParty" = someone else (requires accountHolder).
                      * @example personal
+                     * @enum {string}
                      */
                     ownership: "personal" | "thirdParty";
                     /** @description Account holder details. Required when ownership is "thirdParty". */
@@ -7004,6 +8079,7 @@ export interface operations {
                     /**
                      * @description Type of bank account (checking or savings)
                      * @example checking
+                     * @enum {string}
                      */
                     accountSubtype?: "checking" | "savings";
                     /**
@@ -7020,6 +8096,7 @@ export interface operations {
                     /**
                      * @description Who owns this bank account. "personal" = the authenticated user (holder info inferred from profile). "thirdParty" = someone else (requires accountHolder).
                      * @example personal
+                     * @enum {string}
                      */
                     ownership: "personal" | "thirdParty";
                     /** @description Account holder details. Required when ownership is "thirdParty". */
@@ -7068,6 +8145,7 @@ export interface operations {
                     /**
                      * @description Type of bank account (checking or savings)
                      * @example checking
+                     * @enum {string}
                      */
                     accountSubtype?: "checking" | "savings";
                     /**
@@ -7084,6 +8162,7 @@ export interface operations {
                     /**
                      * @description Who owns this bank account. "personal" = the authenticated user (holder info inferred from profile). "thirdParty" = someone else (requires accountHolder).
                      * @example personal
+                     * @enum {string}
                      */
                     ownership: "personal" | "thirdParty";
                     /** @description Account holder details. Required when ownership is "thirdParty". */
@@ -7138,6 +8217,7 @@ export interface operations {
                     /**
                      * @description Who owns this bank account. "personal" = the authenticated user (holder info inferred from profile). "thirdParty" = someone else (requires accountHolder).
                      * @example personal
+                     * @enum {string}
                      */
                     ownership: "personal" | "thirdParty";
                     /** @description Account holder details. Required when ownership is "thirdParty". */
@@ -7201,6 +8281,7 @@ export interface operations {
                     /**
                      * @description Who owns this bank account. "personal" = the authenticated user (holder info inferred from profile). "thirdParty" = someone else (requires accountHolder).
                      * @example personal
+                     * @enum {string}
                      */
                     ownership: "personal" | "thirdParty";
                     /** @description Account holder details. Required when ownership is "thirdParty". */
@@ -7244,6 +8325,7 @@ export interface operations {
                     /**
                      * @description Type of bank account (checking or savings)
                      * @example checking
+                     * @enum {string}
                      */
                     accountSubtype?: "checking" | "savings";
                     /**
@@ -7260,6 +8342,7 @@ export interface operations {
                     /**
                      * @description Who owns this bank account. "personal" = the authenticated user (holder info inferred from profile). "thirdParty" = someone else (requires accountHolder).
                      * @example personal
+                     * @enum {string}
                      */
                     ownership: "personal" | "thirdParty";
                     /** @description Account holder details. Required when ownership is "thirdParty". */
@@ -7308,6 +8391,7 @@ export interface operations {
                     /**
                      * @description Type of bank account (checking or savings)
                      * @example checking
+                     * @enum {string}
                      */
                     accountSubtype?: "checking" | "savings";
                     /**
@@ -7324,6 +8408,7 @@ export interface operations {
                     /**
                      * @description Who owns this bank account. "personal" = the authenticated user (holder info inferred from profile). "thirdParty" = someone else (requires accountHolder).
                      * @example personal
+                     * @enum {string}
                      */
                     ownership: "personal" | "thirdParty";
                     /** @description Account holder details. Required when ownership is "thirdParty". */
@@ -7378,6 +8463,7 @@ export interface operations {
                     /**
                      * @description Who owns this bank account. "personal" = the authenticated user (holder info inferred from profile). "thirdParty" = someone else (requires accountHolder).
                      * @example personal
+                     * @enum {string}
                      */
                     ownership: "personal" | "thirdParty";
                     /** @description Account holder details. Required when ownership is "thirdParty". */
@@ -7441,6 +8527,7 @@ export interface operations {
                     /**
                      * @description Who owns this bank account. "personal" = the authenticated user (holder info inferred from profile). "thirdParty" = someone else (requires accountHolder).
                      * @example personal
+                     * @enum {string}
                      */
                     ownership: "personal" | "thirdParty";
                     /** @description Account holder details. Required when ownership is "thirdParty". */
@@ -7484,6 +8571,7 @@ export interface operations {
                     /**
                      * @description Type of bank account (checking or savings)
                      * @example checking
+                     * @enum {string}
                      */
                     accountSubtype?: "checking" | "savings";
                     /**
@@ -7500,6 +8588,7 @@ export interface operations {
                     /**
                      * @description Who owns this bank account. "personal" = the authenticated user (holder info inferred from profile). "thirdParty" = someone else (requires accountHolder).
                      * @example personal
+                     * @enum {string}
                      */
                     ownership: "personal" | "thirdParty";
                     /** @description Account holder details. Required when ownership is "thirdParty". */
@@ -7548,6 +8637,7 @@ export interface operations {
                     /**
                      * @description Type of bank account (checking or savings)
                      * @example checking
+                     * @enum {string}
                      */
                     accountSubtype?: "checking" | "savings";
                     /**
@@ -7564,6 +8654,7 @@ export interface operations {
                     /**
                      * @description Who owns this bank account. "personal" = the authenticated user (holder info inferred from profile). "thirdParty" = someone else (requires accountHolder).
                      * @example personal
+                     * @enum {string}
                      */
                     ownership: "personal" | "thirdParty";
                     /** @description Account holder details. Required when ownership is "thirdParty". */
@@ -7618,6 +8709,7 @@ export interface operations {
                     /**
                      * @description Who owns this bank account. "personal" = the authenticated user (holder info inferred from profile). "thirdParty" = someone else (requires accountHolder).
                      * @example personal
+                     * @enum {string}
                      */
                     ownership: "personal" | "thirdParty";
                     /** @description Account holder details. Required when ownership is "thirdParty". */
@@ -7690,6 +8782,7 @@ export interface operations {
                         /**
                          * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
+                         * @enum {string}
                          */
                         status: "active" | "inactive";
                         /**
@@ -7702,10 +8795,11 @@ export interface operations {
                          *
                          *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
+                         * @enum {string|null}
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                        statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                         /**
-                         * @description Name of the account holder
+                         * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                          * @example John Doe
                          */
                         accountHolderName: string;
@@ -7759,6 +8853,7 @@ export interface operations {
                         /**
                          * @description Type of bank account (checking or savings)
                          * @example checking
+                         * @enum {string}
                          */
                         accountSubtype?: "checking" | "savings";
                     } | {
@@ -7770,6 +8865,7 @@ export interface operations {
                         /**
                          * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
+                         * @enum {string}
                          */
                         status: "active" | "inactive";
                         /**
@@ -7782,10 +8878,11 @@ export interface operations {
                          *
                          *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
+                         * @enum {string|null}
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                        statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                         /**
-                         * @description Name of the account holder
+                         * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                          * @example John Doe
                          */
                         accountHolderName: string;
@@ -7844,6 +8941,7 @@ export interface operations {
                         /**
                          * @description Type of bank account (checking or savings)
                          * @example checking
+                         * @enum {string}
                          */
                         accountSubtype?: "checking" | "savings";
                     } | {
@@ -7855,6 +8953,7 @@ export interface operations {
                         /**
                          * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
+                         * @enum {string}
                          */
                         status: "active" | "inactive";
                         /**
@@ -7867,10 +8966,11 @@ export interface operations {
                          *
                          *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
+                         * @enum {string|null}
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                        statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                         /**
-                         * @description Name of the account holder
+                         * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                          * @example John Doe
                          */
                         accountHolderName: string;
@@ -7930,6 +9030,7 @@ export interface operations {
                         /**
                          * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
+                         * @enum {string}
                          */
                         status: "active" | "inactive";
                         /**
@@ -7942,10 +9043,11 @@ export interface operations {
                          *
                          *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
+                         * @enum {string|null}
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                        statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                         /**
-                         * @description Name of the account holder
+                         * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                          * @example John Doe
                          */
                         accountHolderName: string;
@@ -7987,6 +9089,7 @@ export interface operations {
                         /**
                          * @description Fiat currency code
                          * @example USD
+                         * @enum {string}
                          */
                         currency: "USD" | "CAD" | "EUR" | "GBP";
                         /**
@@ -8008,7 +9111,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -8051,7 +9154,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -8084,7 +9187,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -8123,6 +9226,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -8154,6 +9278,7 @@ export interface operations {
                         /**
                          * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
+                         * @enum {string}
                          */
                         status: "active" | "inactive";
                         /**
@@ -8166,10 +9291,11 @@ export interface operations {
                          *
                          *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
+                         * @enum {string|null}
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                        statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                         /**
-                         * @description Name of the account holder
+                         * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                          * @example John Doe
                          */
                         accountHolderName: string;
@@ -8223,6 +9349,7 @@ export interface operations {
                         /**
                          * @description Type of bank account (checking or savings)
                          * @example checking
+                         * @enum {string}
                          */
                         accountSubtype?: "checking" | "savings";
                     } | {
@@ -8234,6 +9361,7 @@ export interface operations {
                         /**
                          * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
+                         * @enum {string}
                          */
                         status: "active" | "inactive";
                         /**
@@ -8246,10 +9374,11 @@ export interface operations {
                          *
                          *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
+                         * @enum {string|null}
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                        statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                         /**
-                         * @description Name of the account holder
+                         * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                          * @example John Doe
                          */
                         accountHolderName: string;
@@ -8308,6 +9437,7 @@ export interface operations {
                         /**
                          * @description Type of bank account (checking or savings)
                          * @example checking
+                         * @enum {string}
                          */
                         accountSubtype?: "checking" | "savings";
                     } | {
@@ -8319,6 +9449,7 @@ export interface operations {
                         /**
                          * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
+                         * @enum {string}
                          */
                         status: "active" | "inactive";
                         /**
@@ -8331,10 +9462,11 @@ export interface operations {
                          *
                          *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
+                         * @enum {string|null}
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                        statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                         /**
-                         * @description Name of the account holder
+                         * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                          * @example John Doe
                          */
                         accountHolderName: string;
@@ -8394,6 +9526,7 @@ export interface operations {
                         /**
                          * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                          * @example active
+                         * @enum {string}
                          */
                         status: "active" | "inactive";
                         /**
@@ -8406,10 +9539,11 @@ export interface operations {
                          *
                          *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                          * @example account_invalid
+                         * @enum {string|null}
                          */
-                        statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                        statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                         /**
-                         * @description Name of the account holder
+                         * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                          * @example John Doe
                          */
                         accountHolderName: string;
@@ -8451,6 +9585,7 @@ export interface operations {
                         /**
                          * @description Fiat currency code
                          * @example USD
+                         * @enum {string}
                          */
                         currency: "USD" | "CAD" | "EUR" | "GBP";
                         /**
@@ -8472,7 +9607,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -8515,7 +9650,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -8548,7 +9683,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -8587,6 +9722,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -8629,7 +9785,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -8672,7 +9828,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -8705,7 +9861,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -8744,6 +9900,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -8782,7 +9959,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -8825,7 +10002,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -8864,6 +10041,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -8930,8 +10128,9 @@ export interface operations {
                         /**
                          * @description Why the funding source is not active, or null when no reason applies.
                          * @example ownership_mismatch
+                         * @enum {string|null}
                          */
-                        statusReason: ("ownership_mismatch" | null) | ("ownership_review_required" | null) | ("user_not_verified" | null) | ("duplicate_bank_account" | null) | ("returned" | null) | ("risk_blocked" | null) | ("rerouted" | null) | ("manually_disabled" | null);
+                        statusReason: "ownership_mismatch" | "ownership_review_required" | "user_not_verified" | "duplicate_bank_account" | "returned" | "risk_blocked" | "rerouted" | "manually_disabled" | null;
                         /**
                          * Format: date-time
                          * @description For a time-boxed block (`statusReason: rerouted`), when the funding source becomes usable again on its own. Re-linking the same account does not shorten it. Null when the source is usable or the block is not time-bound.
@@ -8940,16 +10139,6 @@ export interface operations {
                         availableAt: string | null;
                         /** @description True when the funding source is disabled and will not become usable again on its own; the user should link a different bank account. */
                         permanent: boolean;
-                        /**
-                         * @description Why a disabled funding source was disabled: the ACH return code (e.g. `R10`) or `risk_customer_return`. Null unless `status` is `disabled`.
-                         * @example R10
-                         */
-                        disabledReason: string | null;
-                        /**
-                         * @description Ownership match result for the linked bank account, or null when unavailable.
-                         * @example matched
-                         */
-                        ownershipMatchStatus: ("matched" | null) | ("mismatch" | null) | ("review_required" | null);
                         /**
                          * Format: date-time
                          * @description When the funding source was removed by the user, or null while it remains linked. Removed funding sources stay retrievable by id for historical reference.
@@ -8970,7 +10159,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -9013,7 +10202,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -9046,7 +10235,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -9085,6 +10274,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -9118,54 +10328,6 @@ export interface operations {
                          * @example 750.00
                          */
                         transactionLimitUsd: string;
-                        /**
-                         * @description Maximum daily ACH debit volume. Deprecated: use `limitsByPriority.normal.maxAmountUsd` for the amount that can be deposited right now.
-                         * @example 1500.00
-                         */
-                        dailyLimitUsd: string;
-                        /**
-                         * @description Remaining ACH debit capacity today across all limits. Deprecated: use `limitsByPriority.normal.maxAmountUsd`.
-                         * @example 1400.00
-                         */
-                        dailyRemainingUsd: string;
-                        /**
-                         * @description Maximum monthly ACH debit volume. Deprecated: use `limitsByPriority.normal.maxAmountUsd` for the amount that can be deposited right now.
-                         * @example 5000.00
-                         */
-                        monthlyLimitUsd: string;
-                        /**
-                         * @description Remaining ACH debit capacity this month across all limits. Deprecated: use `limitsByPriority.normal.maxAmountUsd`.
-                         * @example 4900.00
-                         */
-                        monthlyRemainingUsd: string;
-                        /**
-                         * @description Maximum number of unsettled ACH debit deposits allowed
-                         * @example 1
-                         */
-                        unsettledDepositLimit: number;
-                        /**
-                         * @description Remaining unsettled ACH debit deposit capacity
-                         * @example 1
-                         */
-                        unsettledDepositRemaining: number;
-                        /** @description Open-exposure standing for this user. Capacity frees up as deposits clear the 60-day dispute window. */
-                        exposure: {
-                            /**
-                             * @description Ceiling on the user's open exposure — deposits inside the 60-day dispute window
-                             * @example 1500.00
-                             */
-                            capUsd: string;
-                            /**
-                             * @description The user's current open exposure
-                             * @example 400.00
-                             */
-                            openUsd: string;
-                            /**
-                             * @description Exposure capacity remaining before the cap
-                             * @example 1100.00
-                             */
-                            remainingUsd: string;
-                        };
                         /** @description Deposit availability keyed by the `priority` value sent on deposit creation. These blocks are computed by the same evaluator that gates deposit creation — an amount within `maxAmountUsd` will be accepted. */
                         limitsByPriority: {
                             /** @description What a `priority: normal` deposit request will accept */
@@ -9182,10 +10344,16 @@ export interface operations {
                                  * @example 742.57
                                  */
                                 maxAmountUsd: string;
-                                /** @description Why deposits are unavailable; null when available */
-                                reason: ("minimum_deposit" | null) | ("transaction_limit" | null) | ("daily_limit" | null) | ("monthly_limit" | null) | ("unsettled_deposit_limit" | null) | ("bank_unsettled_deposit_limit" | null) | ("open_exposure" | null) | ("aggregate_exposure" | null) | ("new_user_admission_paused" | null) | ("rail_halted" | null);
-                                /** @description Suggested next step when unavailable; null otherwise */
-                                suggestedAction: ("auto_ramp" | null) | ("wait_for_settlement" | null);
+                                /**
+                                 * @description Why deposits are unavailable; null when available
+                                 * @enum {string|null}
+                                 */
+                                reason: "minimum_deposit" | "transaction_limit" | "daily_limit" | "monthly_limit" | "unsettled_deposit_limit" | "unsettled_amount_limit" | "bank_unsettled_deposit_limit" | "open_exposure" | "aggregate_exposure" | "new_user_admission_paused" | "rail_halted" | null;
+                                /**
+                                 * @description Suggested next step when unavailable; null otherwise
+                                 * @enum {string|null}
+                                 */
+                                suggestedAction: "auto_ramp" | "wait_for_settlement" | null;
                                 /**
                                  * Format: date-time
                                  * @description Earliest instant the current `reason` can stop applying, or null when it is not time-bound. Derived from the same state that produced `reason`; another limit may bind after it, so re-fetch before submitting.
@@ -9200,14 +10368,22 @@ export interface operations {
                                 /** @description Whether a `priority: high` deposit can be created right now */
                                 available: boolean;
                                 /**
-                                 * @description The largest portion of a deposit eligible for high-priority release, with headroom for the maximum high-priority fee already deducted
+                                 * @description The largest principal amount accepted for a high-priority request. It is calculated so the principal plus the blended fee stays within the total bank-debit limit.
                                  * @example 0.00
                                  */
-                                maxPortionUsd: string;
+                                maxAmountUsd: string;
+                                /**
+                                 * @description The largest principal amount that may be released before ACH settlement. This is the early portion, not the maximum total deposit; use maxAmountUsd to validate the full high-priority deposit.
+                                 * @example 0.00
+                                 */
+                                maxEarlyReleaseAmountUsd: string;
                                 /** @description Why high priority is unavailable; null when available */
-                                reason: ("not_available" | null) | ("minimum_deposit" | "transaction_limit" | "daily_limit" | "monthly_limit" | "unsettled_deposit_limit" | "bank_unsettled_deposit_limit" | "open_exposure" | "aggregate_exposure" | "new_user_admission_paused" | "rail_halted");
-                                /** @description Suggested next step when unavailable; null otherwise */
-                                suggestedAction: ("auto_ramp" | null) | ("wait_for_settlement" | null);
+                                reason: ("not_available" | null) | ("minimum_deposit" | "transaction_limit" | "daily_limit" | "monthly_limit" | "unsettled_deposit_limit" | "unsettled_amount_limit" | "bank_unsettled_deposit_limit" | "open_exposure" | "aggregate_exposure" | "new_user_admission_paused" | "rail_halted");
+                                /**
+                                 * @description Suggested next step when unavailable; null otherwise
+                                 * @enum {string|null}
+                                 */
+                                suggestedAction: "auto_ramp" | "wait_for_settlement" | null;
                                 /**
                                  * Format: date-time
                                  * @description Earliest instant the current `reason` can stop applying, or null when it is not time-bound. Derived from the same state that produced `reason`; another limit may bind after it, so re-fetch before submitting.
@@ -9227,7 +10403,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -9270,7 +10446,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -9303,7 +10479,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -9342,6 +10518,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -9410,8 +10607,9 @@ export interface operations {
                         /**
                          * @description Why the funding source is not active, or null when no reason applies.
                          * @example ownership_mismatch
+                         * @enum {string|null}
                          */
-                        statusReason: ("ownership_mismatch" | null) | ("ownership_review_required" | null) | ("user_not_verified" | null) | ("duplicate_bank_account" | null) | ("returned" | null) | ("risk_blocked" | null) | ("rerouted" | null) | ("manually_disabled" | null);
+                        statusReason: "ownership_mismatch" | "ownership_review_required" | "user_not_verified" | "duplicate_bank_account" | "returned" | "risk_blocked" | "rerouted" | "manually_disabled" | null;
                         /**
                          * Format: date-time
                          * @description For a time-boxed block (`statusReason: rerouted`), when the funding source becomes usable again on its own. Re-linking the same account does not shorten it. Null when the source is usable or the block is not time-bound.
@@ -9420,16 +10618,6 @@ export interface operations {
                         availableAt: string | null;
                         /** @description True when the funding source is disabled and will not become usable again on its own; the user should link a different bank account. */
                         permanent: boolean;
-                        /**
-                         * @description Why a disabled funding source was disabled: the ACH return code (e.g. `R10`) or `risk_customer_return`. Null unless `status` is `disabled`.
-                         * @example R10
-                         */
-                        disabledReason: string | null;
-                        /**
-                         * @description Ownership match result for the linked bank account, or null when unavailable.
-                         * @example matched
-                         */
-                        ownershipMatchStatus: ("matched" | null) | ("mismatch" | null) | ("review_required" | null);
                         /**
                          * Format: date-time
                          * @description When the funding source was removed by the user, or null while it remains linked. Removed funding sources stay retrievable by id for historical reference.
@@ -9450,7 +10638,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -9493,7 +10681,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -9526,7 +10714,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -9565,6 +10753,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -9607,7 +10816,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -9650,7 +10859,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -9683,7 +10892,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -9722,6 +10931,731 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    getV1Deposits: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /**
+                             * @description Opaque public deposit identifier
+                             * @example dep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                             */
+                            id: string;
+                            /**
+                             * @description Opaque public funding source identifier
+                             * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                             */
+                            sourceId: string;
+                            /**
+                             * @description Identifier of the on-ramp created for this deposit, or null until the on-ramp record exists.
+                             * @example onramp_xyz789
+                             */
+                            onRampId: string | null;
+                            /** @enum {string} */
+                            status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed";
+                            /** @enum {string} */
+                            quoteType: "exact_input" | "exact_output";
+                            /** @enum {string} */
+                            requestedPriority: "normal" | "high";
+                            /** @enum {string} */
+                            priority: "normal" | "high";
+                            feeRateBps: number;
+                            principalAmountUsd: string;
+                            instantPortionUsd: string;
+                            settlementPortionUsd: string;
+                            expectedAssetAmount: string;
+                            grossFeeUsd: string;
+                            publishedFeeUsd: string;
+                            regularPublishedFeeUsd: string;
+                            instantPublishedFeeUsd: string;
+                            feeSubsidyUsd: string;
+                            userFeeUsd: string;
+                            totalDebitAmountUsd: string;
+                            feeSubsidy: {
+                                percentage: number;
+                                percentageBps: number;
+                                maxAmountUsd: string | null;
+                                appliedAmountUsd: string;
+                            } | null;
+                            /** @enum {string} */
+                            network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
+                            /**
+                             * @description Asset sent to the deposit destination
+                             * @example USDC
+                             * @enum {string}
+                             */
+                            asset: "USDC";
+                            assetAddress: string;
+                            /** @description Destination wallet address for the crypto release */
+                            address: string;
+                            /** @enum {string} */
+                            debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                            /** @enum {string} */
+                            releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                            /** @enum {string} */
+                            releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                            releasedAmountUsd: string;
+                            confirmedReleasedAmountUsd: string;
+                            /** Format: date-time */
+                            authorizedAt: string;
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            settledAt: string | null;
+                            /** Format: date-time */
+                            returnedAt: string | null;
+                            /** Format: date-time */
+                            completedAt: string | null;
+                            returnCode: string | null;
+                            returnReason: string | null;
+                            debitFailureCode: string | null;
+                            debitFailureReason: string | null;
+                            releaseFailureCode: string | null;
+                            releaseFailureReason: string | null;
+                            payoutTxHash: string | null;
+                        }[];
+                        /** @description Whether another page of deposits is available */
+                        hasMore: boolean;
+                        /** @description Cursor for the next page, or null when this is the final page */
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    getV1DepositsByDepositId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                depositId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description An ACH debit deposit authorized by the user and processed asynchronously through debit and crypto release lifecycles. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Opaque public deposit identifier
+                         * @example dep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        id: string;
+                        /**
+                         * @description Opaque public funding source identifier
+                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        sourceId: string;
+                        /**
+                         * @description Identifier of the on-ramp created for this deposit, or null until the on-ramp record exists.
+                         * @example onramp_xyz789
+                         */
+                        onRampId: string | null;
+                        /** @enum {string} */
+                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed";
+                        /** @enum {string} */
+                        quoteType: "exact_input" | "exact_output";
+                        /** @enum {string} */
+                        requestedPriority: "normal" | "high";
+                        /** @enum {string} */
+                        priority: "normal" | "high";
+                        feeRateBps: number;
+                        principalAmountUsd: string;
+                        instantPortionUsd: string;
+                        settlementPortionUsd: string;
+                        expectedAssetAmount: string;
+                        grossFeeUsd: string;
+                        publishedFeeUsd: string;
+                        regularPublishedFeeUsd: string;
+                        instantPublishedFeeUsd: string;
+                        feeSubsidyUsd: string;
+                        userFeeUsd: string;
+                        totalDebitAmountUsd: string;
+                        feeSubsidy: {
+                            percentage: number;
+                            percentageBps: number;
+                            maxAmountUsd: string | null;
+                            appliedAmountUsd: string;
+                        } | null;
+                        /** @enum {string} */
+                        network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
+                        /**
+                         * @description Asset sent to the deposit destination
+                         * @example USDC
+                         * @enum {string}
+                         */
+                        asset: "USDC";
+                        assetAddress: string;
+                        /** @description Destination wallet address for the crypto release */
+                        address: string;
+                        /** @enum {string} */
+                        debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                        /** @enum {string} */
+                        releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                        /** @enum {string} */
+                        releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                        releasedAmountUsd: string;
+                        confirmedReleasedAmountUsd: string;
+                        /** Format: date-time */
+                        authorizedAt: string;
+                        /** Format: date-time */
+                        createdAt: string;
+                        /** Format: date-time */
+                        settledAt: string | null;
+                        /** Format: date-time */
+                        returnedAt: string | null;
+                        /** Format: date-time */
+                        completedAt: string | null;
+                        returnCode: string | null;
+                        returnReason: string | null;
+                        debitFailureCode: string | null;
+                        debitFailureReason: string | null;
+                        releaseFailureCode: string | null;
+                        releaseFailureReason: string | null;
+                        payoutTxHash: string | null;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -9768,14 +11702,6 @@ export interface operations {
                         percentage: number;
                         maxAmountUsd?: string;
                     };
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
                 };
                 "application/x-www-form-urlencoded": {
                     /**
@@ -9808,14 +11734,6 @@ export interface operations {
                     feeSubsidy?: {
                         percentage: number;
                         maxAmountUsd?: string;
-                    };
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
                     };
                 };
                 "multipart/form-data": {
@@ -9850,14 +11768,6 @@ export interface operations {
                         percentage: number;
                         maxAmountUsd?: string;
                     };
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
                 };
             };
         };
@@ -9887,14 +11797,20 @@ export interface operations {
                             quoteType: "exact_input" | "exact_output";
                             requestedAmountUsd: string;
                             /** @enum {string} */
+                            requestedPriority: "normal" | "high";
+                            /** @enum {string} */
                             priority: "normal" | "high";
+                            /** @enum {string} */
+                            releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
                             feeRateBps: number;
-                            planAdjustmentBps: number;
                             principalAmountUsd: string;
+                            instantPortionUsd: string;
+                            settlementPortionUsd: string;
                             expectedAssetAmount: string;
                             grossFeeUsd: string;
                             publishedFeeUsd: string;
-                            planAdjustmentFeeUsd: string;
+                            regularPublishedFeeUsd: string;
+                            instantPublishedFeeUsd: string;
                             feeSubsidyUsd: string;
                             userFeeUsd: string;
                             totalDebitAmountUsd: string;
@@ -9924,7 +11840,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": ({
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -9963,7 +11879,31 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /**
+                         * @description Safe next action when the failing product policy can provide one.
+                         * @enum {string}
+                         */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
                     } & {
+                        [key: string]: unknown;
+                    }) & {
                         /** @description Every cause. A single-cause failure also reports it via top-level `code`/`field`/`detail`; a multi-field failure is described only here. */
                         errors?: {
                             field: string;
@@ -9979,7 +11919,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10022,7 +11962,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10061,6 +12001,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -10070,7 +12031,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10103,7 +12064,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10142,6 +12103,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -10151,7 +12133,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10190,6 +12172,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -10199,7 +12202,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10238,6 +12241,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -10246,7 +12270,9 @@ export interface operations {
     postV1DepositsDirect: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "idempotency-key": string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -10258,14 +12284,6 @@ export interface operations {
                      * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                      */
                     preparationId: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
                 };
                 "application/x-www-form-urlencoded": {
                     /**
@@ -10273,14 +12291,6 @@ export interface operations {
                      * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                      */
                     preparationId: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
                 };
                 "multipart/form-data": {
                     /**
@@ -10288,14 +12298,6 @@ export interface operations {
                      * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                      */
                     preparationId: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
                 };
             };
         };
@@ -10327,17 +12329,18 @@ export interface operations {
                         /** @enum {string} */
                         quoteType: "exact_input" | "exact_output";
                         /** @enum {string} */
+                        requestedPriority: "normal" | "high";
+                        /** @enum {string} */
                         priority: "normal" | "high";
                         feeRateBps: number;
-                        planAdjustmentBps: number;
-                        integratorPricingClass: string | null;
-                        integratorPlanPhase: string | null;
-                        integratorPolicyVersion: string | null;
                         principalAmountUsd: string;
+                        instantPortionUsd: string;
+                        settlementPortionUsd: string;
                         expectedAssetAmount: string;
                         grossFeeUsd: string;
                         publishedFeeUsd: string;
-                        planAdjustmentFeeUsd: string;
+                        regularPublishedFeeUsd: string;
+                        instantPublishedFeeUsd: string;
                         feeSubsidyUsd: string;
                         userFeeUsd: string;
                         totalDebitAmountUsd: string;
@@ -10366,7 +12369,6 @@ export interface operations {
                         releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
                         releasedAmountUsd: string;
                         confirmedReleasedAmountUsd: string;
-                        exposureAmountUsd: string;
                         /** Format: date-time */
                         authorizedAt: string;
                         /** Format: date-time */
@@ -10393,7 +12395,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": ({
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10432,7 +12434,31 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /**
+                         * @description Safe next action when the failing product policy can provide one.
+                         * @enum {string}
+                         */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
                     } & {
+                        [key: string]: unknown;
+                    }) & {
                         /** @description Every cause. A single-cause failure also reports it via top-level `code`/`field`/`detail`; a multi-field failure is described only here. */
                         errors?: {
                             field: string;
@@ -10448,7 +12474,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10491,7 +12517,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10530,6 +12556,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -10539,7 +12586,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10572,7 +12619,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10611,6 +12658,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -10620,7 +12688,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10659,6 +12727,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -10668,7 +12757,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10707,6 +12796,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -10716,7 +12826,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10755,6 +12865,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -10802,7 +12933,7 @@ export interface operations {
                     "application/json": {
                         /** @description Token to initialize Plaid Link SDK */
                         linkToken: string;
-                        /** @description Plaid-hosted URL for bank linking. Open in browser or webview. Null if hosted link was not requested. */
+                        /** @description Plaid-hosted URL for bank linking. Spritz requests Hosted Link for every link token; open this URL in a browser or webview when non-null. If Plaid does not return a hosted URL, use the embedded/native linkToken flow. */
                         hostedLinkUrl: string | null;
                         expiration: string;
                         requestId: string;
@@ -10815,7 +12946,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10858,7 +12989,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -10897,6 +13028,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -10955,6 +13107,7 @@ export interface operations {
                             /**
                              * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                              * @example active
+                             * @enum {string}
                              */
                             status: "active" | "inactive";
                             /**
@@ -10967,10 +13120,11 @@ export interface operations {
                              *
                              *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                              * @example account_invalid
+                             * @enum {string|null}
                              */
-                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                            statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                             /**
-                             * @description Name of the account holder
+                             * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                              * @example John Doe
                              */
                             accountHolderName: string;
@@ -11024,6 +13178,7 @@ export interface operations {
                             /**
                              * @description Type of bank account (checking or savings)
                              * @example checking
+                             * @enum {string}
                              */
                             accountSubtype?: "checking" | "savings";
                         } | {
@@ -11035,6 +13190,7 @@ export interface operations {
                             /**
                              * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                              * @example active
+                             * @enum {string}
                              */
                             status: "active" | "inactive";
                             /**
@@ -11047,10 +13203,11 @@ export interface operations {
                              *
                              *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                              * @example account_invalid
+                             * @enum {string|null}
                              */
-                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                            statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                             /**
-                             * @description Name of the account holder
+                             * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                              * @example John Doe
                              */
                             accountHolderName: string;
@@ -11109,6 +13266,7 @@ export interface operations {
                             /**
                              * @description Type of bank account (checking or savings)
                              * @example checking
+                             * @enum {string}
                              */
                             accountSubtype?: "checking" | "savings";
                         } | {
@@ -11120,6 +13278,7 @@ export interface operations {
                             /**
                              * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                              * @example active
+                             * @enum {string}
                              */
                             status: "active" | "inactive";
                             /**
@@ -11132,10 +13291,11 @@ export interface operations {
                              *
                              *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                              * @example account_invalid
+                             * @enum {string|null}
                              */
-                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                            statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                             /**
-                             * @description Name of the account holder
+                             * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                              * @example John Doe
                              */
                             accountHolderName: string;
@@ -11195,6 +13355,7 @@ export interface operations {
                             /**
                              * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
                              * @example active
+                             * @enum {string}
                              */
                             status: "active" | "inactive";
                             /**
@@ -11207,10 +13368,11 @@ export interface operations {
                              *
                              *     All four are terminal: the account will not recover, so prompt the user to add a different one.
                              * @example account_invalid
+                             * @enum {string|null}
                              */
-                            statusReason: ("account_invalid" | null) | ("account_closed" | null) | ("account_blocked" | null) | ("not_supported" | null);
+                            statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
                             /**
-                             * @description Name of the account holder
+                             * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
                              * @example John Doe
                              */
                             accountHolderName: string;
@@ -11252,6 +13414,7 @@ export interface operations {
                             /**
                              * @description Fiat currency code
                              * @example USD
+                             * @enum {string}
                              */
                             currency: "USD" | "CAD" | "EUR" | "GBP";
                             /**
@@ -11274,7 +13437,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -11311,13 +13474,13 @@ export interface operations {
                     };
                 };
             };
-            /** @description Response for status 500 */
-            500: {
+            /** @description Response for status 409 */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -11356,6 +13519,165 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 503 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -11380,7 +13702,7 @@ export interface operations {
                         /** @description Unique identifier for the bill */
                         id: string;
                         /** @enum {string} */
-                        status: "active" | "pending" | "inactive" | "rejected" | "action_required";
+                        status: "active" | "pending" | "inactive" | "rejected" | "action_required" | "deleted";
                         /**
                          * @description Provider bill name or generated fallback label
                          * @example Chase Sapphire Card
@@ -11475,6 +13797,11 @@ export interface operations {
                          * @description When the bill was linked
                          */
                         createdAt: string;
+                        /**
+                         * Format: date-time
+                         * @description When the user removed the bill. Present only when status is deleted.
+                         */
+                        deletedAt?: string;
                     }[];
                 };
             };
@@ -11484,7 +13811,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -11527,7 +13854,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -11560,7 +13887,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -11599,6 +13926,636 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    getV1BillsRemoved: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Unique identifier for the bill */
+                        id: string;
+                        /** @enum {string} */
+                        status: "active" | "pending" | "inactive" | "rejected" | "action_required" | "deleted";
+                        /**
+                         * @description Provider bill name or generated fallback label
+                         * @example Chase Sapphire Card
+                         */
+                        name: string;
+                        /** @description Financial institution details */
+                        institution?: {
+                            /**
+                             * @description Name of the financial institution
+                             * @example Chase
+                             */
+                            name: string;
+                            /**
+                             * @description URL to institution logo
+                             * @example https://example.com/chase-logo.png
+                             */
+                            logo?: string;
+                        };
+                        /** @enum {string} */
+                        type: "auto_loan" | "credit_card" | "loan" | "mobile_phone" | "mortgage" | "student_loan" | "utility" | "unknown";
+                        /**
+                         * @description Last 4 digits of the bill account number
+                         * @example 1234
+                         */
+                        accountNumberLast4?: string;
+                        /** @enum {string} */
+                        currency: "USD" | "CAD" | "EUR" | "GBP";
+                        /** @description Liability data from the bill provider. All fields are optional and amounts are decimal strings. */
+                        liability?: {
+                            /**
+                             * @description Current outstanding balance
+                             * @example 1234.56
+                             */
+                            balance?: string;
+                            /**
+                             * @description Most recent statement balance
+                             * @example 1100.00
+                             */
+                            statementBalance?: string;
+                            /**
+                             * @description Minimum payment due
+                             * @example 25.00
+                             */
+                            minimumPayment?: string;
+                            /**
+                             * @description Amount of the last payment made
+                             * @example 150.00
+                             */
+                            lastPaymentAmount?: string;
+                            /**
+                             * Format: date
+                             * @description Date of the last payment
+                             * @example 2025-03-01
+                             */
+                            lastPaymentDate?: string;
+                            /**
+                             * Format: date
+                             * @description Date the next payment is due
+                             * @example 2025-04-01
+                             */
+                            nextPaymentDueDate?: string;
+                            /**
+                             * @description Amount currently due
+                             * @example 0.00
+                             */
+                            amountDue?: string;
+                        };
+                        /** @description Actions the user must complete before the bill is payable. Present (non-empty) when status is action_required. */
+                        requirements?: {
+                            /**
+                             * @description The action the user must complete to make the bill payable
+                             * @example card_details
+                             */
+                            type: string;
+                            /**
+                             * @description Fields the user must supply to satisfy the requirement
+                             * @example [
+                             *       "credit_card_number"
+                             *     ]
+                             */
+                            fields?: string[];
+                            /**
+                             * @description Human-readable explanation of the requirement
+                             * @example This card is expired
+                             */
+                            reason?: string;
+                        }[];
+                        /** @enum {string} */
+                        unpayableCode?: "institution_not_supported" | "account_number_invalid" | "account_verification_failed" | "not_supported";
+                        /**
+                         * Format: date-time
+                         * @description When the bill was linked
+                         */
+                        createdAt: string;
+                        /**
+                         * Format: date-time
+                         * @description When the user removed the bill. Present only when status is deleted.
+                         */
+                        deletedAt?: string;
+                    }[];
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    postV1BillsByBillIdRestore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                billId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Unique identifier for the bill */
+                        id: string;
+                        /** @enum {string} */
+                        status: "active" | "pending" | "inactive" | "rejected" | "action_required" | "deleted";
+                        /**
+                         * @description Provider bill name or generated fallback label
+                         * @example Chase Sapphire Card
+                         */
+                        name: string;
+                        /** @description Financial institution details */
+                        institution?: {
+                            /**
+                             * @description Name of the financial institution
+                             * @example Chase
+                             */
+                            name: string;
+                            /**
+                             * @description URL to institution logo
+                             * @example https://example.com/chase-logo.png
+                             */
+                            logo?: string;
+                        };
+                        /** @enum {string} */
+                        type: "auto_loan" | "credit_card" | "loan" | "mobile_phone" | "mortgage" | "student_loan" | "utility" | "unknown";
+                        /**
+                         * @description Last 4 digits of the bill account number
+                         * @example 1234
+                         */
+                        accountNumberLast4?: string;
+                        /** @enum {string} */
+                        currency: "USD" | "CAD" | "EUR" | "GBP";
+                        /** @description Liability data from the bill provider. All fields are optional and amounts are decimal strings. */
+                        liability?: {
+                            /**
+                             * @description Current outstanding balance
+                             * @example 1234.56
+                             */
+                            balance?: string;
+                            /**
+                             * @description Most recent statement balance
+                             * @example 1100.00
+                             */
+                            statementBalance?: string;
+                            /**
+                             * @description Minimum payment due
+                             * @example 25.00
+                             */
+                            minimumPayment?: string;
+                            /**
+                             * @description Amount of the last payment made
+                             * @example 150.00
+                             */
+                            lastPaymentAmount?: string;
+                            /**
+                             * Format: date
+                             * @description Date of the last payment
+                             * @example 2025-03-01
+                             */
+                            lastPaymentDate?: string;
+                            /**
+                             * Format: date
+                             * @description Date the next payment is due
+                             * @example 2025-04-01
+                             */
+                            nextPaymentDueDate?: string;
+                            /**
+                             * @description Amount currently due
+                             * @example 0.00
+                             */
+                            amountDue?: string;
+                        };
+                        /** @description Actions the user must complete before the bill is payable. Present (non-empty) when status is action_required. */
+                        requirements?: {
+                            /**
+                             * @description The action the user must complete to make the bill payable
+                             * @example card_details
+                             */
+                            type: string;
+                            /**
+                             * @description Fields the user must supply to satisfy the requirement
+                             * @example [
+                             *       "credit_card_number"
+                             *     ]
+                             */
+                            fields?: string[];
+                            /**
+                             * @description Human-readable explanation of the requirement
+                             * @example This card is expired
+                             */
+                            reason?: string;
+                        }[];
+                        /** @enum {string} */
+                        unpayableCode?: "institution_not_supported" | "account_number_invalid" | "account_verification_failed" | "not_supported";
+                        /**
+                         * Format: date-time
+                         * @description When the bill was linked
+                         */
+                        createdAt: string;
+                        /**
+                         * Format: date-time
+                         * @description When the user removed the bill. Present only when status is deleted.
+                         */
+                        deletedAt?: string;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -11641,7 +14598,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -11684,7 +14641,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -11717,7 +14674,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -11756,6 +14713,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -11860,7 +14838,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -11903,7 +14881,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -11942,6 +14920,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -12007,7 +15006,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -12050,7 +15049,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -12089,6 +15088,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -12165,7 +15185,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -12208,7 +15228,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -12247,6 +15267,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -12301,7 +15342,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -12344,7 +15385,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -12383,6 +15424,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -12433,7 +15495,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -12476,7 +15538,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -12515,6 +15577,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -12569,7 +15652,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -12612,7 +15695,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -12651,6 +15734,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -12720,7 +15824,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -12763,7 +15867,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -12802,6 +15906,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -12845,6 +15970,7 @@ export interface operations {
                             /**
                              * @description The interval for the spend limit
                              * @example weekly
+                             * @enum {string}
                              */
                             interval: "daily" | "weekly" | "monthly" | "yearly" | "all_time" | "per_transaction";
                         } | null;
@@ -12863,7 +15989,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -12906,7 +16032,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -12939,7 +16065,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -12978,6 +16104,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -13013,7 +16160,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13056,7 +16203,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13089,7 +16236,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13128,6 +16275,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -13173,6 +16341,7 @@ export interface operations {
                             /**
                              * @description The interval for the spend limit
                              * @example weekly
+                             * @enum {string}
                              */
                             interval: "daily" | "weekly" | "monthly" | "yearly" | "all_time" | "per_transaction";
                         } | null;
@@ -13191,7 +16360,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13234,7 +16403,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13267,7 +16436,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13306,6 +16475,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -13380,7 +16570,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13423,7 +16613,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13456,7 +16646,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13495,6 +16685,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -13548,7 +16759,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13591,7 +16802,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13624,7 +16835,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13663,6 +16874,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -13732,7 +16964,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13775,7 +17007,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13808,7 +17040,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13847,6 +17079,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -13907,6 +17160,7 @@ export interface operations {
                             /**
                              * @description The interval for the spend limit
                              * @example weekly
+                             * @enum {string}
                              */
                             interval: "daily" | "weekly" | "monthly" | "yearly" | "all_time" | "per_transaction";
                         } | null;
@@ -13925,7 +17179,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -13968,7 +17222,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -14001,7 +17255,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -14040,6 +17294,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -14121,6 +17396,7 @@ export interface operations {
                             /**
                              * @description The interval for the spend limit
                              * @example weekly
+                             * @enum {string}
                              */
                             interval: "daily" | "weekly" | "monthly" | "yearly" | "all_time" | "per_transaction";
                         } | null;
@@ -14139,7 +17415,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -14182,7 +17458,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -14215,7 +17491,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -14254,6 +17530,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -14278,7 +17575,7 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique identifier for the debit card
-                             * @example 6a85c8b76e7637bff6a31952
+                             * @example 6aa831de18ffc49a16151fce
                              */
                             id: string;
                             /** @enum {string} */
@@ -14336,7 +17633,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -14379,7 +17676,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -14412,7 +17709,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -14451,6 +17748,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -14467,18 +17785,18 @@ export interface operations {
             content: {
                 "application/json": {
                     /**
-                     * @description Evervault-encrypted card number token (opaque string from the Card iframe)
+                     * @description Card number as encrypted by the Evervault Card component (`card.number` in its change payload). An opaque `ev:` token — never a raw PAN. Initialise the component with the Evervault team ID and the per-environment app ID that Spritz provides during onboarding.
                      * @example ev:SWFSS:...
                      */
                     encryptedCardNumber: string;
                     /**
-                     * @description Evervault-encrypted expiry month token (opaque string from the Card iframe)
-                     * @example ev:SWFSS:...
+                     * @description Expiry month exactly as the Evervault Card component returns it (`card.expiry.month`). This value is plaintext, not encrypted; one or two digits are accepted.
+                     * @example 09
                      */
                     expiryMonth: string;
                     /**
-                     * @description Evervault-encrypted expiry year token (opaque string from the Card iframe)
-                     * @example ev:SWFSS:...
+                     * @description Expiry year exactly as the Evervault Card component returns it (`card.expiry.year`). This value is plaintext, not encrypted; a two-digit year is accepted.
+                     * @example 29
                      */
                     expiryYear: string;
                     /**
@@ -14543,18 +17861,18 @@ export interface operations {
                 };
                 "application/x-www-form-urlencoded": {
                     /**
-                     * @description Evervault-encrypted card number token (opaque string from the Card iframe)
+                     * @description Card number as encrypted by the Evervault Card component (`card.number` in its change payload). An opaque `ev:` token — never a raw PAN. Initialise the component with the Evervault team ID and the per-environment app ID that Spritz provides during onboarding.
                      * @example ev:SWFSS:...
                      */
                     encryptedCardNumber: string;
                     /**
-                     * @description Evervault-encrypted expiry month token (opaque string from the Card iframe)
-                     * @example ev:SWFSS:...
+                     * @description Expiry month exactly as the Evervault Card component returns it (`card.expiry.month`). This value is plaintext, not encrypted; one or two digits are accepted.
+                     * @example 09
                      */
                     expiryMonth: string;
                     /**
-                     * @description Evervault-encrypted expiry year token (opaque string from the Card iframe)
-                     * @example ev:SWFSS:...
+                     * @description Expiry year exactly as the Evervault Card component returns it (`card.expiry.year`). This value is plaintext, not encrypted; a two-digit year is accepted.
+                     * @example 29
                      */
                     expiryYear: string;
                     /**
@@ -14619,18 +17937,18 @@ export interface operations {
                 };
                 "multipart/form-data": {
                     /**
-                     * @description Evervault-encrypted card number token (opaque string from the Card iframe)
+                     * @description Card number as encrypted by the Evervault Card component (`card.number` in its change payload). An opaque `ev:` token — never a raw PAN. Initialise the component with the Evervault team ID and the per-environment app ID that Spritz provides during onboarding.
                      * @example ev:SWFSS:...
                      */
                     encryptedCardNumber: string;
                     /**
-                     * @description Evervault-encrypted expiry month token (opaque string from the Card iframe)
-                     * @example ev:SWFSS:...
+                     * @description Expiry month exactly as the Evervault Card component returns it (`card.expiry.month`). This value is plaintext, not encrypted; one or two digits are accepted.
+                     * @example 09
                      */
                     expiryMonth: string;
                     /**
-                     * @description Evervault-encrypted expiry year token (opaque string from the Card iframe)
-                     * @example ev:SWFSS:...
+                     * @description Expiry year exactly as the Evervault Card component returns it (`card.expiry.year`). This value is plaintext, not encrypted; a two-digit year is accepted.
+                     * @example 29
                      */
                     expiryYear: string;
                     /**
@@ -14705,7 +18023,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6a85c8b76e7637bff6a31952
+                         * @example 6aa831de18ffc49a16151fce
                          */
                         id: string;
                         /** @enum {string} */
@@ -14761,7 +18079,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -14804,7 +18122,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -14837,7 +18155,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -14876,6 +18194,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -14901,7 +18240,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6a85c8b76e7637bff6a31952
+                         * @example 6aa831de18ffc49a16151fce
                          */
                         id: string;
                         /** @enum {string} */
@@ -14957,7 +18296,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15000,7 +18339,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15033,7 +18372,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15072,6 +18411,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -15105,7 +18465,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15148,7 +18508,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15181,7 +18541,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15220,6 +18580,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -15380,7 +18761,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6a85c8b76e7637bff6a31952
+                         * @example 6aa831de18ffc49a16151fce
                          */
                         id: string;
                         /** @enum {string} */
@@ -15436,7 +18817,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15479,7 +18860,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15512,7 +18893,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15551,6 +18932,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -15606,7 +19008,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15649,7 +19051,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15682,7 +19084,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15721,6 +19123,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -15772,7 +19195,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15815,7 +19238,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15848,7 +19271,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15887,6 +19310,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -15925,7 +19369,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -15968,7 +19412,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16007,6 +19451,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -16045,7 +19510,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16088,7 +19553,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16127,6 +19592,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -16197,7 +19683,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6a85c8b76e7637bff6a31956
+                         * @example 6aa831df18ffc49a16151fd2
                          */
                         userId: string;
                         /**
@@ -16213,7 +19699,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-08-19T16:16:07.597Z
+                         * @example 2026-09-14T18:41:51.268Z
                          */
                         expiresAt: string;
                     };
@@ -16225,7 +19711,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16268,7 +19754,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16301,7 +19787,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16340,6 +19826,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -16363,12 +19870,12 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the integrator
-                         * @example int_abc123
+                         * @example opaque-integrator-id
                          */
                         id: string;
                         /**
                          * @description Public integrator API key used in X-Integrator-Key
-                         * @example int_abc123
+                         * @example ik_abc123
                          */
                         integratorKey: string;
                         /**
@@ -16391,7 +19898,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-08-19T15:16:07.597Z
+                         * @example 2026-09-14T17:41:51.267Z
                          */
                         createdAt: string;
                     };
@@ -16403,7 +19910,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16446,7 +19953,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16479,7 +19986,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16518,6 +20025,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -16583,7 +20111,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description The internal ID of the newly created user
-                         * @example 6a85c8b76e7637bff6a31958
+                         * @example 6aa831df18ffc49a16151fd4
                          */
                         userId: string;
                         /**
@@ -16606,7 +20134,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16649,7 +20177,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16682,7 +20210,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16721,6 +20249,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -16730,7 +20279,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16769,6 +20318,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -16816,7 +20386,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6a85c8b76e7637bff6a31955
+                             * @example 6aa831df18ffc49a16151fd1
                              */
                             userId: string;
                             /**
@@ -16857,7 +20427,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16900,7 +20470,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16933,7 +20503,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -16972,6 +20542,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -17007,7 +20598,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6a85c8b76e7637bff6a31955
+                         * @example 6aa831df18ffc49a16151fd1
                          */
                         userId: string;
                         /**
@@ -17041,7 +20632,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17084,7 +20675,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17117,7 +20708,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17156,6 +20747,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -17179,11 +20791,11 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a85c8b76e7637bff6a31957
+                         * @example 6aa831df18ffc49a16151fd3
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
-                        events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "*")[];
+                        events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                         /**
                          * Format: uri
                          * @description URL to which webhook payloads are delivered
@@ -17209,7 +20821,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17252,7 +20864,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17285,7 +20897,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17324,6 +20936,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -17349,7 +20982,7 @@ export interface operations {
                      * @description List of event types to subscribe to. Defaults to empty array.
                      * @default []
                      */
-                    events?: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "*")[];
+                    events?: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                 };
                 "application/x-www-form-urlencoded": {
                     /**
@@ -17362,7 +20995,7 @@ export interface operations {
                      * @description List of event types to subscribe to. Defaults to empty array.
                      * @default []
                      */
-                    events?: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "*")[];
+                    events?: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                 };
                 "multipart/form-data": {
                     /**
@@ -17375,7 +21008,7 @@ export interface operations {
                      * @description List of event types to subscribe to. Defaults to empty array.
                      * @default []
                      */
-                    events?: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "*")[];
+                    events?: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                 };
             };
         };
@@ -17389,11 +21022,11 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a85c8b76e7637bff6a31957
+                         * @example 6aa831df18ffc49a16151fd3
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
-                        events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "*")[];
+                        events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                         /**
                          * Format: uri
                          * @description URL to which webhook payloads are delivered
@@ -17419,7 +21052,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17462,7 +21095,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17495,7 +21128,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17534,6 +21167,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -17558,7 +21212,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description Recent webhook delivery attempts, newest first */
+                        /** @description Webhook delivery attempts available for inspection, newest first */
                         data: {
                             /**
                              * @description The event that was delivered
@@ -17570,8 +21224,1103 @@ export interface operations {
                              * @example https://api.example.com/webhooks
                              */
                             webhookUrl: string;
-                            /** @description The exact body that was sent, and the body the signature was computed over */
-                            payload: {
+                            /** @description The exact body that was sent, and the body the signature was computed over. ACH debit, off-ramp, and credit on-ramp milestone events use the versioned semantic payload variants; other event families use their resource-change payload. */
+                            payload: ({
+                                /**
+                                 * @description Version of the immutable ACH communication payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-deposit communication sequence. Reject an event whose sequence is not above the highest accepted sequence for this deposit. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                /**
+                                 * @description Opaque public deposit identifier; identical to `deposit.id`
+                                 * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                deposit: {
+                                    /**
+                                     * @description Opaque public ACH debit deposit identifier
+                                     * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                     */
+                                    id: string;
+                                    /**
+                                     * @description Asset sent to the deposit destination
+                                     * @example USDC
+                                     * @enum {string}
+                                     */
+                                    asset: "USDC";
+                                    /**
+                                     * @description Shortened destination wallet address for user-facing copy
+                                     * @example 9xQeWv…wM9R
+                                     */
+                                    destinationAddressDisplay: string;
+                                    principalAmountUsd: string;
+                                    totalDebitAmountUsd: string;
+                                    confirmedReleasedAmountUsd: string;
+                                    /**
+                                     * @description ACH debit lifecycle state for the deposit
+                                     * @example authorized
+                                     * @enum {string}
+                                     */
+                                    debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                                    /**
+                                     * @description Crypto release lifecycle state for the deposit
+                                     * @example not_started
+                                     * @enum {string}
+                                     */
+                                    releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                                    /**
+                                     * @description Policy mode used to decide when crypto is released
+                                     * @example after_settlement
+                                     * @enum {string}
+                                     */
+                                    releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                                    instantPortionUsd: string;
+                                    settlementPortionUsd: string;
+                                    userFeeUsd: string;
+                                };
+                                fundingSource: {
+                                    /**
+                                     * @description Opaque public funding source identifier
+                                     * @example fs_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                     */
+                                    id: string;
+                                    institutionName: string | null;
+                                    accountMask: string | null;
+                                };
+                                /** @enum {string} */
+                                event: "achDebit.authorized";
+                                /** @enum {string} */
+                                milestone: "authorized";
+                                achReturn: {
+                                    /**
+                                     * @description Opaque public ACH debit return identifier
+                                     * @example dr_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                     */
+                                    id: string;
+                                    amountUsd: string;
+                                    /**
+                                     * @description Crypto release state when the ACH return was recorded
+                                     * @example not_released
+                                     * @enum {string}
+                                     */
+                                    cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
+                                    /**
+                                     * @description Action applied to the user after return policy evaluation
+                                     * @example review_required
+                                     * @enum {string}
+                                     */
+                                    userAction: "none" | "review_required" | "restricted" | "disabled";
+                                } | null;
+                            } | {
+                                /**
+                                 * @description Version of the immutable ACH communication payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-deposit communication sequence. Reject an event whose sequence is not above the highest accepted sequence for this deposit. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                /**
+                                 * @description Opaque public deposit identifier; identical to `deposit.id`
+                                 * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                deposit: {
+                                    /**
+                                     * @description Opaque public ACH debit deposit identifier
+                                     * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                     */
+                                    id: string;
+                                    /**
+                                     * @description Asset sent to the deposit destination
+                                     * @example USDC
+                                     * @enum {string}
+                                     */
+                                    asset: "USDC";
+                                    /**
+                                     * @description Shortened destination wallet address for user-facing copy
+                                     * @example 9xQeWv…wM9R
+                                     */
+                                    destinationAddressDisplay: string;
+                                    principalAmountUsd: string;
+                                    totalDebitAmountUsd: string;
+                                    confirmedReleasedAmountUsd: string;
+                                    /**
+                                     * @description ACH debit lifecycle state for the deposit
+                                     * @example authorized
+                                     * @enum {string}
+                                     */
+                                    debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                                    /**
+                                     * @description Crypto release lifecycle state for the deposit
+                                     * @example not_started
+                                     * @enum {string}
+                                     */
+                                    releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                                    /**
+                                     * @description Policy mode used to decide when crypto is released
+                                     * @example after_settlement
+                                     * @enum {string}
+                                     */
+                                    releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                                    instantPortionUsd: string;
+                                    settlementPortionUsd: string;
+                                    userFeeUsd: string;
+                                };
+                                fundingSource: {
+                                    /**
+                                     * @description Opaque public funding source identifier
+                                     * @example fs_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                     */
+                                    id: string;
+                                    institutionName: string | null;
+                                    accountMask: string | null;
+                                };
+                                /** @enum {string} */
+                                event: "achDebit.deliveryProgress";
+                                /** @enum {string} */
+                                milestone: "delivery_progress";
+                                achReturn: {
+                                    /**
+                                     * @description Opaque public ACH debit return identifier
+                                     * @example dr_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                     */
+                                    id: string;
+                                    amountUsd: string;
+                                    /**
+                                     * @description Crypto release state when the ACH return was recorded
+                                     * @example not_released
+                                     * @enum {string}
+                                     */
+                                    cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
+                                    /**
+                                     * @description Action applied to the user after return policy evaluation
+                                     * @example review_required
+                                     * @enum {string}
+                                     */
+                                    userAction: "none" | "review_required" | "restricted" | "disabled";
+                                } | null;
+                            } | {
+                                /**
+                                 * @description Version of the immutable ACH communication payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-deposit communication sequence. Reject an event whose sequence is not above the highest accepted sequence for this deposit. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                /**
+                                 * @description Opaque public deposit identifier; identical to `deposit.id`
+                                 * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                deposit: {
+                                    /**
+                                     * @description Opaque public ACH debit deposit identifier
+                                     * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                     */
+                                    id: string;
+                                    /**
+                                     * @description Asset sent to the deposit destination
+                                     * @example USDC
+                                     * @enum {string}
+                                     */
+                                    asset: "USDC";
+                                    /**
+                                     * @description Shortened destination wallet address for user-facing copy
+                                     * @example 9xQeWv…wM9R
+                                     */
+                                    destinationAddressDisplay: string;
+                                    principalAmountUsd: string;
+                                    totalDebitAmountUsd: string;
+                                    confirmedReleasedAmountUsd: string;
+                                    /**
+                                     * @description ACH debit lifecycle state for the deposit
+                                     * @example authorized
+                                     * @enum {string}
+                                     */
+                                    debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                                    /**
+                                     * @description Crypto release lifecycle state for the deposit
+                                     * @example not_started
+                                     * @enum {string}
+                                     */
+                                    releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                                    /**
+                                     * @description Policy mode used to decide when crypto is released
+                                     * @example after_settlement
+                                     * @enum {string}
+                                     */
+                                    releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                                    instantPortionUsd: string;
+                                    settlementPortionUsd: string;
+                                    userFeeUsd: string;
+                                };
+                                fundingSource: {
+                                    /**
+                                     * @description Opaque public funding source identifier
+                                     * @example fs_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                     */
+                                    id: string;
+                                    institutionName: string | null;
+                                    accountMask: string | null;
+                                };
+                                /** @enum {string} */
+                                event: "achDebit.delivered";
+                                /** @enum {string} */
+                                milestone: "delivered";
+                                achReturn: {
+                                    /**
+                                     * @description Opaque public ACH debit return identifier
+                                     * @example dr_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                     */
+                                    id: string;
+                                    amountUsd: string;
+                                    /**
+                                     * @description Crypto release state when the ACH return was recorded
+                                     * @example not_released
+                                     * @enum {string}
+                                     */
+                                    cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
+                                    /**
+                                     * @description Action applied to the user after return policy evaluation
+                                     * @example review_required
+                                     * @enum {string}
+                                     */
+                                    userAction: "none" | "review_required" | "restricted" | "disabled";
+                                } | null;
+                            } | {
+                                /**
+                                 * @description Version of the immutable ACH communication payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-deposit communication sequence. Reject an event whose sequence is not above the highest accepted sequence for this deposit. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                /**
+                                 * @description Opaque public deposit identifier; identical to `deposit.id`
+                                 * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                deposit: {
+                                    /**
+                                     * @description Opaque public ACH debit deposit identifier
+                                     * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                     */
+                                    id: string;
+                                    /**
+                                     * @description Asset sent to the deposit destination
+                                     * @example USDC
+                                     * @enum {string}
+                                     */
+                                    asset: "USDC";
+                                    /**
+                                     * @description Shortened destination wallet address for user-facing copy
+                                     * @example 9xQeWv…wM9R
+                                     */
+                                    destinationAddressDisplay: string;
+                                    principalAmountUsd: string;
+                                    totalDebitAmountUsd: string;
+                                    confirmedReleasedAmountUsd: string;
+                                    /**
+                                     * @description ACH debit lifecycle state for the deposit
+                                     * @example authorized
+                                     * @enum {string}
+                                     */
+                                    debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                                    /**
+                                     * @description Crypto release lifecycle state for the deposit
+                                     * @example not_started
+                                     * @enum {string}
+                                     */
+                                    releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                                    /**
+                                     * @description Policy mode used to decide when crypto is released
+                                     * @example after_settlement
+                                     * @enum {string}
+                                     */
+                                    releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                                    instantPortionUsd: string;
+                                    settlementPortionUsd: string;
+                                    userFeeUsd: string;
+                                };
+                                fundingSource: {
+                                    /**
+                                     * @description Opaque public funding source identifier
+                                     * @example fs_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                     */
+                                    id: string;
+                                    institutionName: string | null;
+                                    accountMask: string | null;
+                                };
+                                /** @enum {string} */
+                                event: "achDebit.refunded";
+                                /** @enum {string} */
+                                milestone: "refunded";
+                                achReturn: {
+                                    /**
+                                     * @description Opaque public ACH debit return identifier
+                                     * @example dr_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                     */
+                                    id: string;
+                                    amountUsd: string;
+                                    /**
+                                     * @description Crypto release state when the ACH return was recorded
+                                     * @example not_released
+                                     * @enum {string}
+                                     */
+                                    cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
+                                    /**
+                                     * @description Action applied to the user after return policy evaluation
+                                     * @example review_required
+                                     * @enum {string}
+                                     */
+                                    userAction: "none" | "review_required" | "restricted" | "disabled";
+                                } | null;
+                            } | {
+                                /**
+                                 * @description Version of the immutable ACH communication payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-deposit communication sequence. Reject an event whose sequence is not above the highest accepted sequence for this deposit. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                /**
+                                 * @description Opaque public deposit identifier; identical to `deposit.id`
+                                 * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                deposit: {
+                                    /**
+                                     * @description Opaque public ACH debit deposit identifier
+                                     * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                     */
+                                    id: string;
+                                    /**
+                                     * @description Asset sent to the deposit destination
+                                     * @example USDC
+                                     * @enum {string}
+                                     */
+                                    asset: "USDC";
+                                    /**
+                                     * @description Shortened destination wallet address for user-facing copy
+                                     * @example 9xQeWv…wM9R
+                                     */
+                                    destinationAddressDisplay: string;
+                                    principalAmountUsd: string;
+                                    totalDebitAmountUsd: string;
+                                    confirmedReleasedAmountUsd: string;
+                                    /**
+                                     * @description ACH debit lifecycle state for the deposit
+                                     * @example authorized
+                                     * @enum {string}
+                                     */
+                                    debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                                    /**
+                                     * @description Crypto release lifecycle state for the deposit
+                                     * @example not_started
+                                     * @enum {string}
+                                     */
+                                    releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                                    /**
+                                     * @description Policy mode used to decide when crypto is released
+                                     * @example after_settlement
+                                     * @enum {string}
+                                     */
+                                    releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                                    instantPortionUsd: string;
+                                    settlementPortionUsd: string;
+                                    userFeeUsd: string;
+                                };
+                                fundingSource: {
+                                    /**
+                                     * @description Opaque public funding source identifier
+                                     * @example fs_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                     */
+                                    id: string;
+                                    institutionName: string | null;
+                                    accountMask: string | null;
+                                };
+                                /** @enum {string} */
+                                event: "achDebit.returned";
+                                /** @enum {string} */
+                                milestone: "returned";
+                                achReturn: {
+                                    /**
+                                     * @description Opaque public ACH debit return identifier
+                                     * @example dr_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                     */
+                                    id: string;
+                                    amountUsd: string;
+                                    /**
+                                     * @description Crypto release state when the ACH return was recorded
+                                     * @example not_released
+                                     * @enum {string}
+                                     */
+                                    cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
+                                    /**
+                                     * @description Action applied to the user after return policy evaluation
+                                     * @example review_required
+                                     * @enum {string}
+                                     */
+                                    userAction: "none" | "review_required" | "restricted" | "disabled";
+                                };
+                            }) | ({
+                                /**
+                                 * @description Version of the immutable off-ramp milestone payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-off-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this off-ramp. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                integratorId: string | null;
+                                /** @description The off-ramp identifier; identical to `offRamp.id` */
+                                id: string;
+                                offRamp: {
+                                    /** @description The off-ramp identifier */
+                                    id: string;
+                                    /** @description The quote (crypto leg) this off-ramp fulfills. Null for auto-ramp-address deposits, which have no quote. */
+                                    quoteId: string | null;
+                                    /**
+                                     * @description Current status of the off-ramp payment.
+                                     *
+                                     *     - `awaiting_funding`: Payment initialized, awaiting user funding
+                                     *     - `queued`: Payment scheduled for disbursement
+                                     *     - `in_flight`: Payment sent, pending settlement
+                                     *     - `completed`: Payment delivered to the recipient
+                                     *     - `canceled`: Payment canceled
+                                     *     - `failed`: Payment failed
+                                     *     - `reversed`: Payment reversed
+                                     *     - `refunded`: Payment refunded
+                                     * @example in_flight
+                                     * @enum {string}
+                                     */
+                                    status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
+                                    input: {
+                                        /** @description Crypto amount sent, decimal string */
+                                        amount: string;
+                                        token: string;
+                                        chain: string;
+                                    } | null;
+                                    output: {
+                                        /** @description Fiat amount, decimal string */
+                                        amount: string;
+                                        currency: string;
+                                        rail: string | null;
+                                        accountId: string;
+                                        accountName: string | null;
+                                    };
+                                    fees: {
+                                        amount: string;
+                                        currency: string;
+                                    } | null;
+                                    transaction: {
+                                        hash: string | null;
+                                        explorerUrl: string | null;
+                                    } | null;
+                                    /** @description Public-safe failure summary when the milestone is `failed`; never internal or provider detail. */
+                                    failureMessage: string | null;
+                                };
+                                /** @enum {string} */
+                                event: "offramp.confirmed";
+                                /** @enum {string} */
+                                milestone: "confirmed";
+                            } | {
+                                /**
+                                 * @description Version of the immutable off-ramp milestone payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-off-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this off-ramp. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                integratorId: string | null;
+                                /** @description The off-ramp identifier; identical to `offRamp.id` */
+                                id: string;
+                                offRamp: {
+                                    /** @description The off-ramp identifier */
+                                    id: string;
+                                    /** @description The quote (crypto leg) this off-ramp fulfills. Null for auto-ramp-address deposits, which have no quote. */
+                                    quoteId: string | null;
+                                    /**
+                                     * @description Current status of the off-ramp payment.
+                                     *
+                                     *     - `awaiting_funding`: Payment initialized, awaiting user funding
+                                     *     - `queued`: Payment scheduled for disbursement
+                                     *     - `in_flight`: Payment sent, pending settlement
+                                     *     - `completed`: Payment delivered to the recipient
+                                     *     - `canceled`: Payment canceled
+                                     *     - `failed`: Payment failed
+                                     *     - `reversed`: Payment reversed
+                                     *     - `refunded`: Payment refunded
+                                     * @example in_flight
+                                     * @enum {string}
+                                     */
+                                    status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
+                                    input: {
+                                        /** @description Crypto amount sent, decimal string */
+                                        amount: string;
+                                        token: string;
+                                        chain: string;
+                                    } | null;
+                                    output: {
+                                        /** @description Fiat amount, decimal string */
+                                        amount: string;
+                                        currency: string;
+                                        rail: string | null;
+                                        accountId: string;
+                                        accountName: string | null;
+                                    };
+                                    fees: {
+                                        amount: string;
+                                        currency: string;
+                                    } | null;
+                                    transaction: {
+                                        hash: string | null;
+                                        explorerUrl: string | null;
+                                    } | null;
+                                    /** @description Public-safe failure summary when the milestone is `failed`; never internal or provider detail. */
+                                    failureMessage: string | null;
+                                };
+                                /** @enum {string} */
+                                event: "offramp.inFlight";
+                                /** @enum {string} */
+                                milestone: "in_flight";
+                            } | {
+                                /**
+                                 * @description Version of the immutable off-ramp milestone payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-off-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this off-ramp. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                integratorId: string | null;
+                                /** @description The off-ramp identifier; identical to `offRamp.id` */
+                                id: string;
+                                offRamp: {
+                                    /** @description The off-ramp identifier */
+                                    id: string;
+                                    /** @description The quote (crypto leg) this off-ramp fulfills. Null for auto-ramp-address deposits, which have no quote. */
+                                    quoteId: string | null;
+                                    /**
+                                     * @description Current status of the off-ramp payment.
+                                     *
+                                     *     - `awaiting_funding`: Payment initialized, awaiting user funding
+                                     *     - `queued`: Payment scheduled for disbursement
+                                     *     - `in_flight`: Payment sent, pending settlement
+                                     *     - `completed`: Payment delivered to the recipient
+                                     *     - `canceled`: Payment canceled
+                                     *     - `failed`: Payment failed
+                                     *     - `reversed`: Payment reversed
+                                     *     - `refunded`: Payment refunded
+                                     * @example in_flight
+                                     * @enum {string}
+                                     */
+                                    status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
+                                    input: {
+                                        /** @description Crypto amount sent, decimal string */
+                                        amount: string;
+                                        token: string;
+                                        chain: string;
+                                    } | null;
+                                    output: {
+                                        /** @description Fiat amount, decimal string */
+                                        amount: string;
+                                        currency: string;
+                                        rail: string | null;
+                                        accountId: string;
+                                        accountName: string | null;
+                                    };
+                                    fees: {
+                                        amount: string;
+                                        currency: string;
+                                    } | null;
+                                    transaction: {
+                                        hash: string | null;
+                                        explorerUrl: string | null;
+                                    } | null;
+                                    /** @description Public-safe failure summary when the milestone is `failed`; never internal or provider detail. */
+                                    failureMessage: string | null;
+                                };
+                                /** @enum {string} */
+                                event: "offramp.completed";
+                                /** @enum {string} */
+                                milestone: "completed";
+                            } | {
+                                /**
+                                 * @description Version of the immutable off-ramp milestone payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-off-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this off-ramp. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                integratorId: string | null;
+                                /** @description The off-ramp identifier; identical to `offRamp.id` */
+                                id: string;
+                                offRamp: {
+                                    /** @description The off-ramp identifier */
+                                    id: string;
+                                    /** @description The quote (crypto leg) this off-ramp fulfills. Null for auto-ramp-address deposits, which have no quote. */
+                                    quoteId: string | null;
+                                    /**
+                                     * @description Current status of the off-ramp payment.
+                                     *
+                                     *     - `awaiting_funding`: Payment initialized, awaiting user funding
+                                     *     - `queued`: Payment scheduled for disbursement
+                                     *     - `in_flight`: Payment sent, pending settlement
+                                     *     - `completed`: Payment delivered to the recipient
+                                     *     - `canceled`: Payment canceled
+                                     *     - `failed`: Payment failed
+                                     *     - `reversed`: Payment reversed
+                                     *     - `refunded`: Payment refunded
+                                     * @example in_flight
+                                     * @enum {string}
+                                     */
+                                    status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
+                                    input: {
+                                        /** @description Crypto amount sent, decimal string */
+                                        amount: string;
+                                        token: string;
+                                        chain: string;
+                                    } | null;
+                                    output: {
+                                        /** @description Fiat amount, decimal string */
+                                        amount: string;
+                                        currency: string;
+                                        rail: string | null;
+                                        accountId: string;
+                                        accountName: string | null;
+                                    };
+                                    fees: {
+                                        amount: string;
+                                        currency: string;
+                                    } | null;
+                                    transaction: {
+                                        hash: string | null;
+                                        explorerUrl: string | null;
+                                    } | null;
+                                    /** @description Public-safe failure summary when the milestone is `failed`; never internal or provider detail. */
+                                    failureMessage: string | null;
+                                };
+                                /** @enum {string} */
+                                event: "offramp.failed";
+                                /** @enum {string} */
+                                milestone: "failed";
+                            } | {
+                                /**
+                                 * @description Version of the immutable off-ramp milestone payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-off-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this off-ramp. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                integratorId: string | null;
+                                /** @description The off-ramp identifier; identical to `offRamp.id` */
+                                id: string;
+                                offRamp: {
+                                    /** @description The off-ramp identifier */
+                                    id: string;
+                                    /** @description The quote (crypto leg) this off-ramp fulfills. Null for auto-ramp-address deposits, which have no quote. */
+                                    quoteId: string | null;
+                                    /**
+                                     * @description Current status of the off-ramp payment.
+                                     *
+                                     *     - `awaiting_funding`: Payment initialized, awaiting user funding
+                                     *     - `queued`: Payment scheduled for disbursement
+                                     *     - `in_flight`: Payment sent, pending settlement
+                                     *     - `completed`: Payment delivered to the recipient
+                                     *     - `canceled`: Payment canceled
+                                     *     - `failed`: Payment failed
+                                     *     - `reversed`: Payment reversed
+                                     *     - `refunded`: Payment refunded
+                                     * @example in_flight
+                                     * @enum {string}
+                                     */
+                                    status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
+                                    input: {
+                                        /** @description Crypto amount sent, decimal string */
+                                        amount: string;
+                                        token: string;
+                                        chain: string;
+                                    } | null;
+                                    output: {
+                                        /** @description Fiat amount, decimal string */
+                                        amount: string;
+                                        currency: string;
+                                        rail: string | null;
+                                        accountId: string;
+                                        accountName: string | null;
+                                    };
+                                    fees: {
+                                        amount: string;
+                                        currency: string;
+                                    } | null;
+                                    transaction: {
+                                        hash: string | null;
+                                        explorerUrl: string | null;
+                                    } | null;
+                                    /** @description Public-safe failure summary when the milestone is `failed`; never internal or provider detail. */
+                                    failureMessage: string | null;
+                                };
+                                /** @enum {string} */
+                                event: "offramp.refunded";
+                                /** @enum {string} */
+                                milestone: "refunded";
+                            } | {
+                                /**
+                                 * @description Version of the immutable off-ramp milestone payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-off-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this off-ramp. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                integratorId: string | null;
+                                /** @description The off-ramp identifier; identical to `offRamp.id` */
+                                id: string;
+                                offRamp: {
+                                    /** @description The off-ramp identifier */
+                                    id: string;
+                                    /** @description The quote (crypto leg) this off-ramp fulfills. Null for auto-ramp-address deposits, which have no quote. */
+                                    quoteId: string | null;
+                                    /**
+                                     * @description Current status of the off-ramp payment.
+                                     *
+                                     *     - `awaiting_funding`: Payment initialized, awaiting user funding
+                                     *     - `queued`: Payment scheduled for disbursement
+                                     *     - `in_flight`: Payment sent, pending settlement
+                                     *     - `completed`: Payment delivered to the recipient
+                                     *     - `canceled`: Payment canceled
+                                     *     - `failed`: Payment failed
+                                     *     - `reversed`: Payment reversed
+                                     *     - `refunded`: Payment refunded
+                                     * @example in_flight
+                                     * @enum {string}
+                                     */
+                                    status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
+                                    input: {
+                                        /** @description Crypto amount sent, decimal string */
+                                        amount: string;
+                                        token: string;
+                                        chain: string;
+                                    } | null;
+                                    output: {
+                                        /** @description Fiat amount, decimal string */
+                                        amount: string;
+                                        currency: string;
+                                        rail: string | null;
+                                        accountId: string;
+                                        accountName: string | null;
+                                    };
+                                    fees: {
+                                        amount: string;
+                                        currency: string;
+                                    } | null;
+                                    transaction: {
+                                        hash: string | null;
+                                        explorerUrl: string | null;
+                                    } | null;
+                                    /** @description Public-safe failure summary when the milestone is `failed`; never internal or provider detail. */
+                                    failureMessage: string | null;
+                                };
+                                /** @enum {string} */
+                                event: "offramp.reversed";
+                                /** @enum {string} */
+                                milestone: "reversed";
+                            }) | ({
+                                /**
+                                 * @description Version of the immutable credit on-ramp milestone payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-on-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this on-ramp. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                integratorId: string | null;
+                                /** @description The on-ramp identifier; identical to `onRamp.id` */
+                                id: string;
+                                onRamp: {
+                                    /** @description The on-ramp identifier */
+                                    id: string;
+                                    /** @description Public on-ramp status at the milestone */
+                                    status: string;
+                                    input: {
+                                        /** @description Fiat amount received, decimal string */
+                                        amount: string;
+                                        currency: string;
+                                        rail: string | null;
+                                    };
+                                    output: {
+                                        /** @description Crypto amount delivered or expected */
+                                        amount: string;
+                                        token: string;
+                                        network: string;
+                                        /** @description Destination wallet address (the user's own) */
+                                        address: string;
+                                    };
+                                    fees: {
+                                        amount: string;
+                                        currency: string;
+                                    } | null;
+                                    transaction: {
+                                        hash: string | null;
+                                        explorerUrl: string | null;
+                                    } | null;
+                                };
+                                /** @enum {string} */
+                                event: "onrampCredit.depositDetected";
+                                /** @enum {string} */
+                                milestone: "deposit_detected";
+                            } | {
+                                /**
+                                 * @description Version of the immutable credit on-ramp milestone payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-on-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this on-ramp. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                integratorId: string | null;
+                                /** @description The on-ramp identifier; identical to `onRamp.id` */
+                                id: string;
+                                onRamp: {
+                                    /** @description The on-ramp identifier */
+                                    id: string;
+                                    /** @description Public on-ramp status at the milestone */
+                                    status: string;
+                                    input: {
+                                        /** @description Fiat amount received, decimal string */
+                                        amount: string;
+                                        currency: string;
+                                        rail: string | null;
+                                    };
+                                    output: {
+                                        /** @description Crypto amount delivered or expected */
+                                        amount: string;
+                                        token: string;
+                                        network: string;
+                                        /** @description Destination wallet address (the user's own) */
+                                        address: string;
+                                    };
+                                    fees: {
+                                        amount: string;
+                                        currency: string;
+                                    } | null;
+                                    transaction: {
+                                        hash: string | null;
+                                        explorerUrl: string | null;
+                                    } | null;
+                                };
+                                /** @enum {string} */
+                                event: "onrampCredit.completed";
+                                /** @enum {string} */
+                                milestone: "completed";
+                            } | {
+                                /**
+                                 * @description Version of the immutable credit on-ramp milestone payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-on-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this on-ramp. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                integratorId: string | null;
+                                /** @description The on-ramp identifier; identical to `onRamp.id` */
+                                id: string;
+                                onRamp: {
+                                    /** @description The on-ramp identifier */
+                                    id: string;
+                                    /** @description Public on-ramp status at the milestone */
+                                    status: string;
+                                    input: {
+                                        /** @description Fiat amount received, decimal string */
+                                        amount: string;
+                                        currency: string;
+                                        rail: string | null;
+                                    };
+                                    output: {
+                                        /** @description Crypto amount delivered or expected */
+                                        amount: string;
+                                        token: string;
+                                        network: string;
+                                        /** @description Destination wallet address (the user's own) */
+                                        address: string;
+                                    };
+                                    fees: {
+                                        amount: string;
+                                        currency: string;
+                                    } | null;
+                                    transaction: {
+                                        hash: string | null;
+                                        explorerUrl: string | null;
+                                    } | null;
+                                };
+                                /** @enum {string} */
+                                event: "onrampCredit.failed";
+                                /** @enum {string} */
+                                milestone: "failed";
+                            } | {
+                                /**
+                                 * @description Version of the immutable credit on-ramp milestone payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-on-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this on-ramp. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                integratorId: string | null;
+                                /** @description The on-ramp identifier; identical to `onRamp.id` */
+                                id: string;
+                                onRamp: {
+                                    /** @description The on-ramp identifier */
+                                    id: string;
+                                    /** @description Public on-ramp status at the milestone */
+                                    status: string;
+                                    input: {
+                                        /** @description Fiat amount received, decimal string */
+                                        amount: string;
+                                        currency: string;
+                                        rail: string | null;
+                                    };
+                                    output: {
+                                        /** @description Crypto amount delivered or expected */
+                                        amount: string;
+                                        token: string;
+                                        network: string;
+                                        /** @description Destination wallet address (the user's own) */
+                                        address: string;
+                                    };
+                                    fees: {
+                                        amount: string;
+                                        currency: string;
+                                    } | null;
+                                    transaction: {
+                                        hash: string | null;
+                                        explorerUrl: string | null;
+                                    } | null;
+                                };
+                                /** @enum {string} */
+                                event: "onrampCredit.reversed";
+                                /** @enum {string} */
+                                milestone: "reversed";
+                            } | {
+                                /**
+                                 * @description Version of the immutable credit on-ramp milestone payload
+                                 * @enum {string}
+                                 */
+                                schemaVersion: "1";
+                                /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                                eventId: string;
+                                /** @description Per-on-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this on-ramp. */
+                                sequence: number;
+                                /** Format: date-time */
+                                occurredAt: string;
+                                userId: string;
+                                integratorId: string | null;
+                                /** @description The on-ramp identifier; identical to `onRamp.id` */
+                                id: string;
+                                onRamp: {
+                                    /** @description The on-ramp identifier */
+                                    id: string;
+                                    /** @description Public on-ramp status at the milestone */
+                                    status: string;
+                                    input: {
+                                        /** @description Fiat amount received, decimal string */
+                                        amount: string;
+                                        currency: string;
+                                        rail: string | null;
+                                    };
+                                    output: {
+                                        /** @description Crypto amount delivered or expected */
+                                        amount: string;
+                                        token: string;
+                                        network: string;
+                                        /** @description Destination wallet address (the user's own) */
+                                        address: string;
+                                    };
+                                    fees: {
+                                        amount: string;
+                                        currency: string;
+                                    } | null;
+                                    transaction: {
+                                        hash: string | null;
+                                        explorerUrl: string | null;
+                                    } | null;
+                                };
+                                /** @enum {string} */
+                                event: "onrampCredit.refunded";
+                                /** @enum {string} */
+                                milestone: "refunded";
+                            }) | {
                                 [key: string]: unknown;
                             };
                             /**
@@ -17611,7 +22360,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17650,6 +22399,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -17659,7 +22429,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17702,7 +22472,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17735,7 +22505,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17774,6 +22544,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -17783,7 +22574,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17822,6 +22613,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -17831,7 +22643,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17870,6 +22682,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -17879,7 +22712,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -17918,6 +22751,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -17960,7 +22814,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -18003,7 +22857,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -18036,7 +22890,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -18075,6 +22929,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -18093,15 +22968,15 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @description List of event types to subscribe to. Use `*` to subscribe to all events. */
-                    events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "*")[];
+                    events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                 };
                 "application/x-www-form-urlencoded": {
                     /** @description List of event types to subscribe to. Use `*` to subscribe to all events. */
-                    events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "*")[];
+                    events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                 };
                 "multipart/form-data": {
                     /** @description List of event types to subscribe to. Use `*` to subscribe to all events. */
-                    events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "*")[];
+                    events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                 };
             };
         };
@@ -18115,11 +22990,11 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6a85c8b76e7637bff6a31957
+                         * @example 6aa831df18ffc49a16151fd3
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
-                        events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "*")[];
+                        events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                         /**
                          * Format: uri
                          * @description URL to which webhook payloads are delivered
@@ -18145,7 +23020,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -18188,7 +23063,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -18221,7 +23096,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -18260,6 +23135,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -18319,7 +23215,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -18362,7 +23258,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -18395,7 +23291,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -18434,6 +23330,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -18490,7 +23407,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-08-19T15:21:07.597Z
+                         * @example 2026-09-14T17:46:51.269Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -18502,7 +23419,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -18545,7 +23462,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -18578,7 +23495,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -18617,6 +23534,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -18640,7 +23578,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a85c8b76e7637bff6a31953
+                         * @example 6aa831df18ffc49a16151fcf
                          */
                         id: string;
                         /**
@@ -18657,7 +23595,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-08-19T15:16:07.590Z
+                         * @example 2026-09-14T17:41:51.209Z
                          */
                         signedUpAt: string;
                         /**
@@ -18699,12 +23637,12 @@ export interface operations {
                                  */
                                 description?: string;
                                 /**
-                                 * @description URL where the user can complete this requirement
+                                 * @description URL where the user can complete this requirement. Optional because some requirements use an API flow, are pending, or require support; clients must branch on type and status when absent.
                                  * @example https://verify.example.com/start
                                  */
                                 actionUrl?: string | null;
                                 /**
-                                 * @description Whether this requirement can be retried after failure
+                                 * @description Whether this requirement can be retried after failure. Absence is not permission to retry automatically.
                                  * @example true
                                  */
                                 retryable?: boolean;
@@ -18745,12 +23683,12 @@ export interface operations {
                                  */
                                 description?: string;
                                 /**
-                                 * @description URL where the user can complete this requirement
+                                 * @description URL where the user can complete this requirement. Optional because some requirements use an API flow, are pending, or require support; clients must branch on type and status when absent.
                                  * @example https://verify.example.com/start
                                  */
                                 actionUrl?: string | null;
                                 /**
-                                 * @description Whether this requirement can be retried after failure
+                                 * @description Whether this requirement can be retried after failure. Absence is not permission to retry automatically.
                                  * @example true
                                  */
                                 retryable?: boolean;
@@ -18767,7 +23705,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -18810,7 +23748,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -18843,7 +23781,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -18882,6 +23820,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -19002,7 +23961,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a85c8b76e7637bff6a31953
+                         * @example 6aa831df18ffc49a16151fcf
                          */
                         id: string;
                         /**
@@ -19019,7 +23978,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-08-19T15:16:07.590Z
+                         * @example 2026-09-14T17:41:51.209Z
                          */
                         signedUpAt: string;
                         /**
@@ -19061,12 +24020,12 @@ export interface operations {
                                  */
                                 description?: string;
                                 /**
-                                 * @description URL where the user can complete this requirement
+                                 * @description URL where the user can complete this requirement. Optional because some requirements use an API flow, are pending, or require support; clients must branch on type and status when absent.
                                  * @example https://verify.example.com/start
                                  */
                                 actionUrl?: string | null;
                                 /**
-                                 * @description Whether this requirement can be retried after failure
+                                 * @description Whether this requirement can be retried after failure. Absence is not permission to retry automatically.
                                  * @example true
                                  */
                                 retryable?: boolean;
@@ -19107,12 +24066,12 @@ export interface operations {
                                  */
                                 description?: string;
                                 /**
-                                 * @description URL where the user can complete this requirement
+                                 * @description URL where the user can complete this requirement. Optional because some requirements use an API flow, are pending, or require support; clients must branch on type and status when absent.
                                  * @example https://verify.example.com/start
                                  */
                                 actionUrl?: string | null;
                                 /**
-                                 * @description Whether this requirement can be retried after failure
+                                 * @description Whether this requirement can be retried after failure. Absence is not permission to retry automatically.
                                  * @example true
                                  */
                                 retryable?: boolean;
@@ -19129,7 +24088,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -19172,7 +24131,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -19205,7 +24164,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -19244,6 +24203,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -19312,7 +24292,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -19355,7 +24335,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -19394,6 +24374,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -19444,7 +24445,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6a85c8b76e7637bff6a31953
+                         * @example 6aa831df18ffc49a16151fcf
                          */
                         id: string;
                         /**
@@ -19461,7 +24462,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-08-19T15:16:07.590Z
+                         * @example 2026-09-14T17:41:51.209Z
                          */
                         signedUpAt: string;
                         /**
@@ -19503,12 +24504,12 @@ export interface operations {
                                  */
                                 description?: string;
                                 /**
-                                 * @description URL where the user can complete this requirement
+                                 * @description URL where the user can complete this requirement. Optional because some requirements use an API flow, are pending, or require support; clients must branch on type and status when absent.
                                  * @example https://verify.example.com/start
                                  */
                                 actionUrl?: string | null;
                                 /**
-                                 * @description Whether this requirement can be retried after failure
+                                 * @description Whether this requirement can be retried after failure. Absence is not permission to retry automatically.
                                  * @example true
                                  */
                                 retryable?: boolean;
@@ -19549,12 +24550,12 @@ export interface operations {
                                  */
                                 description?: string;
                                 /**
-                                 * @description URL where the user can complete this requirement
+                                 * @description URL where the user can complete this requirement. Optional because some requirements use an API flow, are pending, or require support; clients must branch on type and status when absent.
                                  * @example https://verify.example.com/start
                                  */
                                 actionUrl?: string | null;
                                 /**
-                                 * @description Whether this requirement can be retried after failure
+                                 * @description Whether this requirement can be retried after failure. Absence is not permission to retry automatically.
                                  * @example true
                                  */
                                 retryable?: boolean;
@@ -19571,7 +24572,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -19614,7 +24615,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -19653,6 +24654,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -19681,11 +24703,11 @@ export interface operations {
                         sessionId: string;
                         /** @enum {string} */
                         provider: "persona" | "plaid";
-                        /** @description Provider-issued token for embedded or resumed verification flows. Null when not required. */
+                        /** @description Provider-issued token for an embedded flow: a Persona session token when provider is persona, or a Plaid Link token when provider is plaid. Null when the provider supplies only a hosted URL or no usable flow. */
                         sessionToken: string | null;
                         /**
                          * Format: uri
-                         * @description Hosted URL to start or continue verification. For Persona this may be a fresh one-time link.
+                         * @description Provider-hosted URL to start or continue verification. It is the hosted fallback for either provider and must not be constructed by the client. Null when only an embedded token is available or no usable flow was returned.
                          * @example https://withpersona.com/verify?inquiry-id=inq_2Q3x7k9m1n
                          */
                         verificationUrl: string | null;
@@ -19703,7 +24725,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -19740,13 +24762,13 @@ export interface operations {
                     };
                 };
             };
-            /** @description Response for status 500 */
-            500: {
+            /** @description Response for status 409 */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -19785,6 +24807,165 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 503 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -19839,7 +25020,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -19882,7 +25063,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -19915,7 +25096,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -19954,6 +25135,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -19990,7 +25192,10 @@ export interface operations {
                      *     ]
                      */
                     nationalities: string[];
-                    /** @description What the user intends to use the account for. */
+                    /**
+                     * @description What the user intends to use the account for.
+                     * @enum {string}
+                     */
                     accountPurpose: "charitable_donations" | "ecommerce_retail_payments" | "investment_purposes" | "operating_a_company" | "payments_to_friends_or_family_abroad" | "personal_or_living_expenses" | "protect_wealth" | "purchase_goods_and_services" | "receive_payment_for_freelancing" | "receive_salary";
                 } | {
                     /** @description Where the user was born. */
@@ -20039,7 +25244,10 @@ export interface operations {
                      *     ]
                      */
                     nationalities: string[];
-                    /** @description What the user intends to use the account for. */
+                    /**
+                     * @description What the user intends to use the account for.
+                     * @enum {string}
+                     */
                     accountPurpose: "charitable_donations" | "ecommerce_retail_payments" | "investment_purposes" | "operating_a_company" | "payments_to_friends_or_family_abroad" | "personal_or_living_expenses" | "protect_wealth" | "purchase_goods_and_services" | "receive_payment_for_freelancing" | "receive_salary";
                 } | {
                     /** @description Where the user was born. */
@@ -20088,7 +25296,10 @@ export interface operations {
                      *     ]
                      */
                     nationalities: string[];
-                    /** @description What the user intends to use the account for. */
+                    /**
+                     * @description What the user intends to use the account for.
+                     * @enum {string}
+                     */
                     accountPurpose: "charitable_donations" | "ecommerce_retail_payments" | "investment_purposes" | "operating_a_company" | "payments_to_friends_or_family_abroad" | "personal_or_living_expenses" | "protect_wealth" | "purchase_goods_and_services" | "receive_payment_for_freelancing" | "receive_salary";
                 } | {
                     /** @description Where the user was born. */
@@ -20139,7 +25350,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -20182,7 +25393,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -20215,7 +25426,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -20254,6 +25465,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -20308,7 +25540,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -20351,7 +25583,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -20384,7 +25616,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -20423,6 +25655,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -20464,7 +25717,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -20507,7 +25760,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -20546,6 +25799,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -20617,7 +25891,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -20660,7 +25934,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -20699,6 +25973,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -20732,7 +26027,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -20775,7 +26070,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -20808,7 +26103,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -20847,6 +26142,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -20962,7 +26278,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -21005,7 +26321,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -21044,6 +26360,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -21111,7 +26448,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -21154,7 +26491,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -21193,6 +26530,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -21253,7 +26611,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -21296,7 +26654,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -21335,6 +26693,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -21405,7 +26784,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -21448,7 +26827,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -21487,6 +26866,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -21496,7 +26896,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -21535,6 +26935,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -21596,7 +27017,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -21639,7 +27060,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -21678,6 +27099,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -21775,7 +27217,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -21818,7 +27260,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -21857,6 +27299,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -21896,7 +27359,10 @@ export interface operations {
                              * @description ISO 8601 timestamp at which the snapshot was actually captured.
                              */
                             capturedAt: string;
-                            /** @description `complete` when every wallet was captured successfully; `partial` when one or more wallets failed or are unsupported. */
+                            /**
+                             * @description `complete` when every wallet was captured successfully; `partial` when one or more wallets failed or are unsupported.
+                             * @enum {string}
+                             */
                             status: "complete" | "partial";
                             /**
                              * @description Total USD balance across all captured wallets at this point, formatted to two decimal places.
@@ -21930,7 +27396,10 @@ export interface operations {
                              * @description ISO 8601 timestamp at which the snapshot was actually captured.
                              */
                             capturedAt: string;
-                            /** @description `complete` when every wallet was captured successfully; `partial` when one or more wallets failed or are unsupported. */
+                            /**
+                             * @description `complete` when every wallet was captured successfully; `partial` when one or more wallets failed or are unsupported.
+                             * @enum {string}
+                             */
                             status: "complete" | "partial";
                             /**
                              * @description Total USD balance across all captured wallets at this point, formatted to two decimal places.
@@ -22003,7 +27472,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -22046,7 +27515,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -22085,6 +27554,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -22164,7 +27654,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -22207,7 +27697,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -22246,6 +27736,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -22674,7 +28185,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -22717,7 +28228,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -22756,6 +28267,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -22765,7 +28297,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -22804,6 +28336,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -22813,7 +28366,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -22852,6 +28405,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -22861,7 +28435,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -22900,6 +28474,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -22909,7 +28504,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -22948,6 +28543,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -23016,7 +28632,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23059,7 +28675,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23098,6 +28714,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -23107,7 +28744,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23146,6 +28783,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -23155,7 +28813,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23194,6 +28852,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -23203,7 +28882,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23242,6 +28921,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -23251,7 +28951,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23290,6 +28990,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -23354,7 +29075,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23397,7 +29118,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23436,6 +29157,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -23445,7 +29187,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23484,6 +29226,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -23493,7 +29256,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23532,6 +29295,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -23541,7 +29325,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23580,6 +29364,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -23589,7 +29394,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23628,6 +29433,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -23681,7 +29507,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23724,7 +29550,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23763,6 +29589,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -23831,7 +29678,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23874,7 +29721,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23913,6 +29760,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -23922,7 +29790,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -23961,6 +29829,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -23984,6 +29873,7 @@ export interface operations {
                     /** @description Optional nickname for this passkey. */
                     label?: string;
                 } | {
+                    /** @enum {string} */
                     kind: "google" | "apple";
                     /** @description OIDC ID token issued by Google or Apple after a successful sign-in flow on the client. */
                     oidcToken: string;
@@ -24014,6 +29904,7 @@ export interface operations {
                     /** @description Optional nickname for this passkey. */
                     label?: string;
                 } | {
+                    /** @enum {string} */
                     kind: "google" | "apple";
                     /** @description OIDC ID token issued by Google or Apple after a successful sign-in flow on the client. */
                     oidcToken: string;
@@ -24044,6 +29935,7 @@ export interface operations {
                     /** @description Optional nickname for this passkey. */
                     label?: string;
                 } | {
+                    /** @enum {string} */
                     kind: "google" | "apple";
                     /** @description OIDC ID token issued by Google or Apple after a successful sign-in flow on the client. */
                     oidcToken: string;
@@ -24099,7 +29991,10 @@ export interface operations {
                         data: {
                             /** @description Stable identifier for the auth method. */
                             id: string;
-                            /** @description Authentication method kind. `passkey` is a WebAuthn authenticator on this device; `google`/`apple` are OIDC tokens; `email` is a verified email address used for OTP login. */
+                            /**
+                             * @description Authentication method kind. `passkey` is a WebAuthn authenticator on this device; `google`/`apple` are OIDC tokens; `email` is a verified email address used for OTP login.
+                             * @enum {string}
+                             */
                             kind: "passkey" | "google" | "apple" | "email";
                             /** @description Human-readable label for the method (e.g., the email address, OAuth account label, or passkey nickname). */
                             label: string;
@@ -24120,7 +30015,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -24163,7 +30058,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -24202,6 +30097,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -24211,7 +30127,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -24250,6 +30166,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -24259,7 +30196,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -24298,6 +30235,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -24367,7 +30325,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -24410,7 +30368,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -24449,6 +30407,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -24458,7 +30437,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -24497,6 +30476,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -24558,7 +30558,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -24601,7 +30601,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -24640,6 +30640,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -24649,7 +30670,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -24688,6 +30709,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -24734,7 +30776,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -24777,7 +30819,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -24816,6 +30858,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -24825,7 +30888,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -24864,6 +30927,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -24873,7 +30957,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -24912,6 +30996,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -24963,7 +31068,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25006,7 +31111,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25045,6 +31150,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -25054,7 +31180,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25093,6 +31219,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -25102,7 +31249,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25141,6 +31288,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -25251,7 +31419,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25290,6 +31458,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -25299,7 +31488,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25342,7 +31531,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25381,6 +31570,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -25390,7 +31600,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25429,6 +31639,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -25532,7 +31763,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25571,6 +31802,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -25580,7 +31832,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25623,7 +31875,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25662,6 +31914,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -25671,7 +31944,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25710,6 +31983,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -25719,7 +32013,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25758,6 +32052,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -25811,7 +32126,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25850,6 +32165,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -25859,7 +32195,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25902,7 +32238,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25941,6 +32277,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -25950,7 +32307,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -25989,6 +32346,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -25998,7 +32376,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26037,6 +32415,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -26108,7 +32507,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26147,6 +32546,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -26156,7 +32576,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26199,7 +32619,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26238,6 +32658,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -26247,7 +32688,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26286,6 +32727,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -26321,6 +32783,7 @@ export interface operations {
                             walletAddress: string;
                             vaultName: string | null;
                             depositToken: {
+                                /** @enum {string} */
                                 symbol: "USDC" | "UNKNOWN";
                                 mint: string | null;
                                 decimals: number | null;
@@ -26350,7 +32813,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26389,6 +32852,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -26398,7 +32882,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26441,7 +32925,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26480,6 +32964,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -26489,7 +32994,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26528,6 +33033,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -26537,7 +33063,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26576,6 +33102,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -26630,7 +33177,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26669,6 +33216,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -26678,7 +33246,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26721,7 +33289,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26760,6 +33328,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -26769,7 +33358,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26808,6 +33397,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -26817,7 +33427,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26856,6 +33466,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -26906,7 +33537,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26945,6 +33576,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -26954,7 +33606,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -26997,7 +33649,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -27036,6 +33688,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -27045,7 +33718,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -27084,6 +33757,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -27093,7 +33787,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -27132,6 +33826,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -27199,7 +33914,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -27238,6 +33953,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -27247,7 +33983,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -27290,7 +34026,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -27329,6 +34065,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -27338,7 +34095,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -27377,6 +34134,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -27460,7 +34238,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": ({
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -27499,7 +34277,31 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /**
+                         * @description Safe next action when the failing product policy can provide one.
+                         * @enum {string}
+                         */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
                     } & {
+                        [key: string]: unknown;
+                    }) & {
                         /** @description Every cause. A single-cause failure also reports it via top-level `code`/`field`/`detail`; a multi-field failure is described only here. */
                         errors?: {
                             field: string;
@@ -27515,7 +34317,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -27558,7 +34360,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -27597,6 +34399,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -27606,7 +34429,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -27645,6 +34468,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -27654,7 +34498,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -27693,6 +34537,729 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 503 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    postV1SandboxDepositsDirectPrepare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Opaque public funding source identifier
+                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    sourceId: string;
+                    /**
+                     * @description Destination wallet address to deposit into. Validated but not proven via wallet signature; authorization is derived from the verified ACH funding source.
+                     * @example 9n4nbM75f5Ui33ZbPYXn59EwSb9Y1zdyu3x2b1f8jQRY
+                     */
+                    address: string;
+                    /** @enum {string} */
+                    network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
+                    /**
+                     * @description Asset sent to the deposit destination
+                     * @example USDC
+                     * @enum {string}
+                     */
+                    asset: "USDC";
+                    /** @enum {string} */
+                    quoteType: "exact_input" | "exact_output";
+                    /**
+                     * @description Requested USD amount as a decimal string
+                     * @example 100.00
+                     */
+                    amountUsd: string;
+                    /** @enum {string} */
+                    priority: "normal" | "high";
+                    feeSubsidy?: {
+                        percentage: number;
+                        maxAmountUsd?: string;
+                    };
+                    programControlSimulation: {
+                        /**
+                         * @description Sandbox-only program state to evaluate through the normal deposit policy gate.
+                         * @default new_user_paused
+                         * @example halted
+                         * @enum {string}
+                         */
+                        state: "new_user_paused" | "halted";
+                    };
+                };
+                "application/x-www-form-urlencoded": {
+                    /**
+                     * @description Opaque public funding source identifier
+                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    sourceId: string;
+                    /**
+                     * @description Destination wallet address to deposit into. Validated but not proven via wallet signature; authorization is derived from the verified ACH funding source.
+                     * @example 9n4nbM75f5Ui33ZbPYXn59EwSb9Y1zdyu3x2b1f8jQRY
+                     */
+                    address: string;
+                    /** @enum {string} */
+                    network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
+                    /**
+                     * @description Asset sent to the deposit destination
+                     * @example USDC
+                     * @enum {string}
+                     */
+                    asset: "USDC";
+                    /** @enum {string} */
+                    quoteType: "exact_input" | "exact_output";
+                    /**
+                     * @description Requested USD amount as a decimal string
+                     * @example 100.00
+                     */
+                    amountUsd: string;
+                    /** @enum {string} */
+                    priority: "normal" | "high";
+                    feeSubsidy?: {
+                        percentage: number;
+                        maxAmountUsd?: string;
+                    };
+                    programControlSimulation: {
+                        /**
+                         * @description Sandbox-only program state to evaluate through the normal deposit policy gate.
+                         * @default new_user_paused
+                         * @example halted
+                         * @enum {string}
+                         */
+                        state: "new_user_paused" | "halted";
+                    };
+                };
+                "multipart/form-data": {
+                    /**
+                     * @description Opaque public funding source identifier
+                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    sourceId: string;
+                    /**
+                     * @description Destination wallet address to deposit into. Validated but not proven via wallet signature; authorization is derived from the verified ACH funding source.
+                     * @example 9n4nbM75f5Ui33ZbPYXn59EwSb9Y1zdyu3x2b1f8jQRY
+                     */
+                    address: string;
+                    /** @enum {string} */
+                    network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
+                    /**
+                     * @description Asset sent to the deposit destination
+                     * @example USDC
+                     * @enum {string}
+                     */
+                    asset: "USDC";
+                    /** @enum {string} */
+                    quoteType: "exact_input" | "exact_output";
+                    /**
+                     * @description Requested USD amount as a decimal string
+                     * @example 100.00
+                     */
+                    amountUsd: string;
+                    /** @enum {string} */
+                    priority: "normal" | "high";
+                    feeSubsidy?: {
+                        percentage: number;
+                        maxAmountUsd?: string;
+                    };
+                    programControlSimulation: {
+                        /**
+                         * @description Sandbox-only program state to evaluate through the normal deposit policy gate.
+                         * @default new_user_paused
+                         * @example halted
+                         * @enum {string}
+                         */
+                        state: "new_user_paused" | "halted";
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Opaque public preparation identifier
+                         * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        preparationId: string;
+                        /** @enum {string} */
+                        kind: "deposit_authorization";
+                        /** Format: date-time */
+                        expiresAt: string;
+                        /** @enum {string} */
+                        messageVersion: "v1";
+                        /** @description Display-ready ACH authorization message */
+                        message: string;
+                        summary: {
+                            /** @enum {string} */
+                            quoteType: "exact_input" | "exact_output";
+                            requestedAmountUsd: string;
+                            /** @enum {string} */
+                            requestedPriority: "normal" | "high";
+                            /** @enum {string} */
+                            priority: "normal" | "high";
+                            /** @enum {string} */
+                            releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                            feeRateBps: number;
+                            principalAmountUsd: string;
+                            instantPortionUsd: string;
+                            settlementPortionUsd: string;
+                            expectedAssetAmount: string;
+                            grossFeeUsd: string;
+                            publishedFeeUsd: string;
+                            regularPublishedFeeUsd: string;
+                            instantPublishedFeeUsd: string;
+                            feeSubsidyUsd: string;
+                            userFeeUsd: string;
+                            totalDebitAmountUsd: string;
+                            feeSubsidy: {
+                                percentage: number;
+                                percentageBps: number;
+                                maxAmountUsd: string | null;
+                                appliedAmountUsd: string;
+                            } | null;
+                            /** @enum {string} */
+                            network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
+                            /**
+                             * @description Asset sent to the deposit destination
+                             * @example USDC
+                             * @enum {string}
+                             */
+                            asset: "USDC";
+                            assetAddress: string;
+                            destinationAddress: string;
+                        };
+                    };
+                };
+            };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": ({
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /**
+                         * @description Safe next action when the failing product policy can provide one.
+                         * @enum {string}
+                         */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    }) & {
+                        /** @description Every cause. A single-cause failure also reports it via top-level `code`/`field`/`detail`; a multi-field failure is described only here. */
+                        errors?: {
+                            field: string;
+                            message: string;
+                            code?: string;
+                        }[];
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 503 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -27701,7 +35268,9 @@ export interface operations {
     postV1SandboxDepositsDirect: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "idempotency-key": string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -27713,20 +35282,27 @@ export interface operations {
                      * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                      */
                     preparationId: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                    returnSimulation: {
+                    returnSimulation?: {
                         /**
-                         * @description Sandbox-only ACH return code to simulate through the Modern Treasury provider path
+                         * @description Sandbox-only ACH return code. The deposit proceeds asynchronously and the code determines the later return state and source/user consequences.
+                         * @default R01
                          * @example R10
+                         * @enum {string}
                          */
-                        code: string;
+                        code: "R01" | "R02" | "R03" | "R04" | "R05" | "R06" | "R07" | "R08" | "R09" | "R10" | "R11" | "R12" | "R13" | "R14" | "R15" | "R16" | "R17" | "R18" | "R19" | "R20" | "R21" | "R22" | "R23" | "R24" | "R25" | "R26" | "R27" | "R28" | "R29" | "R30" | "R31" | "R32" | "R33" | "R34" | "R35" | "R36" | "R37" | "R38" | "R39" | "R45" | "R51";
+                    };
+                    riskSimulation?: {
+                        /** @enum {string} */
+                        profile: "review_required" | "rejected" | "source_temporarily_unavailable" | "decision_unavailable" | "high_priority_available" | "high_priority_downgraded";
+                    };
+                    lifecycleSimulation?: {
+                        /**
+                         * @description Deterministic sandbox lifecycle outcome. Refund, release-failure, release-stall, and full-delivery profiles require normal priority; partial_then_full_delivery requires a high-priority preparation with both instant and settlement portions.
+                         * @default refunded
+                         * @example release_failed
+                         * @enum {string}
+                         */
+                        profile: "refunded" | "release_failed" | "release_stalled" | "full_delivery" | "partial_then_full_delivery";
                     };
                 };
                 "application/x-www-form-urlencoded": {
@@ -27735,20 +35311,27 @@ export interface operations {
                      * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                      */
                     preparationId: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                    returnSimulation: {
+                    returnSimulation?: {
                         /**
-                         * @description Sandbox-only ACH return code to simulate through the Modern Treasury provider path
+                         * @description Sandbox-only ACH return code. The deposit proceeds asynchronously and the code determines the later return state and source/user consequences.
+                         * @default R01
                          * @example R10
+                         * @enum {string}
                          */
-                        code: string;
+                        code: "R01" | "R02" | "R03" | "R04" | "R05" | "R06" | "R07" | "R08" | "R09" | "R10" | "R11" | "R12" | "R13" | "R14" | "R15" | "R16" | "R17" | "R18" | "R19" | "R20" | "R21" | "R22" | "R23" | "R24" | "R25" | "R26" | "R27" | "R28" | "R29" | "R30" | "R31" | "R32" | "R33" | "R34" | "R35" | "R36" | "R37" | "R38" | "R39" | "R45" | "R51";
+                    };
+                    riskSimulation?: {
+                        /** @enum {string} */
+                        profile: "review_required" | "rejected" | "source_temporarily_unavailable" | "decision_unavailable" | "high_priority_available" | "high_priority_downgraded";
+                    };
+                    lifecycleSimulation?: {
+                        /**
+                         * @description Deterministic sandbox lifecycle outcome. Refund, release-failure, release-stall, and full-delivery profiles require normal priority; partial_then_full_delivery requires a high-priority preparation with both instant and settlement portions.
+                         * @default refunded
+                         * @example release_failed
+                         * @enum {string}
+                         */
+                        profile: "refunded" | "release_failed" | "release_stalled" | "full_delivery" | "partial_then_full_delivery";
                     };
                 };
                 "multipart/form-data": {
@@ -27757,20 +35340,27 @@ export interface operations {
                      * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                      */
                     preparationId: string;
-                    clientContext?: {
-                        clientIp?: string;
-                        userAgent?: string;
-                        sessionId?: string;
-                        deviceId?: string;
-                        platform?: string;
-                        appVersion?: string;
-                    };
-                    returnSimulation: {
+                    returnSimulation?: {
                         /**
-                         * @description Sandbox-only ACH return code to simulate through the Modern Treasury provider path
+                         * @description Sandbox-only ACH return code. The deposit proceeds asynchronously and the code determines the later return state and source/user consequences.
+                         * @default R01
                          * @example R10
+                         * @enum {string}
                          */
-                        code: string;
+                        code: "R01" | "R02" | "R03" | "R04" | "R05" | "R06" | "R07" | "R08" | "R09" | "R10" | "R11" | "R12" | "R13" | "R14" | "R15" | "R16" | "R17" | "R18" | "R19" | "R20" | "R21" | "R22" | "R23" | "R24" | "R25" | "R26" | "R27" | "R28" | "R29" | "R30" | "R31" | "R32" | "R33" | "R34" | "R35" | "R36" | "R37" | "R38" | "R39" | "R45" | "R51";
+                    };
+                    riskSimulation?: {
+                        /** @enum {string} */
+                        profile: "review_required" | "rejected" | "source_temporarily_unavailable" | "decision_unavailable" | "high_priority_available" | "high_priority_downgraded";
+                    };
+                    lifecycleSimulation?: {
+                        /**
+                         * @description Deterministic sandbox lifecycle outcome. Refund, release-failure, release-stall, and full-delivery profiles require normal priority; partial_then_full_delivery requires a high-priority preparation with both instant and settlement portions.
+                         * @default refunded
+                         * @example release_failed
+                         * @enum {string}
+                         */
+                        profile: "refunded" | "release_failed" | "release_stalled" | "full_delivery" | "partial_then_full_delivery";
                     };
                 };
             };
@@ -27803,17 +35393,18 @@ export interface operations {
                         /** @enum {string} */
                         quoteType: "exact_input" | "exact_output";
                         /** @enum {string} */
+                        requestedPriority: "normal" | "high";
+                        /** @enum {string} */
                         priority: "normal" | "high";
                         feeRateBps: number;
-                        planAdjustmentBps: number;
-                        integratorPricingClass: string | null;
-                        integratorPlanPhase: string | null;
-                        integratorPolicyVersion: string | null;
                         principalAmountUsd: string;
+                        instantPortionUsd: string;
+                        settlementPortionUsd: string;
                         expectedAssetAmount: string;
                         grossFeeUsd: string;
                         publishedFeeUsd: string;
-                        planAdjustmentFeeUsd: string;
+                        regularPublishedFeeUsd: string;
+                        instantPublishedFeeUsd: string;
                         feeSubsidyUsd: string;
                         userFeeUsd: string;
                         totalDebitAmountUsd: string;
@@ -27842,7 +35433,6 @@ export interface operations {
                         releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
                         releasedAmountUsd: string;
                         confirmedReleasedAmountUsd: string;
-                        exposureAmountUsd: string;
                         /** Format: date-time */
                         authorizedAt: string;
                         /** Format: date-time */
@@ -27863,13 +35453,92 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": ({
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /**
+                         * @description Safe next action when the failing product policy can provide one.
+                         * @enum {string}
+                         */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    }) & {
+                        /** @description Every cause. A single-cause failure also reports it via top-level `code`/`field`/`detail`; a multi-field failure is described only here. */
+                        errors?: {
+                            field: string;
+                            message: string;
+                            code?: string;
+                        }[];
+                    };
+                };
+            };
             /** @description Response for status 401 */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -27912,7 +35581,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -27951,6 +35620,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -27960,7 +35650,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -27987,13 +35677,13 @@ export interface operations {
                     };
                 };
             };
-            /** @description Response for status 500 */
-            500: {
+            /** @description Response for status 409 */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -28032,6 +35722,1694 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 422 */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    "getV1SandboxAch-debitExposure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        aggregateCapW2Usd: string;
+                        aggregateCapW1Usd: string;
+                        openExposureW2Usd: string;
+                        openExposureW1Usd: string;
+                        committedExposureW1Usd: string;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 503 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    "postV1SandboxAch-debitExposureCap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    aggregateCapW2Usd: string;
+                    aggregateCapW1Usd: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    aggregateCapW2Usd: string;
+                    aggregateCapW1Usd: string;
+                };
+                "multipart/form-data": {
+                    aggregateCapW2Usd: string;
+                    aggregateCapW1Usd: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        aggregateCapW2Usd: string;
+                        aggregateCapW1Usd: string;
+                        openExposureW2Usd: string;
+                        openExposureW1Usd: string;
+                        committedExposureW1Usd: string;
+                    };
+                };
+            };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": ({
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /**
+                         * @description Safe next action when the failing product policy can provide one.
+                         * @enum {string}
+                         */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    }) & {
+                        /** @description Every cause. A single-cause failure also reports it via top-level `code`/`field`/`detail`; a multi-field failure is described only here. */
+                        errors?: {
+                            field: string;
+                            message: string;
+                            code?: string;
+                        }[];
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 503 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    "postV1SandboxBank-accountsLink": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    simulation: {
+                        /**
+                         * @description Deterministic Plaid sandbox bank-link scenario.
+                         *     `ownership_pending`: linking succeeds and the funding source remains pending for frontend-state testing.
+                         *     `ownership_matched`: linking succeeds and the funding source is active.
+                         *     `ownership_uncertain`: linking succeeds and the funding source requires ownership review.
+                         *     `ownership_mismatch`: linking succeeds and the funding source is ineligible because ownership does not match.
+                         *     `link_failed`: linking fails before Spritz persists a bank account or funding source.
+                         *     `duplicate_identity`: linking returns a non-retryable conflict because the verified identity belongs to another account.
+                         *     `duplicate_bank_account`: linking returns a non-retryable conflict because the bank account belongs to another account.
+                         * @default ownership_pending
+                         * @example ownership_matched
+                         * @enum {string}
+                         */
+                        code: "ownership_pending" | "ownership_matched" | "ownership_uncertain" | "ownership_mismatch" | "link_failed" | "duplicate_identity" | "duplicate_bank_account";
+                        /**
+                         * @description Which deterministic sandbox bank account to link. Defaults to `primary`; use `secondary` to link another distinct account for the same user.
+                         * @example secondary
+                         * @enum {string}
+                         */
+                        account?: "primary" | "secondary";
+                    };
+                };
+                "application/x-www-form-urlencoded": {
+                    simulation: {
+                        /**
+                         * @description Deterministic Plaid sandbox bank-link scenario.
+                         *     `ownership_pending`: linking succeeds and the funding source remains pending for frontend-state testing.
+                         *     `ownership_matched`: linking succeeds and the funding source is active.
+                         *     `ownership_uncertain`: linking succeeds and the funding source requires ownership review.
+                         *     `ownership_mismatch`: linking succeeds and the funding source is ineligible because ownership does not match.
+                         *     `link_failed`: linking fails before Spritz persists a bank account or funding source.
+                         *     `duplicate_identity`: linking returns a non-retryable conflict because the verified identity belongs to another account.
+                         *     `duplicate_bank_account`: linking returns a non-retryable conflict because the bank account belongs to another account.
+                         * @default ownership_pending
+                         * @example ownership_matched
+                         * @enum {string}
+                         */
+                        code: "ownership_pending" | "ownership_matched" | "ownership_uncertain" | "ownership_mismatch" | "link_failed" | "duplicate_identity" | "duplicate_bank_account";
+                        /**
+                         * @description Which deterministic sandbox bank account to link. Defaults to `primary`; use `secondary` to link another distinct account for the same user.
+                         * @example secondary
+                         * @enum {string}
+                         */
+                        account?: "primary" | "secondary";
+                    };
+                };
+                "multipart/form-data": {
+                    simulation: {
+                        /**
+                         * @description Deterministic Plaid sandbox bank-link scenario.
+                         *     `ownership_pending`: linking succeeds and the funding source remains pending for frontend-state testing.
+                         *     `ownership_matched`: linking succeeds and the funding source is active.
+                         *     `ownership_uncertain`: linking succeeds and the funding source requires ownership review.
+                         *     `ownership_mismatch`: linking succeeds and the funding source is ineligible because ownership does not match.
+                         *     `link_failed`: linking fails before Spritz persists a bank account or funding source.
+                         *     `duplicate_identity`: linking returns a non-retryable conflict because the verified identity belongs to another account.
+                         *     `duplicate_bank_account`: linking returns a non-retryable conflict because the bank account belongs to another account.
+                         * @default ownership_pending
+                         * @example ownership_matched
+                         * @enum {string}
+                         */
+                        code: "ownership_pending" | "ownership_matched" | "ownership_uncertain" | "ownership_mismatch" | "link_failed" | "duplicate_identity" | "duplicate_bank_account";
+                        /**
+                         * @description Which deterministic sandbox bank account to link. Defaults to `primary`; use `secondary` to link another distinct account for the same user.
+                         * @example secondary
+                         * @enum {string}
+                         */
+                        account?: "primary" | "secondary";
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        bankAccounts: ({
+                            /**
+                             * @description Unique identifier for the bank account
+                             * @example ba_abc123
+                             */
+                            id: string;
+                            /**
+                             * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
+                             * @example active
+                             * @enum {string}
+                             */
+                            status: "active" | "inactive";
+                            /**
+                             * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                             *
+                             *     - `account_invalid` — the receiving bank does not recognise the account details.
+                             *     - `account_closed` — the account has been closed at the bank.
+                             *     - `account_blocked` — the bank will not accept credits to this account.
+                             *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                             *
+                             *     All four are terminal: the account will not recover, so prompt the user to add a different one.
+                             * @example account_invalid
+                             * @enum {string|null}
+                             */
+                            statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
+                            /**
+                             * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
+                             * @example John Doe
+                             */
+                            accountHolderName: string;
+                            /** @description Financial institution details */
+                            institution?: {
+                                /**
+                                 * @description Name of the financial institution
+                                 * @example Chase
+                                 */
+                                name: string;
+                                /**
+                                 * @description URL to institution logo
+                                 * @example https://example.com/chase-logo.png
+                                 */
+                                logo?: string;
+                            };
+                            /**
+                             * @description Payment rails available for this account
+                             * @example [
+                             *       "ach_standard",
+                             *       "rtp"
+                             *     ]
+                             */
+                            supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
+                            /**
+                             * @description Friendly name for the account
+                             * @example Primary Checking
+                             */
+                            label?: string;
+                            /**
+                             * Format: date-time
+                             * @description When the account was created
+                             */
+                            createdAt: string;
+                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                            fundingSourceId: string | null;
+                            /** @enum {string} */
+                            type: "us";
+                            /** @enum {string} */
+                            currency: "USD";
+                            /**
+                             * @description Last 4 digits of account number
+                             * @example 6789
+                             */
+                            accountNumberLast4: string;
+                            /**
+                             * @description Last 4 digits of routing number
+                             * @example 0021
+                             */
+                            routingNumberLast4: string;
+                            /**
+                             * @description Type of bank account (checking or savings)
+                             * @example checking
+                             * @enum {string}
+                             */
+                            accountSubtype?: "checking" | "savings";
+                        } | {
+                            /**
+                             * @description Unique identifier for the bank account
+                             * @example ba_abc123
+                             */
+                            id: string;
+                            /**
+                             * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
+                             * @example active
+                             * @enum {string}
+                             */
+                            status: "active" | "inactive";
+                            /**
+                             * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                             *
+                             *     - `account_invalid` — the receiving bank does not recognise the account details.
+                             *     - `account_closed` — the account has been closed at the bank.
+                             *     - `account_blocked` — the bank will not accept credits to this account.
+                             *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                             *
+                             *     All four are terminal: the account will not recover, so prompt the user to add a different one.
+                             * @example account_invalid
+                             * @enum {string|null}
+                             */
+                            statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
+                            /**
+                             * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
+                             * @example John Doe
+                             */
+                            accountHolderName: string;
+                            /** @description Financial institution details */
+                            institution?: {
+                                /**
+                                 * @description Name of the financial institution
+                                 * @example Chase
+                                 */
+                                name: string;
+                                /**
+                                 * @description URL to institution logo
+                                 * @example https://example.com/chase-logo.png
+                                 */
+                                logo?: string;
+                            };
+                            /**
+                             * @description Payment rails available for this account
+                             * @example [
+                             *       "ach_standard",
+                             *       "rtp"
+                             *     ]
+                             */
+                            supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
+                            /**
+                             * @description Friendly name for the account
+                             * @example Primary Checking
+                             */
+                            label?: string;
+                            /**
+                             * Format: date-time
+                             * @description When the account was created
+                             */
+                            createdAt: string;
+                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                            fundingSourceId: string | null;
+                            /** @enum {string} */
+                            type: "ca";
+                            /** @enum {string} */
+                            currency: "CAD";
+                            /**
+                             * @description Last 4 digits of account number
+                             * @example 4567
+                             */
+                            accountNumberLast4: string;
+                            /**
+                             * @description 3-digit institution number
+                             * @example 001
+                             */
+                            institutionNumber: string;
+                            /**
+                             * @description Last 3 digits of transit number
+                             * @example 345
+                             */
+                            transitNumberLast3: string;
+                            /**
+                             * @description Type of bank account (checking or savings)
+                             * @example checking
+                             * @enum {string}
+                             */
+                            accountSubtype?: "checking" | "savings";
+                        } | {
+                            /**
+                             * @description Unique identifier for the bank account
+                             * @example ba_abc123
+                             */
+                            id: string;
+                            /**
+                             * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
+                             * @example active
+                             * @enum {string}
+                             */
+                            status: "active" | "inactive";
+                            /**
+                             * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                             *
+                             *     - `account_invalid` — the receiving bank does not recognise the account details.
+                             *     - `account_closed` — the account has been closed at the bank.
+                             *     - `account_blocked` — the bank will not accept credits to this account.
+                             *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                             *
+                             *     All four are terminal: the account will not recover, so prompt the user to add a different one.
+                             * @example account_invalid
+                             * @enum {string|null}
+                             */
+                            statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
+                            /**
+                             * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
+                             * @example John Doe
+                             */
+                            accountHolderName: string;
+                            /** @description Financial institution details */
+                            institution?: {
+                                /**
+                                 * @description Name of the financial institution
+                                 * @example Chase
+                                 */
+                                name: string;
+                                /**
+                                 * @description URL to institution logo
+                                 * @example https://example.com/chase-logo.png
+                                 */
+                                logo?: string;
+                            };
+                            /**
+                             * @description Payment rails available for this account
+                             * @example [
+                             *       "ach_standard",
+                             *       "rtp"
+                             *     ]
+                             */
+                            supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
+                            /**
+                             * @description Friendly name for the account
+                             * @example Primary Checking
+                             */
+                            label?: string;
+                            /**
+                             * Format: date-time
+                             * @description When the account was created
+                             */
+                            createdAt: string;
+                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                            fundingSourceId: string | null;
+                            /** @enum {string} */
+                            type: "uk";
+                            /** @enum {string} */
+                            currency: "GBP";
+                            /**
+                             * @description Last 4 digits of account number
+                             * @example 2345
+                             */
+                            accountNumberLast4: string;
+                            /**
+                             * @description 6-digit sort code (not sensitive)
+                             * @example 108800
+                             */
+                            sortCode: string;
+                        } | {
+                            /**
+                             * @description Unique identifier for the bank account
+                             * @example ba_abc123
+                             */
+                            id: string;
+                            /**
+                             * @description Whether the account can receive payouts. `active` is the only payable state; every other value means the account cannot be paid, and `statusReason` says why. Treat any value that is not `active` as unpayable rather than switching on the full list — new states may be added and will always follow that rule.
+                             * @example active
+                             * @enum {string}
+                             */
+                            status: "active" | "inactive";
+                            /**
+                             * @description Why the account cannot receive payouts. Always present when `status` is not `active`, and always `null` when it is.
+                             *
+                             *     - `account_invalid` — the receiving bank does not recognise the account details.
+                             *     - `account_closed` — the account has been closed at the bank.
+                             *     - `account_blocked` — the bank will not accept credits to this account.
+                             *     - `not_supported` — Spritz cannot pay accounts of this type or region.
+                             *
+                             *     All four are terminal: the account will not recover, so prompt the user to add a different one.
+                             * @example account_invalid
+                             * @enum {string|null}
+                             */
+                            statusReason: "account_invalid" | "account_closed" | "account_blocked" | "not_supported" | null;
+                            /**
+                             * @description Display name recorded on the user's bank account. This is not an ownership-match or eligibility decision.
+                             * @example John Doe
+                             */
+                            accountHolderName: string;
+                            /** @description Financial institution details */
+                            institution?: {
+                                /**
+                                 * @description Name of the financial institution
+                                 * @example Chase
+                                 */
+                                name: string;
+                                /**
+                                 * @description URL to institution logo
+                                 * @example https://example.com/chase-logo.png
+                                 */
+                                logo?: string;
+                            };
+                            /**
+                             * @description Payment rails available for this account
+                             * @example [
+                             *       "ach_standard",
+                             *       "rtp"
+                             *     ]
+                             */
+                            supportedRails: ("ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit")[];
+                            /**
+                             * @description Friendly name for the account
+                             * @example Primary Checking
+                             */
+                            label?: string;
+                            /**
+                             * Format: date-time
+                             * @description When the account was created
+                             */
+                            createdAt: string;
+                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                            fundingSourceId: string | null;
+                            /** @enum {string} */
+                            type: "iban";
+                            /**
+                             * @description Fiat currency code
+                             * @example USD
+                             * @enum {string}
+                             */
+                            currency: "USD" | "CAD" | "EUR" | "GBP";
+                            /**
+                             * @description Last 4 characters of IBAN
+                             * @example 3000
+                             */
+                            ibanLast4: string;
+                            /**
+                             * @description Bank Identifier Code
+                             * @example COBADEFFXXX
+                             */
+                            bic?: string;
+                        })[];
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 503 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -28151,7 +37529,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -28194,7 +37572,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -28233,6 +37611,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -28242,7 +37641,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -28281,6 +37680,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -28346,7 +37766,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -28389,7 +37809,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -28428,6 +37848,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -28437,7 +37878,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -28476,6 +37917,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -28552,7 +38014,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -28595,7 +38057,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -28634,6 +38096,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -28643,7 +38126,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -28682,6 +38165,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -28724,7 +38228,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -28767,7 +38271,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -28806,6 +38310,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -28815,7 +38340,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -28848,7 +38373,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -28887,6 +38412,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -29060,7 +38606,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -29099,6 +38645,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -29108,7 +38675,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -29151,7 +38718,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -29190,6 +38757,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -29199,7 +38787,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -29232,7 +38820,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -29271,6 +38859,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -29280,7 +38889,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -29319,6 +38928,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -29353,7 +38983,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -29396,7 +39026,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -29435,6 +39065,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -29444,7 +39095,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/problem+json": {
                         /**
                          * @description A URI reference that identifies the problem type
                          * @default about:blank
@@ -29483,6 +39134,27 @@ export interface operations {
                          * @example true
                          */
                         retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };

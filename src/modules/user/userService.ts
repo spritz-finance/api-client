@@ -6,9 +6,13 @@ import { CurrentUser, UserAccess } from '../../graph/queries/__types__'
 import CurrentUserQuery from '../../graph/queries/currentUser.graphql'
 import UserAccessQuery from '../../graph/queries/userAccess.graphql'
 import { SpritzClient } from '../../lib/client'
+import { restRoute } from '../../rest/route'
+import type { PathResponse } from '../../rest/types'
 import { transformToUserAccess } from './accessTransform'
 import { UserAccessCapabilities } from './accessTypes'
 import { transformUserResponse, VerificationStatus } from './transform'
+
+export type UserProfile = PathResponse<'/v1/users/me', 'get'>
 
 interface CreateUserResponse {
     userId: string
@@ -75,6 +79,16 @@ export class UserService {
             path: '/users/validate-key',
             body: args,
         })
+    }
+
+    /**
+     * Fetch the authenticated user's profile from the REST API (`GET /v1/users/me`).
+     *
+     * Returns the response as-is, including `verification` (status, country and any
+     * outstanding requirement) and `capabilities`.
+     */
+    public async getMe() {
+        return this.client.restApi(restRoute('/v1/users/me', 'get'))
     }
 
     public async getCurrentUser() {

@@ -89,6 +89,8 @@ export type {
     OnRampDetail,
 } from './modules/onrampPayment/onrampPaymentService'
 export type { OffRampRefundRequest, OffRampRefundResponse } from './modules/offramp/offrampService'
+export type { UserProfile } from './modules/user/userService'
+export type { VerificationSession } from './modules/verification/verificationService'
 export type {
     paths as RestApiPaths,
     operations as RestApiOperations,

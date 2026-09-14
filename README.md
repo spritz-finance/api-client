@@ -161,6 +161,21 @@ const { apiKey, userId, email } = await client.user.authorizeApiKeyWithOTP({
 const userData = await client.user.getCurrentUser()
 ```
 
+#### REST User Profile
+
+`user.getMe()` returns the user profile from the REST API (`GET /v1/users/me`) as-is, typed as `UserProfile`. It includes the user's `verification` state and `capabilities`:
+
+```typescript
+const me = await client.user.getMe()
+
+me.verification.status // 'not_started' | 'verified' | 'failed' | 'disabled' | 'retry'
+me.verification.country // e.g. 'US', or null
+me.verification.requirement // outstanding requirement, if any ({ type, status, actionUrl?, retryable? })
+me.capabilities // [{ product, method?, name, status, nextRequirement?, requirements }]
+```
+
+> **Note:** `getMe()` does not yet replace `getCurrentUser()`. The REST profile has no verification failure reason, reports verifications under review as `not_started`, and there is no REST equivalent of `retryFailedVerification()`.
+
 ### Identity Verification
 
 All users must complete identity verification before using the platform. New users start with a verification status of `NotStarted`.
@@ -178,6 +193,21 @@ const verificationParams = await client.user.getVerificationParams()
 // - sessionToken: Token for use with Persona's Embedded Flow
 // - verificationUrlExpiresAt: Expiration timestamp for the verification URL
 ```
+
+#### Creating a Verification Session (REST)
+
+`verification.createSession()` creates or resumes the user's verification session via the REST API (`POST /v1/users/me/verification-sessions/`) and returns the response as-is, typed as `VerificationSession`:
+
+```typescript
+const { sessionId, provider, sessionToken, verificationUrl, verificationUrlExpiresAt } =
+    await client.verification.createSession()
+
+// provider: 'persona' | 'plaid'
+// sessionToken: embedded-flow token (Persona session token or Plaid Link token), or null
+// verificationUrl: provider-hosted URL, or null
+```
+
+Tokens and URLs may expire, so create the session just in time rather than caching it. The call throws a `ConflictError` (409) when verification is under review or unavailable, and an `InternalServerError` (503, with `retryAfter` in the error body) when the provider is temporarily unavailable.
 
 #### Option 1: Verification URL
 
