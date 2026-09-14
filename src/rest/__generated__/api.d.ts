@@ -1632,8 +1632,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create or refresh an enhanced verification session
-         * @description Creates or resumes the authenticated user's interactive enhanced identity verification session. Verification URLs and provider tokens are retrieved just in time because they may expire or need to be regenerated.
+         * Create, resume, or retry an identity verification session
+         * @description Creates or resumes the authenticated user's Persona identity verification session without requesting an implicit enhanced upgrade, or starts a new inquiry when a failed verification is retryable. Check GET /v1/users/me: verification.status=retry and identity_verification requirements with retryable=true indicate eligibility. Overlapping REST session requests for the same user return 409 Conflict while a request is in progress. Retry the same POST after the first request completes. Temporary provider unavailability returns 503 VERIFICATION_TEMPORARILY_UNAVAILABLE with retryAfter (seconds). URLs and tokens may expire and are retrieved just in time. Returns 409 VERIFICATION_NOT_RETRYABLE for a permanent failure, VERIFICATION_UNDER_REVIEW while review is pending, VERIFICATION_ALREADY_VERIFIED when verified with no pending verification, or VERIFICATION_SESSION_UNAVAILABLE when unavailable. An existing pending step-up remains resumable; this call does not initiate a new step-up for an already verified user.
          */
         post: operations["postV1UsersMeVerification-sessions"];
         delete?: never;
@@ -2299,7 +2299,7 @@ export interface paths {
          * Bypass KYC (sandbox only)
          * @description Simulate KYC verification for testing purposes. **Only available in sandbox environments** — returns 403 in production.
          *
-         *     To simulate a successful verification, pass a `country` — the capability group to verify the user into. To simulate a failed check, pass `failed: true`. Exactly one of the two is required; an empty body is a 400.
+         *     To simulate a successful verification, pass a `country` — the capability group to verify the user into. To simulate a failed check, pass `failed: true`. Exactly one of the two is required; an empty body is a 400. Add `retryable: true` with `failed: true` to simulate a retryable documentary failure, then POST /v1/users/me/verification-sessions to obtain a new Persona sandbox session.
          *
          *     `US` and `EU` can be simulated today. `CA` and `GB` are real capability groups with no sandbox fixture yet and return **501**, which is distinct from the **400** an unrecognised value gets.
          */
@@ -3943,7 +3943,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description Creation timestamp
-                         * @example 2026-09-14T17:41:50.986Z
+                         * @example 2026-09-14T21:03:08.629Z
                          */
                         createdAt?: string;
                     }[];
@@ -4108,7 +4108,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6aa831de18ffc49a16151fc7
+                     * @example 6aa8610c7b1776d095a9389b
                      */
                     accountId: string;
                     /**
@@ -4136,7 +4136,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6aa831de18ffc49a16151fc7
+                     * @example 6aa8610c7b1776d095a9389b
                      */
                     accountId: string;
                     /**
@@ -4164,7 +4164,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6aa831de18ffc49a16151fc7
+                     * @example 6aa8610c7b1776d095a9389b
                      */
                     accountId: string;
                     /**
@@ -4211,7 +4211,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-09-14T17:41:50.908Z
+                         * @example 2026-09-14T21:03:08.611Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4250,7 +4250,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6aa831de18ffc49a16151fc8
+                             * @example 6aa8610c7b1776d095a9389c
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -4507,7 +4507,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-09-14T17:41:50.908Z
+                         * @example 2026-09-14T21:03:08.611Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4546,7 +4546,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6aa831de18ffc49a16151fc8
+                             * @example 6aa8610c7b1776d095a9389c
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5142,7 +5142,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-09-14T17:41:50.908Z
+                         * @example 2026-09-14T21:03:08.611Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -5181,7 +5181,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6aa831de18ffc49a16151fc8
+                             * @example 6aa8610c7b1776d095a9389c
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5484,7 +5484,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6aa831de18ffc49a16151fc9
+                                 * @example 6aa8610c7b1776d095a9389d
                                  */
                                 accountId: string;
                                 /**
@@ -5775,7 +5775,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6aa831de18ffc49a16151fc9
+                             * @example 6aa8610c7b1776d095a9389d
                              */
                             accountId: string;
                             /**
@@ -6016,7 +6016,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6aa831de18ffc49a16151fca
+                     * @example 6aa8610c7b1776d095a9389e
                      */
                     accountId?: string;
                 };
@@ -6034,7 +6034,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6aa831de18ffc49a16151fca
+                     * @example 6aa8610c7b1776d095a9389e
                      */
                     accountId?: string;
                 };
@@ -6052,7 +6052,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6aa831de18ffc49a16151fca
+                     * @example 6aa8610c7b1776d095a9389e
                      */
                     accountId?: string;
                 };
@@ -6118,7 +6118,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6aa831de18ffc49a16151fc9
+                             * @example 6aa8610c7b1776d095a9389d
                              */
                             accountId: string;
                             /**
@@ -17575,7 +17575,7 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique identifier for the debit card
-                             * @example 6aa831de18ffc49a16151fce
+                             * @example 6aa8610c7b1776d095a938a2
                              */
                             id: string;
                             /** @enum {string} */
@@ -18023,7 +18023,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6aa831de18ffc49a16151fce
+                         * @example 6aa8610c7b1776d095a938a2
                          */
                         id: string;
                         /** @enum {string} */
@@ -18240,7 +18240,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6aa831de18ffc49a16151fce
+                         * @example 6aa8610c7b1776d095a938a2
                          */
                         id: string;
                         /** @enum {string} */
@@ -18761,7 +18761,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6aa831de18ffc49a16151fce
+                         * @example 6aa8610c7b1776d095a938a2
                          */
                         id: string;
                         /** @enum {string} */
@@ -19683,7 +19683,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6aa831df18ffc49a16151fd2
+                         * @example 6aa8610c7b1776d095a938a6
                          */
                         userId: string;
                         /**
@@ -19699,7 +19699,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-09-14T18:41:51.268Z
+                         * @example 2026-09-14T22:03:08.919Z
                          */
                         expiresAt: string;
                     };
@@ -19898,7 +19898,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-09-14T17:41:51.267Z
+                         * @example 2026-09-14T21:03:08.919Z
                          */
                         createdAt: string;
                     };
@@ -20111,7 +20111,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description The internal ID of the newly created user
-                         * @example 6aa831df18ffc49a16151fd4
+                         * @example 6aa8610c7b1776d095a938a8
                          */
                         userId: string;
                         /**
@@ -20386,7 +20386,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6aa831df18ffc49a16151fd1
+                             * @example 6aa8610c7b1776d095a938a5
                              */
                             userId: string;
                             /**
@@ -20598,7 +20598,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6aa831df18ffc49a16151fd1
+                         * @example 6aa8610c7b1776d095a938a5
                          */
                         userId: string;
                         /**
@@ -20791,7 +20791,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6aa831df18ffc49a16151fd3
+                         * @example 6aa8610c7b1776d095a938a7
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -21022,7 +21022,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6aa831df18ffc49a16151fd3
+                         * @example 6aa8610c7b1776d095a938a7
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -22990,7 +22990,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6aa831df18ffc49a16151fd3
+                         * @example 6aa8610c7b1776d095a938a7
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -23407,7 +23407,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-09-14T17:46:51.269Z
+                         * @example 2026-09-14T21:08:08.920Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -23578,7 +23578,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6aa831df18ffc49a16151fcf
+                         * @example 6aa8610c7b1776d095a938a3
                          */
                         id: string;
                         /**
@@ -23595,7 +23595,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-09-14T17:41:51.209Z
+                         * @example 2026-09-14T21:03:08.911Z
                          */
                         signedUpAt: string;
                         /**
@@ -23618,10 +23618,14 @@ export interface operations {
                              */
                             mobile: boolean;
                         }[];
-                        /** @description User's identity verification status and any pending requirements */
                         verification: {
                             /** @enum {string} */
-                            status: "not_started" | "verified" | "failed" | "disabled" | "retry";
+                            status: "not_started" | "verified" | "failed" | "disabled" | "retry" | "under_review";
+                            /**
+                             * @description Failure reason for failed, retry, or under_review identity verification; null otherwise. A pending re-verification never downgrades a verified identity or exposes its failure reason here.
+                             * @enum {string|null}
+                             */
+                            failureReason: "verify_sms" | "documentary_verification" | "risk_check" | "kyc_check" | "address_invalid" | "selfie_check" | "watchlist_screening" | "vpn_detected" | "duplicate_identity" | null;
                             /**
                              * @description ISO 3166-1 alpha-2 country code where user was verified
                              * @example US
@@ -23649,6 +23653,8 @@ export interface operations {
                                 /** @enum {string} */
                                 status: "not_started" | "pending" | "completed" | "failed";
                             };
+                            /** @enum {string} */
+                            provider: "persona" | "plaid";
                         };
                         /** @description User's available capabilities and their requirements */
                         capabilities: {
@@ -23961,7 +23967,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6aa831df18ffc49a16151fcf
+                         * @example 6aa8610c7b1776d095a938a3
                          */
                         id: string;
                         /**
@@ -23978,7 +23984,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-09-14T17:41:51.209Z
+                         * @example 2026-09-14T21:03:08.911Z
                          */
                         signedUpAt: string;
                         /**
@@ -24004,7 +24010,12 @@ export interface operations {
                         /** @description User's identity verification status and any pending requirements */
                         verification: {
                             /** @enum {string} */
-                            status: "not_started" | "verified" | "failed" | "disabled" | "retry";
+                            status: "not_started" | "verified" | "failed" | "disabled" | "retry" | "under_review";
+                            /**
+                             * @description Failure reason for failed, retry, or under_review identity verification; null otherwise. A pending re-verification never downgrades a verified identity or exposes its failure reason here.
+                             * @enum {string|null}
+                             */
+                            failureReason: "verify_sms" | "documentary_verification" | "risk_check" | "kyc_check" | "address_invalid" | "selfie_check" | "watchlist_screening" | "vpn_detected" | "duplicate_identity" | null;
                             /**
                              * @description ISO 3166-1 alpha-2 country code where user was verified
                              * @example US
@@ -24445,7 +24456,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6aa831df18ffc49a16151fcf
+                         * @example 6aa8610c7b1776d095a938a3
                          */
                         id: string;
                         /**
@@ -24462,7 +24473,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-09-14T17:41:51.209Z
+                         * @example 2026-09-14T21:03:08.911Z
                          */
                         signedUpAt: string;
                         /**
@@ -24488,7 +24499,12 @@ export interface operations {
                         /** @description User's identity verification status and any pending requirements */
                         verification: {
                             /** @enum {string} */
-                            status: "not_started" | "verified" | "failed" | "disabled" | "retry";
+                            status: "not_started" | "verified" | "failed" | "disabled" | "retry" | "under_review";
+                            /**
+                             * @description Failure reason for failed, retry, or under_review identity verification; null otherwise. A pending re-verification never downgrades a verified identity or exposes its failure reason here.
+                             * @enum {string|null}
+                             */
+                            failureReason: "verify_sms" | "documentary_verification" | "risk_check" | "kyc_check" | "address_invalid" | "selfie_check" | "watchlist_screening" | "vpn_detected" | "duplicate_identity" | null;
                             /**
                              * @description ISO 3166-1 alpha-2 country code where user was verified
                              * @example US
@@ -34183,6 +34199,8 @@ export interface operations {
                      * @enum {string}
                      */
                     country?: "US" | "CA" | "EU" | "GB";
+                    /** @description With failed=true, allow retry through POST /v1/users/me/verification-sessions. Defaults to false. */
+                    retryable?: boolean;
                     /** @description Set to true to simulate a failed KYC check */
                     failed?: boolean;
                 };
@@ -34200,6 +34218,8 @@ export interface operations {
                      * @enum {string}
                      */
                     country?: "US" | "CA" | "EU" | "GB";
+                    /** @description With failed=true, allow retry through POST /v1/users/me/verification-sessions. Defaults to false. */
+                    retryable?: boolean;
                     /** @description Set to true to simulate a failed KYC check */
                     failed?: boolean;
                 };
@@ -34217,6 +34237,8 @@ export interface operations {
                      * @enum {string}
                      */
                     country?: "US" | "CA" | "EU" | "GB";
+                    /** @description With failed=true, allow retry through POST /v1/users/me/verification-sessions. Defaults to false. */
+                    retryable?: boolean;
                     /** @description Set to true to simulate a failed KYC check */
                     failed?: boolean;
                 };

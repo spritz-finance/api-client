@@ -168,13 +168,15 @@ const userData = await client.user.getCurrentUser()
 ```typescript
 const me = await client.user.getMe()
 
-me.verification.status // 'not_started' | 'verified' | 'failed' | 'disabled' | 'retry'
+me.verification.status // 'not_started' | 'verified' | 'failed' | 'disabled' | 'retry' | 'under_review'
+me.verification.failureReason // e.g. 'documentary_verification', or null unless failed / retry / under_review
+me.verification.provider // 'persona' | 'plaid' — the provider the next verification session will use
 me.verification.country // e.g. 'US', or null
 me.verification.requirement // outstanding requirement, if any ({ type, status, actionUrl?, retryable? })
 me.capabilities // [{ product, method?, name, status, nextRequirement?, requirements }]
 ```
 
-> **Note:** `getMe()` does not yet replace `getCurrentUser()`. The REST profile has no verification failure reason, reports verifications under review as `not_started`, and there is no REST equivalent of `retryFailedVerification()`.
+`status: 'retry'` (with an `identity_verification` requirement whose `retryable` is `true`) means a failed verification can be retried by calling `verification.createSession()` again; `under_review` means a decision is pending and no new session can be started. This is the REST replacement for `getCurrentUser()` verification state and `retryFailedVerification()`.
 
 ### Identity Verification
 
@@ -207,7 +209,9 @@ const { sessionId, provider, sessionToken, verificationUrl, verificationUrlExpir
 // verificationUrl: provider-hosted URL, or null
 ```
 
-Tokens and URLs may expire, so create the session just in time rather than caching it. The call throws a `ConflictError` (409) when verification is under review or unavailable, and an `InternalServerError` (503, with `retryAfter` in the error body) when the provider is temporarily unavailable.
+The same call retries a failed verification: when `getMe().verification.status` is `retry`, it starts a new inquiry and returns the new session. There is no separate retry endpoint.
+
+Tokens and URLs may expire, so create the session just in time rather than caching it. The call throws a `ConflictError` (409) with one of `VERIFICATION_NOT_RETRYABLE` (permanent failure), `VERIFICATION_UNDER_REVIEW`, `VERIFICATION_ALREADY_VERIFIED`, or `VERIFICATION_SESSION_UNAVAILABLE`, a 409 with no code while another session request for the same user is still in progress (retry after it completes), and an `InternalServerError` (503, with `retryAfter` seconds in the error body) when the provider is temporarily unavailable.
 
 #### Option 1: Verification URL
 
