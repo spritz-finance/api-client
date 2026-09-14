@@ -1,6 +1,7 @@
 import { SpritzClient } from '../../lib/client'
 import { restRoute } from '../../rest/route'
 import type { PathRequestBody, PathResponse } from '../../rest/types'
+import { idempotencyHeaders, type CreateDepositOptions } from '../deposit/depositService'
 
 export type BypassKycRequest = PathRequestBody<'/v1/sandbox/bypass-kyc', 'post'>
 export type CreateDepositWithReturnRequest = PathRequestBody<'/v1/sandbox/deposits/direct', 'post'>
@@ -34,12 +35,19 @@ export class SandboxService {
      * receiving account. The deposit settles into the `returned` lifecycle with
      * the supplied NACHA `code` so end-to-end return handling can be tested.
      *
+     * Like `deposit.create`, `POST /v1/sandbox/deposits/direct` requires an
+     * `idempotency-key`; reuse the same key and body to replay after a timeout.
+     *
      * Only available in sandbox environments — returns 403 in production.
      */
-    public async createDepositWithReturn(input: CreateDepositWithReturnRequest) {
+    public async createDepositWithReturn(
+        input: CreateDepositWithReturnRequest,
+        options: CreateDepositOptions
+    ) {
         return this.client.restApi(
             restRoute('/v1/sandbox/deposits/direct', 'post', {
                 body: input,
+                headers: idempotencyHeaders(options),
             })
         )
     }

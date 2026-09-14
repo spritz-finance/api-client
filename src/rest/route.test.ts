@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import {
     buildRestPath,
+    normalizeRestHeaders,
     normalizeRestQuery,
     restRoute,
     type RestRoute,
@@ -45,6 +46,46 @@ describe('REST route builder', () => {
         expect(() => normalizeRestQuery({ ids: ['one', 'two'] })).toThrow(
             'Unsupported query parameter value for ids'
         )
+    })
+
+    it('includes per-request headers on the route', () => {
+        expect(
+            restRoute('/v1/deposits/direct', 'post', {
+                body: { preparationId: 'prep_123' },
+                headers: { 'idempotency-key': 'intent_123' },
+            })
+        ).toEqual({
+            method: 'post',
+            path: '/v1/deposits/direct',
+            body: { preparationId: 'prep_123' },
+            headers: { 'idempotency-key': 'intent_123' },
+        })
+    })
+
+    it('drops undefined headers and rejects non-string or empty header values', () => {
+        expect(normalizeRestHeaders({ 'idempotency-key': 'intent_123', extra: undefined })).toEqual(
+            {
+                'idempotency-key': 'intent_123',
+            }
+        )
+        expect(normalizeRestHeaders({ extra: undefined })).toBeUndefined()
+        expect(() => normalizeRestHeaders({ 'idempotency-key': '' })).toThrow(
+            'Unsupported header value for idempotency-key'
+        )
+        expect(() => normalizeRestHeaders({ 'idempotency-key': 42 })).toThrow(
+            'Unsupported header value for idempotency-key'
+        )
+    })
+
+    it('requires the headers the generated contract declares', () => {
+        type CreateDepositOptions = RestRouteOptions<'/v1/deposits/direct', 'post'>
+
+        expectTypeOf<CreateDepositOptions>().toMatchTypeOf<{
+            headers: { 'idempotency-key': string }
+        }>()
+        expectTypeOf<RestRouteOptions<'/v1/deposits/direct/prepare', 'post'>>().toMatchTypeOf<{
+            headers?: never
+        }>()
     })
 
     it('includes request bodies unchanged', () => {

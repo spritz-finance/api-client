@@ -1,5 +1,6 @@
 import type {
     HttpMethod,
+    PathHeaders,
     PathParams,
     PathQuery,
     PathRequestBody,
@@ -27,30 +28,38 @@ type RestQueryOption<P extends RestPath, M extends RestMethod<P>> =
         ? { query?: never }
         : { query?: SupportedRestQuery<PathQuery<P, M>> }
 
+type RestHeadersOption<P extends RestPath, M extends RestMethod<P>> =
+    IsNever<PathHeaders<P, M>> extends true ? { headers?: never } : { headers: PathHeaders<P, M> }
+
 type RestRouteNeedsOptions<P extends RestPath, M extends RestMethod<P>> =
     IsNever<PathParams<P, M>> extends false
         ? true
-        : IsNever<PathRequestBody<P, M>> extends true
-          ? false
-          : CanOmitBody<PathRequestBody<P, M>> extends true
+        : IsNever<PathHeaders<P, M>> extends false
+          ? true
+          : IsNever<PathRequestBody<P, M>> extends true
             ? false
-            : true
+            : CanOmitBody<PathRequestBody<P, M>> extends true
+              ? false
+              : true
 
 export type RestQueryValue = string | number | boolean | undefined
 export type RestQuery = Record<string, RestQueryValue>
+export type RestHeaders = Record<string, string>
 
 export type RestRouteOptions<P extends RestPath, M extends RestMethod<P>> = RestPathParamsOption<
     P,
     M
 > &
     RestBodyOption<P, M> &
-    RestQueryOption<P, M>
+    RestQueryOption<P, M> &
+    RestHeadersOption<P, M>
 
 export type RestRoute<P extends RestPath = RestPath, M extends RestMethod<P> = RestMethod<P>> = {
     method: M
     path: string
     body?: PathRequestBody<P, M>
     query?: RestQuery
+    headers?: RestHeaders
 }
 
 function pathParamsAsRecord(params: unknown): Record<string, unknown> | undefined {
@@ -91,6 +100,24 @@ export function normalizeRestQuery(query?: Record<string, unknown>): RestQuery |
     return entries.length > 0 ? Object.fromEntries(entries) : undefined
 }
 
+export function normalizeRestHeaders(headers?: Record<string, unknown>): RestHeaders | undefined {
+    if (!headers) return undefined
+
+    const entries: [string, string][] = []
+
+    for (const [key, value] of Object.entries(headers)) {
+        if (value === undefined) continue
+
+        if (typeof value !== 'string' || value.length === 0) {
+            throw new Error(`Unsupported header value for ${key}`)
+        }
+
+        entries.push([key, value])
+    }
+
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined
+}
+
 export function restRoute<P extends RestPath, M extends RestMethod<P>>(
     path: P,
     method: M,
@@ -101,6 +128,7 @@ export function restRoute<P extends RestPath, M extends RestMethod<P>>(
     const params = pathParamsAsRecord(options?.params)
     const routePath = buildRestPath(path, params)
     const query = normalizeRestQuery(options?.query)
+    const headers = normalizeRestHeaders(options?.headers as Record<string, unknown> | undefined)
     const body = options?.body as PathRequestBody<P, M> | undefined
 
     return {
@@ -108,6 +136,7 @@ export function restRoute<P extends RestPath, M extends RestMethod<P>>(
         path: routePath,
         ...(body !== undefined ? { body } : {}),
         ...(query ? { query } : {}),
+        ...(headers ? { headers } : {}),
     }
 }
 

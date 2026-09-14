@@ -86,13 +86,30 @@ describe('DepositService', () => {
 
         vi.mocked(mockClient.restApi).mockResolvedValue(response)
 
-        const result = await depositService.create(input)
+        const result = await depositService.create(input, { idempotencyKey: 'intent_123' })
 
         expect(mockClient.restApi).toHaveBeenCalledWith({
             method: 'post',
             path: '/v1/deposits/direct',
             body: input,
+            headers: { 'idempotency-key': 'intent_123' },
         })
         expect(result).toEqual(response)
+    })
+
+    it('refuses to create a deposit without an idempotency key', async () => {
+        await expect(
+            depositService.create({ preparationId: 'prep_123' }, { idempotencyKey: '' } as {
+                idempotencyKey: string
+            })
+        ).rejects.toThrow('idempotencyKey is required to create a deposit')
+        await expect(
+            depositService.create(
+                { preparationId: 'prep_123' },
+                undefined as unknown as { idempotencyKey: string }
+            )
+        ).rejects.toThrow('idempotencyKey is required to create a deposit')
+
+        expect(mockClient.restApi).not.toHaveBeenCalled()
     })
 })

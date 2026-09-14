@@ -60,6 +60,7 @@ export type {
     PrepareDepositRequest,
     PrepareDepositResponse,
     CreateDepositRequest,
+    CreateDepositOptions,
 } from './modules/deposit/depositService'
 export type {
     AchDebitReturn,

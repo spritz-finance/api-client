@@ -34,6 +34,13 @@ export type PathQuery<P extends RestPath, M extends RestMethod<P>> = paths[P][M]
     ? Q
     : never
 
+/** Extract required header parameters for a path + method (never when the contract declares none) */
+export type PathHeaders<P extends RestPath, M extends RestMethod<P>> = paths[P][M] extends {
+    parameters: { header: infer H }
+}
+    ? H
+    : never
+
 /** Extract path parameters for a path + method */
 export type PathParams<P extends RestPath, M extends RestMethod<P>> = paths[P][M] extends {
     parameters: { path: infer PP }

@@ -48,9 +48,11 @@ const preparation = await client.deposit.prepare({
 
 // Show preparation.summary and preparation.message to the user first.
 // The ACH pull is not started until create passes risk checks.
-const deposit = await client.deposit.create({
-    preparationId: preparation.preparationId,
-})
+// Persist one unique idempotency key per deposit intent and reuse it on retries.
+const deposit = await client.deposit.create(
+    { preparationId: preparation.preparationId },
+    { idempotencyKey: intent.id }
+)
 ```
 
 Use `limits` to keep your UI inside the user's current ACH capacity before preparing a quote. Use webhooks to track the deposit after creation; `onrampPayment` and `achDebitReturn` are the read APIs for reconciliation.
@@ -391,10 +393,13 @@ When you call `create`, Spritz runs Plaid Signal/risk checks after the user has 
 
 Blocked create attempts consume the `preparationId`. After a blocked or expired attempt, prepare a new quote instead of retrying the same preparation.
 
+`POST /v1/deposits/direct` requires an `idempotency-key`. Persist one unique key per deposit intent _before_ calling `create`; if the request times out or the response is lost, retry with the exact same key and body to recover the original deposit instead of authorizing a second ACH debit. A new intent (fresh preparation) needs a fresh key.
+
 ```typescript
-const deposit = await client.deposit.create({
-    preparationId: preparation.preparationId,
-})
+const deposit = await client.deposit.create(
+    { preparationId: preparation.preparationId },
+    { idempotencyKey: intent.id }
+)
 ```
 
 **Deposit response (selected fields):**
@@ -717,10 +722,14 @@ const preparation = await client.deposit.prepare({
 })
 
 // 2. Use the sandbox creator instead of client.deposit.create
-const deposit = await client.sandbox.createDepositWithReturn({
-    preparationId: preparation.preparationId,
-    returnSimulation: { code: 'R01' }, // NACHA return code to arm
-})
+//    (same required idempotency key as client.deposit.create)
+const deposit = await client.sandbox.createDepositWithReturn(
+    {
+        preparationId: preparation.preparationId,
+        returnSimulation: { code: 'R01' }, // NACHA return code to arm
+    },
+    { idempotencyKey: intent.id }
+)
 
 // deposit.status will move through authorized → processing → returned
 // deposit.returnCode === 'R01', and a matching ACH debit return record
