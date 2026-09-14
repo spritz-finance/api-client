@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createServer } from 'node:http'
-import { createHash, createHmac } from 'node:crypto'
+import { createHash, createHmac, randomUUID } from 'node:crypto'
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { dirname, extname, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -102,6 +102,18 @@ function assertObject(value, name) {
         throw new Error(`${name} is required`)
     }
     return value
+}
+
+// Deposit creation needs an `idempotency-key`. The browser harness may supply
+// one (to replay a request), otherwise mint a fresh key per call.
+function splitIdempotencyKey(input, name) {
+    const { idempotencyKey, ...body } = assertObject(input, name)
+    return {
+        body,
+        options: {
+            idempotencyKey: typeof idempotencyKey === 'string' ? idempotencyKey : randomUUID(),
+        },
+    }
 }
 
 function optionalQuery(input) {
@@ -322,12 +334,16 @@ async function invokeSdkAction(client, action, input) {
             )
         case 'deposit.prepare':
             return client.deposit.prepare(assertObject(input, 'input'))
-        case 'deposit.create':
-            return client.deposit.create(assertObject(input, 'input'))
+        case 'deposit.create': {
+            const { body, options } = splitIdempotencyKey(input, 'input')
+            return client.deposit.create(body, options)
+        }
         case 'sandbox.bypassKyc':
             return client.sandbox.bypassKyc(input?.country ? { country: input.country } : undefined)
-        case 'sandbox.createDepositWithReturn':
-            return client.sandbox.createDepositWithReturn(assertObject(input, 'input'))
+        case 'sandbox.createDepositWithReturn': {
+            const { body, options } = splitIdempotencyKey(input, 'input')
+            return client.sandbox.createDepositWithReturn(body, options)
+        }
         case 'onrampPayment.list':
             return client.onrampPayment.list(optionalQuery(input))
         case 'onrampPayment.get':

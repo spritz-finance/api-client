@@ -48,10 +48,12 @@ const preparation = await client.deposit.prepare({
 
 // Show preparation.summary and preparation.message to the user first.
 // The ACH pull is not started until create passes risk checks.
-// Persist one unique idempotency key per deposit intent and reuse it on retries.
+// Generate one idempotency key per deposit intent, persist it before calling
+// create, and reuse the same key + body on retries.
+const idempotencyKey = crypto.randomUUID()
 const deposit = await client.deposit.create(
     { preparationId: preparation.preparationId },
-    { idempotencyKey: intent.id }
+    { idempotencyKey }
 )
 ```
 
@@ -396,9 +398,12 @@ Blocked create attempts consume the `preparationId`. After a blocked or expired 
 `POST /v1/deposits/direct` requires an `idempotency-key`. Persist one unique key per deposit intent _before_ calling `create`; if the request times out or the response is lost, retry with the exact same key and body to recover the original deposit instead of authorizing a second ACH debit. A new intent (fresh preparation) needs a fresh key.
 
 ```typescript
+// Persist this key with your deposit intent *before* calling create so a
+// retry after a timeout sends the exact same key and body.
+const idempotencyKey = crypto.randomUUID()
 const deposit = await client.deposit.create(
     { preparationId: preparation.preparationId },
-    { idempotencyKey: intent.id }
+    { idempotencyKey }
 )
 ```
 
@@ -728,7 +733,7 @@ const deposit = await client.sandbox.createDepositWithReturn(
         preparationId: preparation.preparationId,
         returnSimulation: { code: 'R01' }, // NACHA return code to arm
     },
-    { idempotencyKey: intent.id }
+    { idempotencyKey: crypto.randomUUID() }
 )
 
 // deposit.status will move through authorized → processing → returned
