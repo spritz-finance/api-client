@@ -13,7 +13,7 @@ The GraphQL methods `user.getCurrentUser()`, `user.getVerificationParams()` and 
 
 **Regenerated REST types**
 
-The regeneration adds types for new endpoints (for example `POST /v1/off-ramp-quotes/{quoteId}/submit`, `GET /v1/deposits/`, `POST /v1/sandbox/bank-accounts/link`) and new webhook event names (`offramp.*`, `achDebit.*`, `onrampCredit.*`). It also changes types used by existing methods to match the API:
+The checked-in REST types had drifted from the live API (the production and sandbox OpenAPI schemas match). The regeneration adds types for new endpoints (for example `POST /v1/off-ramp-quotes/{quoteId}/submit`, `GET /v1/deposits/`, `POST /v1/sandbox/bank-accounts/link`) and new webhook event names (`offramp.*`, `achDebit.*`, `onrampCredit.*`). The API responses themselves are unchanged by this release, but types used by existing methods now describe what the API already returns, so code reading removed fields will stop compiling:
 
 - `deposit.prepare()` / `deposit.create()` / `sandbox.createDepositWithReturn()`: the `clientContext` request field is gone; the fee quote replaces `planAdjustmentBps` / `planAdjustmentFeeUsd` with `instantPortionUsd`, `settlementPortionUsd`, `regularPublishedFeeUsd`, `instantPublishedFeeUsd` and adds `requestedPriority`; `integratorPricingClass`, `integratorPlanPhase`, `integratorPolicyVersion` and `exposureAmountUsd` are removed from the deposit.
 - `sandbox.createDepositWithReturn()`: `returnSimulation` is now optional and its `code` is a union of NACHA return codes (was `string`); `riskSimulation` and `lifecycleSimulation` were added.

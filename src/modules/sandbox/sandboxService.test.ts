@@ -50,7 +50,7 @@ describe('SandboxService', () => {
         const input = {
             preparationId: 'prep_123',
             returnSimulation: {
-                code: 'R01',
+                code: 'R01' as const,
             },
         }
         const response = {
@@ -99,11 +99,8 @@ describe('SandboxService', () => {
     it('passes through additional generated sandbox return fields without inventing Signal fields', async () => {
         const input = {
             preparationId: 'prep_123',
-            clientContext: {
-                sessionId: 'session_123',
-            },
             returnSimulation: {
-                code: 'R10',
+                code: 'R10' as const,
             },
         }
         const response = {

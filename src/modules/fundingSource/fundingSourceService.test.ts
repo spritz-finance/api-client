@@ -24,7 +24,6 @@ describe('FundingSourceService', () => {
                 accountType: 'checking',
                 status: 'active',
                 statusReason: null,
-                ownershipMatchStatus: 'matched',
             },
         ]
 
@@ -48,7 +47,6 @@ describe('FundingSourceService', () => {
             accountType: 'checking',
             status: 'active',
             statusReason: null,
-            ownershipMatchStatus: 'matched',
         }
 
         vi.mocked(mockClient.restApi).mockResolvedValue(source)
@@ -66,12 +64,26 @@ describe('FundingSourceService', () => {
         const limits = {
             minimumDepositAmountUsd: '10.00',
             transactionLimitUsd: '500.00',
-            dailyLimitUsd: '1500.00',
-            dailyRemainingUsd: '1400.00',
-            monthlyLimitUsd: '5000.00',
-            monthlyRemainingUsd: '4900.00',
-            unsettledDepositLimit: 1,
-            unsettledDepositRemaining: 1,
+            limitsByPriority: {
+                normal: {
+                    available: true,
+                    minAmountUsd: '10.00',
+                    maxAmountUsd: '500.00',
+                    reason: null,
+                    suggestedAction: null,
+                    clearsAt: null,
+                    clearsAtIsEstimate: false,
+                },
+                high: {
+                    available: false,
+                    maxAmountUsd: '0.00',
+                    maxEarlyReleaseAmountUsd: '0.00',
+                    reason: 'daily_limit',
+                    suggestedAction: 'wait_for_settlement',
+                    clearsAt: '2026-01-02T00:00:00Z',
+                    clearsAtIsEstimate: true,
+                },
+            },
         }
 
         vi.mocked(mockClient.restApi).mockResolvedValue(limits)
