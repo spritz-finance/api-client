@@ -16,6 +16,7 @@ import { VirtualAccountsService } from './modules/virtualAccounts/virtualAccount
 import { PaymentService } from './modules/payment/paymentService'
 import { PaymentRequestService } from './modules/paymentRequest/paymentRequestService'
 import { UserService } from './modules/user/userService'
+import { VerificationService } from './modules/verification/verificationService'
 import { VirtualCardService } from './modules/virtualCard/virtualCardService'
 import { WebhookService } from './modules/webhook/webhookService'
 
@@ -62,6 +63,7 @@ export class SpritzApiClient {
 
     private client: SpritzClient
     public user: UserService
+    public verification: VerificationService
     public bankAccount: BankAccountService
     public debitCard: DebitCardService
     public deposit: DepositService
@@ -134,6 +136,7 @@ export class SpritzApiClient {
             integratorSecret: this.integratorSecret,
         })
         this.user = new UserService(this.client)
+        this.verification = new VerificationService(this.client)
         this.bankAccount = new BankAccountService(this.client)
         this.debitCard = new DebitCardService(this.client)
         this.deposit = new DepositService(this.client)
