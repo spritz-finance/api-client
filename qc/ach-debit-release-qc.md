@@ -179,10 +179,10 @@ Use Plaid's sandbox amount fixtures:
 Return simulation remains explicit and post-authorization:
 
 ```typescript
-await client.sandbox.createDepositWithReturn({
-    preparationId,
-    returnSimulation: { code: 'R01' },
-})
+await client.sandbox.createDepositWithReturn(
+    { preparationId, returnSimulation: { code: 'R01' } },
+    { idempotencyKey: crypto.randomUUID() }
+)
 ```
 
 ## Automated Test Plan
