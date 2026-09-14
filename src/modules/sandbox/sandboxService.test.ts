@@ -61,12 +61,15 @@ describe('SandboxService', () => {
 
         vi.mocked(mockClient.restApi).mockResolvedValue(response)
 
-        const result = await sandboxService.createDepositWithReturn(input)
+        const result = await sandboxService.createDepositWithReturn(input, {
+            idempotencyKey: 'intent_123',
+        })
 
         expect(mockClient.restApi).toHaveBeenCalledWith({
             method: 'post',
             path: '/v1/sandbox/deposits/direct',
             body: input,
+            headers: { 'idempotency-key': 'intent_123' },
         })
         expect(result).toEqual(response)
     })
@@ -110,12 +113,15 @@ describe('SandboxService', () => {
 
         vi.mocked(mockClient.restApi).mockResolvedValue(response)
 
-        const result = await sandboxService.createDepositWithReturn(input)
+        const result = await sandboxService.createDepositWithReturn(input, {
+            idempotencyKey: 'intent_123',
+        })
 
         expect(mockClient.restApi).toHaveBeenCalledWith({
             method: 'post',
             path: '/v1/sandbox/deposits/direct',
             body: input,
+            headers: { 'idempotency-key': 'intent_123' },
         })
         expect(result).toEqual(response)
     })

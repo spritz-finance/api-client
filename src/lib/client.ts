@@ -7,7 +7,7 @@ import { APIConnectionError, APIConnectionTimeoutError, APIError, SpritzApiError
 import { gracefulParseJSON } from '../utils/json'
 import { validateGraphQLQuery, sanitizeGraphQLVariables } from '../utils/graphqlSecurity'
 import { stampRequest } from './hmac'
-import type { RestQuery, RestRoute } from '../rest/route'
+import type { RestHeaders, RestQuery, RestRoute } from '../rest/route'
 import type { HttpMethod, PathResponse, RestMethod, RestPath } from '../rest/types'
 
 type GraphQLVariables = Record<string, unknown>
@@ -127,28 +127,33 @@ export class SpritzClient {
         path,
         body,
         query,
+        headers,
     }: {
         method: HttpMethod
         path: string
         body?: Request | undefined
         query?: RestQuery
+        headers?: RestHeaders
     }): Promise<Response>
     public async restApi<Response, Request = unknown>({
         method,
         path,
         body = undefined,
         query,
+        headers,
     }: {
         method: HttpMethod
         path: string
         body?: Request | undefined
         query?: RestQuery
+        headers?: RestHeaders
     }) {
         return this.sendRestApiRequest({
             method,
             path,
             body,
             ...(query ? { query } : {}),
+            ...(headers ? { headers } : {}),
         })
             .then((res) => parseAPIResponse<Response>(res))
             .then(({ response }) => response)
@@ -183,18 +188,21 @@ export class SpritzClient {
         path,
         body,
         query,
+        headers,
     }: {
         method: HttpMethod
         path: string
         body: unknown | undefined
         query?: RestQuery
+        headers?: RestHeaders
     }) {
         const { url, req, timeout } = this.buildRestRequest(
             method,
             path,
             body,
             this.baseRestApiURL,
-            query
+            query,
+            headers
         )
 
         if (this.integrationKey && this.integratorSecret) {
@@ -316,15 +324,19 @@ export class SpritzClient {
         path: string,
         reqBody?: unknown | null,
         baseURL?: string,
-        query?: RestQuery
+        query?: RestQuery,
+        headers?: RestHeaders
     ) {
         const body = reqBody ? JSON.stringify(reqBody) : null
         const contentLength = this.calculateContentLength(body)
         const timeout = this.timeout
 
+        // Per-request headers (e.g. `idempotency-key`) are added last so a
+        // route can never be silently overridden by the client defaults.
         const baseHeaders = {
             ...(contentLength && { 'Content-Length': contentLength }),
             ...this.defaultHeaders(),
+            ...(headers ?? {}),
         }
 
         // Safely filter out null values to prevent prototype pollution

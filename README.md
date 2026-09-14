@@ -1010,7 +1010,7 @@ ACH onramp lets users convert USD from their bank account into USDC delivered to
 4. **Server:** find an active funding source and fetch limits with `client.fundingSource.getDepositLimits(id)`
 5. **Server:** prepare a quote with `client.deposit.prepare(...)`
 6. **Client:** show the quote and ACH authorization message to the user
-7. **Server:** create the deposit with `client.deposit.create(...)`; Spritz runs risk checks before initiating the ACH pull
+7. **Server:** create the deposit with `client.deposit.create(input, { idempotencyKey })`; Spritz runs risk checks before initiating the ACH pull. Persist one unique key per deposit intent and reuse it verbatim on retries so a timed-out request replays the original response instead of authorizing a second debit
 
 Authorization is derived from the verified ACH funding source — no wallet signature is required.
 

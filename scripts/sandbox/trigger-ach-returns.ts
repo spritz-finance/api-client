@@ -15,6 +15,7 @@
  * Optional:
  *   SPRITZ_DEST_NETWORK   - one of solana|ethereum|polygon|base|avalanche|arbitrum (default: solana)
  */
+import { randomUUID } from 'node:crypto'
 import { createClient } from './client'
 import { requireEnv, optionalEnv } from './env'
 
@@ -69,10 +70,15 @@ async function main() {
                 priority: 'normal',
             })
 
-            const deposit = await client.sandbox.createDepositWithReturn({
-                preparationId: preparation.preparationId,
-                returnSimulation: { code },
-            })
+            // One key per intent; a real integration persists it before create
+            // so a retry after a timeout replays the same request.
+            const deposit = await client.sandbox.createDepositWithReturn(
+                {
+                    preparationId: preparation.preparationId,
+                    returnSimulation: { code },
+                },
+                { idempotencyKey: randomUUID() }
+            )
 
             console.log(`  deposit ${deposit.id} — status=${deposit.status}`)
             results.push({ code, depositId: deposit.id, status: deposit.status })
