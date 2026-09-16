@@ -328,13 +328,16 @@ describe('ProblemDetails', () => {
         expect(error.error).toEqual(payload)
     })
 
-    it('omits unknown fields from problem but keeps them in error', () => {
+    it('keeps unmodelled fields out of problem but reachable on error', () => {
         const payload = {
             type: 'urn:problem-type:auth:unauthorized',
             title: 'Unauthorized',
             status: 401,
+            // Documented by the spec on some 401s, deliberately not modelled on
+            // ProblemDetails — read from `error`, not absent from the response.
             realm: 'spritz',
             scope: 'deposits:write',
+            // Genuinely not part of any problem contract.
             clearsAtIsEstimate: true,
             nested: { anything: [1, 2, 3] },
         }
@@ -345,10 +348,31 @@ describe('ProblemDetails', () => {
             title: 'Unauthorized',
             status: 401,
         })
-        expect(error.problem).not.toHaveProperty('realm')
-        expect(error.problem).not.toHaveProperty('clearsAtIsEstimate')
         expect(error.error).toEqual(payload)
+        // The documented-but-unmodelled fields stay available to consumers.
         expect(error.error?.['realm']).toBe('spritz')
+        expect(error.error?.['scope']).toBe('deposits:write')
+    })
+
+    it('keeps 404 resource fields reachable on error', () => {
+        // `resourceType`/`resourceId` are required on 404 problems but are not
+        // modelled on ProblemDetails; this pins where consumers must read them.
+        const payload = {
+            type: 'urn:problem-type:not-found',
+            title: 'Not Found',
+            status: 404,
+            resourceType: 'deposit',
+            resourceId: 'dep_123',
+        }
+        const error = APIError.generate(404, payload, undefined, headers)
+
+        expect(error.problem).toStrictEqual({
+            type: 'urn:problem-type:not-found',
+            title: 'Not Found',
+            status: 404,
+        })
+        expect(error.error?.['resourceType']).toBe('deposit')
+        expect(error.error?.['resourceId']).toBe('dep_123')
     })
 
     it('leaves problem undefined when nothing documented survives', () => {
