@@ -42,6 +42,26 @@ describe('HMAC Request Stamping', () => {
             expect(canonicalizeQueryString(url)).toBe('cursor=o%27brien')
         })
 
+        it('substitutes unpaired surrogates instead of throwing', () => {
+            // `encodeURIComponent` throws URIError on a lone surrogate; the
+            // previous URLSearchParams serializer emitted U+FFFD and sent the
+            // request, so callers slicing through an emoji must keep working.
+            expect(canonicalizeQueryEntries([['search', 'R01\uD800admin']])).toBe(
+                'search=R01%EF%BF%BDadmin'
+            )
+            expect(canonicalizeQueryEntries([['search', '\uDC00lead']])).toBe(
+                'search=%EF%BF%BDlead'
+            )
+        })
+
+        it('leaves valid surrogate pairs intact', () => {
+            const url = new URL('https://api.example.com/v1/test')
+            url.search = `?${canonicalizeQueryEntries([['search', 'grin \uD83D\uDE00']])}`
+
+            expect(url.searchParams.get('search')).toBe('grin \uD83D\uDE00')
+            expect(canonicalizeQueryString(url)).toBe('search=grin%20%F0%9F%98%80')
+        })
+
         it('handles single param', () => {
             const url = new URL('https://api.example.com/v1/on-ramps?limit=20')
             expect(canonicalizeQueryString(url)).toBe('limit=20')

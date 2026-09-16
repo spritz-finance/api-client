@@ -25,6 +25,21 @@ async function hmacSha256Hex(secret: string, data: string): Promise<string> {
     return hexEncode(signature)
 }
 
+const SURROGATE = /[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDFFF]/g
+
+/**
+ * Replace unpaired surrogates with U+FFFD, leaving valid pairs intact.
+ *
+ * `encodeURIComponent` throws `URIError` on lone surrogates, which a caller can
+ * produce by slicing a string through an emoji before passing it as a free-text
+ * filter. `URLSearchParams` substitutes the replacement character instead, so
+ * doing the same here keeps such a request sendable rather than turning it into
+ * a raw `URIError` from inside the client.
+ */
+function toWellFormed(value: string): string {
+    return value.replace(SURROGATE, (match) => (match.length === 2 ? match : '�'))
+}
+
 /**
  * Percent-encode a query component so that the result is a fixed point of the
  * WHATWG URL parser.
@@ -34,7 +49,7 @@ async function hmacSha256Hex(secret: string, data: string): Promise<string> {
  * differ from the signed one. Escaping it up front keeps the two identical.
  */
 function encodeQueryComponent(value: string): string {
-    return encodeURIComponent(value).replace(/'/g, '%27')
+    return encodeURIComponent(toWellFormed(value)).replace(/'/g, '%27')
 }
 
 /**
