@@ -26,20 +26,40 @@ async function hmacSha256Hex(secret: string, data: string): Promise<string> {
 }
 
 /**
+ * Percent-encode a query component so that the result is a fixed point of the
+ * WHATWG URL parser.
+ *
+ * `encodeURIComponent` leaves `'` untouched but the URL parser escapes it in the
+ * query of a special scheme, which would make the transmitted query string
+ * differ from the signed one. Escaping it up front keeps the two identical.
+ */
+function encodeQueryComponent(value: string): string {
+    return encodeURIComponent(value).replace(/'/g, '%27')
+}
+
+/**
+ * Canonicalize query entries for HMAC signature.
+ * Params are sorted lexicographically by key and percent-encoded.
+ *
+ * This is the single serializer used both to build the request URL and to sign
+ * it, so the signed path always matches the requested path byte for byte.
+ */
+export function canonicalizeQueryEntries(entries: Iterable<[string, string]>): string {
+    const params = [...entries]
+    if (params.length === 0) return ''
+
+    return params
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .map(([key, value]) => `${encodeQueryComponent(key)}=${encodeQueryComponent(value)}`)
+        .join('&')
+}
+
+/**
  * Canonicalize query string for HMAC signature.
  * Params are sorted alphabetically by key and URL-encoded.
  */
 export function canonicalizeQueryString(url: URL): string {
-    const params = url.searchParams
-    if ([...params].length === 0) return ''
-
-    return [...params.keys()]
-        .sort()
-        .map((key) => {
-            const value = params.get(key) ?? ''
-            return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-        })
-        .join('&')
+    return canonicalizeQueryEntries(url.searchParams)
 }
 
 /**
