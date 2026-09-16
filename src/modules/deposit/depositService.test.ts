@@ -141,6 +141,54 @@ describe('DepositService', () => {
         })
     })
 
+    it('requires clientIp when the client uses integrator HMAC credentials', async () => {
+        const integratorClient = {
+            restApi: vi.fn(),
+            usesIntegratorAuth: true,
+        } as unknown as SpritzClient
+        const service = new DepositService(integratorClient)
+
+        await expect(
+            service.create({ preparationId: 'prep_123' }, { idempotencyKey: 'intent_123' })
+        ).rejects.toThrow('clientIp is required to create a deposit with integrator HMAC')
+        await expect(
+            service.create(
+                { preparationId: 'prep_123', clientIp: '' },
+                { idempotencyKey: 'intent_123' }
+            )
+        ).rejects.toThrow('clientIp is required to create a deposit with integrator HMAC')
+
+        expect(integratorClient.restApi).not.toHaveBeenCalled()
+
+        vi.mocked(integratorClient.restApi).mockResolvedValue({ id: 'dep_123' })
+        await service.create(
+            { preparationId: 'prep_123', clientIp: '1.1.1.1' },
+            { idempotencyKey: 'intent_123' }
+        )
+        expect(integratorClient.restApi).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not require clientIp on the user-bearer path', async () => {
+        // `bearerAuth` alone: the caller is the authorizing client, so there is
+        // no edge-observed address to claim.
+        const userClient = {
+            restApi: vi.fn(),
+            usesIntegratorAuth: false,
+        } as unknown as SpritzClient
+        const service = new DepositService(userClient)
+
+        vi.mocked(userClient.restApi).mockResolvedValue({ id: 'dep_123' })
+
+        await service.create({ preparationId: 'prep_123' }, { idempotencyKey: 'intent_123' })
+
+        expect(userClient.restApi).toHaveBeenCalledWith({
+            method: 'post',
+            path: '/v1/deposits/direct',
+            body: { preparationId: 'prep_123' },
+            headers: { 'idempotency-key': 'intent_123' },
+        })
+    })
+
     it('lists deposits without a query', async () => {
         const response = { data: [], hasMore: false, nextCursor: null }
 

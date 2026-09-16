@@ -439,11 +439,33 @@ const preparation = await client.deposit.prepare({
 // preparation-bound, short-lived, and can submit nothing else.
 ```
 
-The client then calls `POST /v1/deposits/direct` itself with that token as its
-credential, sending `{ preparationId }` and **no** `clientIp`. This SDK signs every REST
-call with integrator HMAC, so it is not the right tool for that request — have the client
-call the endpoint directly. Spritz matches the submission against the addresses you
-claimed at prepare time and rejects a submission that comes from the preparing backend.
+The client then calls `POST /v1/deposits/direct` itself. This SDK signs every REST call
+with integrator HMAC, so it is not the right tool for that request — have the client call
+the endpoint directly:
+
+```http
+POST /v1/deposits/direct HTTP/1.1
+Host: platform.spritz.finance
+Authorization: Bearer ach_submit_eyJhbGciOiJIUzI1NiJ9...
+Idempotency-Key: <one unique key per deposit intent>
+Content-Type: application/json
+
+{ "preparationId": "prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X" }
+```
+
+The `submissionToken` is the **only** credential on this request: it goes in
+`Authorization` as a bearer token, and replaces the user API key, the integrator key and
+the HMAC headers rather than accompanying them. Send **no** `clientIp` — the token is
+already bound to the addresses you claimed at prepare time.
+
+`Idempotency-Key` is required here exactly as it is for a backend create. Have your
+server generate and persist the key alongside the preparation, and hand it to the client
+with the token, so a client-side retry replays the original deposit instead of
+authorizing a second debit.
+
+Spritz matches the submission against the addresses claimed at prepare time and rejects a
+submission that comes from the preparing backend. The capability can submit only its own
+preparation, expires shortly after issue, and grants nothing else.
 
 **Deposit response (selected fields):**
 

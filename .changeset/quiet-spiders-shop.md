@@ -13,7 +13,7 @@ const deposit = await client.deposit.create(
 )
 ```
 
-`clientIp` is typed optional because the contract allows omitting it only for a direct client submission authenticated with a `submissionToken`. This SDK signs every REST call with integrator HMAC and never sends that token, so for SDK callers the field is effectively required — and a missing one fails at runtime, not at compile time.
+`clientIp` is typed optional because the route accepts three authentication modes and only the backend-integrator one requires it — a plain user bearer (Cognito JWT or `ak_` key) submits without it. So that the omission cannot reach the API, `create` now throws before sending when the client is configured with integrator HMAC credentials and `clientIp` is missing. `SpritzClient` exposes `usesIntegratorAuth` to make that distinction.
 
 **Direct client submission.** `deposit.prepare()` accepts `clientNetwork: { ipAddresses }` and its response now carries `submissionToken`, a short-lived preparation-bound capability to forward to the authorizing client. That client submits `POST /v1/deposits/direct` itself with the token as its credential; it is not a request this SDK can make. Integrator JWT is no longer accepted on `create` (it cannot bind the claimed `clientIp`) and remains valid on `prepare` and the deposit read methods.
 
