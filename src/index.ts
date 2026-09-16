@@ -15,7 +15,11 @@ export {
     RateLimitError,
     SpritzApiError,
     UnprocessableEntityError,
+    hasProblemCode,
+    hasProblemType,
+    isAPIError,
 } from './lib/error'
+export type { ProblemDetails, ProblemFieldError, ProblemSuggestedAction } from './lib/error'
 export type {
     CreateDirectPaymentInput,
     BankAccountInput,
