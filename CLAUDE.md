@@ -19,6 +19,7 @@
 - `yarn test:ui` - Run tests with UI
 - `yarn build` - Build the project
 - `yarn codegen` - Generate GraphQL types
+- `yarn typecheck:contract` - Assert the hand-written `ProblemDetails` still matches the generated OpenAPI problem schemas (runs as part of `agent:check`)
 - `yarn changeset` - Create a release note for a releasable change
 - `yarn changeset --empty` - Record an internal-only change so PR checks still pass
 - **Never run `yarn version-packages`** — this is handled by CI. Running it locally consumes the changesets and breaks the release pipeline.
@@ -66,6 +67,17 @@ gh workflow run publish.yml --ref main \
 ### Why one workflow
 
 npm trusted publishing allows only one trusted publisher per package, keyed on the workflow file path. Keeping all publishes in `publish.yml` means the single existing trusted-publishing entry covers both main and maintenance releases.
+
+## Problem details contract
+
+`ProblemDetails` in `src/lib/error.ts` is hand-written, because the generated spec inlines a separate problem schema into every error response instead of sharing one component — there is no generated symbol to alias.
+
+`src/lib/problemContract.ts` stops that drifting. It unions the declared keys of every `application/problem+json` body in `paths` and fails the build if either side gains a field the other lacks, naming the field. It emits no runtime code and is not bundled.
+
+If `yarn codegen:rest` makes it fail:
+
+- **`Type '"<field>"' does not satisfy the constraint 'never'`** on `ProblemContractIsCovered` — the API documents a problem field the SDK does not model. Add it to `ProblemDetails`, add a `set(problem, '<field>', read…)` line to `parseProblemDetails`, and add the row to the README table.
+- The same error on `ProblemContractHasNoStaleFields` — the API stopped documenting a field the SDK still models. Removing it is a breaking change for consumers, so deprecate rather than delete unless the field never shipped.
 
 ## Testing
 
