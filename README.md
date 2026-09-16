@@ -1091,21 +1091,18 @@ try {
 | `clearsAt`        | `string \| null`                                        | When a limit clears; `null` means not bounded by time            |
 | `availableAt`     | `string \| null`                                        | When the resource becomes available                              |
 | `permanent`       | `boolean`                                               | Whether retrying can ever succeed                                |
+| `realm`           | `string`                                                | Authentication realm, on some `401`s                             |
+| `scope`           | `string`                                                | Scope required for the resource, on some `401`s                  |
+| `resourceType`    | `string`                                                | Type of the missing resource; required on `404`s                 |
+| `resourceId`      | `string`                                                | Id of the missing resource; required on `404`s                   |
 
 Every field is optional. The payload is untrusted, so a field appears only when the response carried it with its documented type — anything malformed is dropped, inherited properties are ignored, and a malformed body never turns into a thrown parse error. `problem` itself is undefined for transport failures, non-JSON bodies, and payloads with nothing documented in them.
 
-The table above is the set of fields common to every documented problem. A few are endpoint-specific and deliberately **not** modelled on `ProblemDetails`:
-
-| Field                        | Where it appears                        |
-| ---------------------------- | --------------------------------------- |
-| `realm`, `scope`             | Some `401` problems                     |
-| `resourceType`, `resourceId` | `404` problems, where they are required |
-
-Read those from `error.error`, which keeps the payload untouched:
+Some fields only appear on certain problems — `realm`/`scope` on some `401`s, `resourceType`/`resourceId` on `404`s — so check before reading them:
 
 ```typescript
 if (isAPIError(error) && error.status === 404) {
-    const resourceId = error.error?.['resourceId']
+    logger.warn(`missing ${error.problem?.resourceType}: ${error.problem?.resourceId}`)
 }
 ```
 

@@ -20,7 +20,7 @@ try {
 
 **New**
 
-- `ProblemDetails`, `ProblemFieldError` and `ProblemSuggestedAction` types, modelling the fields common to every documented problem: `type`, `title`, `status`, `detail`, `instance`, `code`, `field`, `errors[]`, `retryable`, `retryAfter`, `suggestedAction`, `clearsAt`, `availableAt`, `permanent`. Endpoint-specific fields (`realm`/`scope` on some 401s, `resourceType`/`resourceId` on 404s) are not modelled and stay readable from `error`.
+- `ProblemDetails`, `ProblemFieldError` and `ProblemSuggestedAction` types, modelling every field the contract documents on a problem response: `type`, `title`, `status`, `detail`, `instance`, `code`, `field`, `errors[]`, `retryable`, `retryAfter`, `suggestedAction`, `clearsAt`, `availableAt`, `permanent`, plus `realm`/`scope` (some 401s) and `resourceType`/`resourceId` (404s). Anything else the API sends stays readable on `error`.
 - `APIError.problem?: ProblemDetails`, parsed from the response body.
 - `APIError.requestId?: string` and `APIError.traceId?: string`, lifted from the `x-amzn-requestid` and `x-amzn-trace-id` headers.
 - Type guards `isAPIError`, `hasProblemType` and `hasProblemCode`. The latter two narrow `problem.type` / `problem.code` to the literal passed in.

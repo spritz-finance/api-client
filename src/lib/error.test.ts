@@ -328,16 +328,13 @@ describe('ProblemDetails', () => {
         expect(error.error).toEqual(payload)
     })
 
-    it('keeps unmodelled fields out of problem but reachable on error', () => {
+    it('omits fields no problem contract documents, keeping them on error', () => {
         const payload = {
             type: 'urn:problem-type:auth:unauthorized',
             title: 'Unauthorized',
             status: 401,
-            // Documented by the spec on some 401s, deliberately not modelled on
-            // ProblemDetails — read from `error`, not absent from the response.
-            realm: 'spritz',
-            scope: 'deposits:write',
-            // Genuinely not part of any problem contract.
+            // Not part of any problem contract: `clearsAtIsEstimate` belongs to
+            // successful deposit-limit responses, not problem responses.
             clearsAtIsEstimate: true,
             nested: { anything: [1, 2, 3] },
         }
@@ -348,30 +345,47 @@ describe('ProblemDetails', () => {
             title: 'Unauthorized',
             status: 401,
         })
+        expect(error.problem).not.toHaveProperty('clearsAtIsEstimate')
         expect(error.error).toEqual(payload)
-        // The documented-but-unmodelled fields stay available to consumers.
-        expect(error.error?.['realm']).toBe('spritz')
-        expect(error.error?.['scope']).toBe('deposits:write')
+        expect(error.error?.['clearsAtIsEstimate']).toBe(true)
     })
 
-    it('keeps 404 resource fields reachable on error', () => {
-        // `resourceType`/`resourceId` are required on 404 problems but are not
-        // modelled on ProblemDetails; this pins where consumers must read them.
-        const payload = {
-            type: 'urn:problem-type:not-found',
-            title: 'Not Found',
-            status: 404,
-            resourceType: 'deposit',
-            resourceId: 'dep_123',
-        }
-        const error = APIError.generate(404, payload, undefined, headers)
+    it('exposes the auth realm and scope carried by 401 problems', () => {
+        const error = APIError.generate(
+            401,
+            {
+                type: 'urn:problem-type:auth:unauthorized',
+                title: 'Unauthorized',
+                status: 401,
+                realm: 'spritz',
+                scope: 'deposits:write',
+            },
+            undefined,
+            headers
+        )
 
-        expect(error.problem).toStrictEqual({
-            type: 'urn:problem-type:not-found',
-            title: 'Not Found',
-            status: 404,
-        })
-        expect(error.error?.['resourceType']).toBe('deposit')
+        expect(error.problem?.realm).toBe('spritz')
+        expect(error.problem?.scope).toBe('deposits:write')
+    })
+
+    it('exposes the resource identity 404 problems are required to carry', () => {
+        const error = APIError.generate(
+            404,
+            {
+                type: 'urn:problem-type:not-found',
+                title: 'Not Found',
+                status: 404,
+                resourceType: 'deposit',
+                resourceId: 'dep_123',
+            },
+            undefined,
+            headers
+        )
+
+        expect(error).toBeInstanceOf(NotFoundError)
+        expect(error.problem?.resourceType).toBe('deposit')
+        expect(error.problem?.resourceId).toBe('dep_123')
+        // Still reachable on the untouched payload too.
         expect(error.error?.['resourceId']).toBe('dep_123')
     })
 

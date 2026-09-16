@@ -23,10 +23,9 @@ export type ProblemSuggestedAction = 'auto_ramp' | 'wait_for_settlement' | (stri
  * response that omits them should still surface whatever it did send rather
  * than collapsing to nothing.
  *
- * This models the fields common to every documented problem. A few are
- * endpoint-specific and deliberately not modelled here — `realm` and `scope` on
- * some 401s, `resourceType` and `resourceId` on 404s — so read those from
- * `APIError.error`, which keeps the payload untouched.
+ * Some fields only appear on certain problems — `realm`/`scope` on some 401s,
+ * `resourceType`/`resourceId` on 404s — so check before reading them. Anything
+ * the API sends that is not modelled here stays readable on `APIError.error`.
  */
 export type ProblemDetails = {
     /** Problem type URI, e.g. `urn:problem-type:idempotency-conflict`. */
@@ -48,6 +47,14 @@ export type ProblemDetails = {
     clearsAt?: string | null
     availableAt?: string | null
     permanent?: boolean
+    /** Authentication realm, on some `401` problems. */
+    realm?: string
+    /** Scope required for the resource, on some `401` problems. */
+    scope?: string
+    /** Type of the missing resource. The contract requires it on `404`s. */
+    resourceType?: string
+    /** Identifier of the missing resource. The contract requires it on `404`s. */
+    resourceId?: string
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -153,6 +160,10 @@ function parseProblemDetails(payload: unknown): ProblemDetails | undefined {
     set(problem, 'clearsAt', readNullableString(payload, 'clearsAt'))
     set(problem, 'availableAt', readNullableString(payload, 'availableAt'))
     set(problem, 'permanent', readBoolean(payload, 'permanent'))
+    set(problem, 'realm', readString(payload, 'realm'))
+    set(problem, 'scope', readString(payload, 'scope'))
+    set(problem, 'resourceType', readString(payload, 'resourceType'))
+    set(problem, 'resourceId', readString(payload, 'resourceId'))
 
     return Object.keys(problem).length > 0 ? problem : undefined
 }
