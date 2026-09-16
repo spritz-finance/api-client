@@ -639,7 +639,7 @@ export interface paths {
         put?: never;
         /**
          * Prepare a direct deposit authorization
-         * @description Creates the canonical ACH authorization message for a deposit targeting a raw wallet address. Authorization is derived from the verified ACH funding source; no wallet signature is required.
+         * @description Creates the canonical ACH authorization message for a deposit targeting a raw wallet address. Integrators can include the public client IP their edge observed to receive a short-lived submissionToken for direct client submission. During migration, an integrator can omit clientNetwork and submit through its HMAC-authenticated backend by including clientIp on create. Authorization is derived from the verified ACH funding source; no wallet signature is required.
          */
         post: operations["postV1DepositsDirectPrepare"];
         delete?: never;
@@ -659,7 +659,7 @@ export interface paths {
         put?: never;
         /**
          * Create a direct deposit
-         * @description Authorizes and creates a deposit against a raw wallet address prepared via /direct/prepare. Authorization is derived from the verified ACH funding source; no wallet signature is required. Idempotency-Key is required; reuse the same key and body after a timeout to recover the original response without creating another deposit.
+         * @description Authorizes and creates a deposit against a raw wallet address prepared via /direct/prepare. Integrators should send the preparation's short-lived submissionToken to the authorizing client and call this endpoint directly from that client; the capability can submit only its bound preparation. During migration, integrators can continue submitting with HMAC backend authentication but must include the public clientIp observed by their edge. Authorization is derived from the verified ACH funding source; no wallet signature is required. Idempotency-Key is required; reuse the same key and body after a timeout to recover the original response without creating another deposit.
          */
         post: operations["postV1DepositsDirect"];
         delete?: never;
@@ -1200,6 +1200,26 @@ export interface paths {
         patch: operations["patchV1Debit-cardsByCardIdCardholder-info"];
         trace?: never;
     };
+    "/v1/connect/sessions/{sessionId}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Return from an unfinished connect session
+         * @description Ends a pending session without granting access. Requires the scoped returnToken delivered in the authorization URL fragment; a session ID alone grants no authority. Sign-in is not required. The token expires 15 minutes after creation, including a five-minute grace period after consent expires. Invalid or expired tokens return 404. Returns only the registered callback with its original state and a server-selected error. Retries preserve the first terminal outcome. Approved sessions return 409.
+         */
+        post: operations["postV1ConnectSessionsBySessionIdReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/integrator/connect/sessions": {
         parameters: {
             query?: never;
@@ -1343,7 +1363,7 @@ export interface paths {
          *
          *     The response includes the user's API key (`ak_...`), which is returned only once at creation - store it securely.
          *
-         *     **Conflict**: If a user with the given email already exists, the request fails with `409 Conflict`. In that case, use Spritz Connect (`POST /v1/integrator/connect/sessions`) to have the existing user authorize this integrator.
+         *     **Conflict**: If a user with the given email already exists, the request fails with `409 Conflict`. In that case, use Spritz Connect (`POST /v1/integrator/connect/sessions`) to have the existing user authorize this integrator. A concurrent request to create a user with the same email also returns `409 Conflict`; retry shortly.
          */
         post: operations["postV1IntegratorUsers"];
         delete?: never;
@@ -1633,7 +1653,7 @@ export interface paths {
         put?: never;
         /**
          * Create, resume, or retry an identity verification session
-         * @description Creates or resumes the authenticated user's Persona identity verification session without requesting an implicit enhanced upgrade, or starts a new inquiry when a failed verification is retryable. Check GET /v1/users/me: verification.status=retry and identity_verification requirements with retryable=true indicate eligibility. Overlapping REST session requests for the same user return 409 Conflict while a request is in progress. Retry the same POST after the first request completes. Temporary provider unavailability returns 503 VERIFICATION_TEMPORARILY_UNAVAILABLE with retryAfter (seconds). URLs and tokens may expire and are retrieved just in time. Returns 409 VERIFICATION_NOT_RETRYABLE for a permanent failure, VERIFICATION_UNDER_REVIEW while review is pending, VERIFICATION_ALREADY_VERIFIED when verified with no pending verification, or VERIFICATION_SESSION_UNAVAILABLE when unavailable. An existing pending step-up remains resumable; this call does not initiate a new step-up for an already verified user.
+         * @description Creates or resumes the authenticated user's Persona identity verification session without requesting an implicit enhanced upgrade, or starts a new inquiry when a failed verification is retryable. Check GET /v1/users/me: verification.status=retry and identity_verification requirements with retryable=true indicate eligibility. Overlapping REST session requests for the same user return 409 Conflict while a request is in progress. Retry the same POST after the first request completes. Temporary provider unavailability returns 503 VERIFICATION_TEMPORARILY_UNAVAILABLE with retryAfter (seconds). URLs and tokens may expire and are retrieved just in time. Returns 409 VERIFICATION_NOT_RETRYABLE for a permanent failure, VERIFICATION_UNDER_REVIEW while review is pending, VERIFICATION_ALREADY_VERIFIED when verified with no pending verification, or VERIFICATION_SESSION_UNAVAILABLE when unavailable or an interrupted retry requires support reconciliation. An interrupted retry with a saved Persona idempotency key or inquiry ID resumes that inquiry and completes pending event delivery on a subsequent POST; creation that is still ambiguous after 23 hours returns VERIFICATION_SESSION_UNAVAILABLE instead of starting another inquiry. An existing pending step-up remains resumable; this call does not initiate a new step-up for an already verified user.
          */
         post: operations["postV1UsersMeVerification-sessions"];
         delete?: never;
@@ -3943,7 +3963,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description Creation timestamp
-                         * @example 2026-09-14T21:03:08.629Z
+                         * @example 2026-09-16T17:08:54.978Z
                          */
                         createdAt?: string;
                     }[];
@@ -4108,7 +4128,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6aa8610c7b1776d095a9389b
+                     * @example 6aaacd26ca4e09cadce93883
                      */
                     accountId: string;
                     /**
@@ -4136,7 +4156,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6aa8610c7b1776d095a9389b
+                     * @example 6aaacd26ca4e09cadce93883
                      */
                     accountId: string;
                     /**
@@ -4164,7 +4184,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6aa8610c7b1776d095a9389b
+                     * @example 6aaacd26ca4e09cadce93883
                      */
                     accountId: string;
                     /**
@@ -4211,7 +4231,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-09-14T21:03:08.611Z
+                         * @example 2026-09-16T17:08:54.956Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4250,7 +4270,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6aa8610c7b1776d095a9389c
+                             * @example 6aaacd26ca4e09cadce93884
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -4507,7 +4527,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-09-14T21:03:08.611Z
+                         * @example 2026-09-16T17:08:54.956Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4546,7 +4566,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6aa8610c7b1776d095a9389c
+                             * @example 6aaacd26ca4e09cadce93884
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5142,7 +5162,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-09-14T21:03:08.611Z
+                         * @example 2026-09-16T17:08:54.956Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -5181,7 +5201,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6aa8610c7b1776d095a9389c
+                             * @example 6aaacd26ca4e09cadce93884
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5484,7 +5504,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6aa8610c7b1776d095a9389d
+                                 * @example 6aaacd26ca4e09cadce93885
                                  */
                                 accountId: string;
                                 /**
@@ -5775,7 +5795,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6aa8610c7b1776d095a9389d
+                             * @example 6aaacd26ca4e09cadce93885
                              */
                             accountId: string;
                             /**
@@ -6016,7 +6036,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6aa8610c7b1776d095a9389e
+                     * @example 6aaacd26ca4e09cadce93886
                      */
                     accountId?: string;
                 };
@@ -6034,7 +6054,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6aa8610c7b1776d095a9389e
+                     * @example 6aaacd26ca4e09cadce93886
                      */
                     accountId?: string;
                 };
@@ -6052,7 +6072,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6aa8610c7b1776d095a9389e
+                     * @example 6aaacd26ca4e09cadce93886
                      */
                     accountId?: string;
                 };
@@ -6118,7 +6138,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6aa8610c7b1776d095a9389d
+                             * @example 6aaacd26ca4e09cadce93885
                              */
                             accountId: string;
                             /**
@@ -7584,6 +7604,7 @@ export interface operations {
                          * @description Payment rails available for this account
                          * @example [
                          *       "ach_standard",
+                         *       "ach_same_day",
                          *       "rtp"
                          *     ]
                          */
@@ -7667,6 +7688,7 @@ export interface operations {
                          * @description Payment rails available for this account
                          * @example [
                          *       "ach_standard",
+                         *       "ach_same_day",
                          *       "rtp"
                          *     ]
                          */
@@ -7755,6 +7777,7 @@ export interface operations {
                          * @description Payment rails available for this account
                          * @example [
                          *       "ach_standard",
+                         *       "ach_same_day",
                          *       "rtp"
                          *     ]
                          */
@@ -7832,6 +7855,7 @@ export interface operations {
                          * @description Payment rails available for this account
                          * @example [
                          *       "ach_standard",
+                         *       "ach_same_day",
                          *       "rtp"
                          *     ]
                          */
@@ -8820,6 +8844,7 @@ export interface operations {
                          * @description Payment rails available for this account
                          * @example [
                          *       "ach_standard",
+                         *       "ach_same_day",
                          *       "rtp"
                          *     ]
                          */
@@ -8903,6 +8928,7 @@ export interface operations {
                          * @description Payment rails available for this account
                          * @example [
                          *       "ach_standard",
+                         *       "ach_same_day",
                          *       "rtp"
                          *     ]
                          */
@@ -8991,6 +9017,7 @@ export interface operations {
                          * @description Payment rails available for this account
                          * @example [
                          *       "ach_standard",
+                         *       "ach_same_day",
                          *       "rtp"
                          *     ]
                          */
@@ -9068,6 +9095,7 @@ export interface operations {
                          * @description Payment rails available for this account
                          * @example [
                          *       "ach_standard",
+                         *       "ach_same_day",
                          *       "rtp"
                          *     ]
                          */
@@ -9316,6 +9344,7 @@ export interface operations {
                          * @description Payment rails available for this account
                          * @example [
                          *       "ach_standard",
+                         *       "ach_same_day",
                          *       "rtp"
                          *     ]
                          */
@@ -9399,6 +9428,7 @@ export interface operations {
                          * @description Payment rails available for this account
                          * @example [
                          *       "ach_standard",
+                         *       "ach_same_day",
                          *       "rtp"
                          *     ]
                          */
@@ -9487,6 +9517,7 @@ export interface operations {
                          * @description Payment rails available for this account
                          * @example [
                          *       "ach_standard",
+                         *       "ach_same_day",
                          *       "rtp"
                          *     ]
                          */
@@ -9564,6 +9595,7 @@ export interface operations {
                          * @description Payment rails available for this account
                          * @example [
                          *       "ach_standard",
+                         *       "ach_same_day",
                          *       "rtp"
                          *     ]
                          */
@@ -11702,6 +11734,16 @@ export interface operations {
                         percentage: number;
                         maxAmountUsd?: string;
                     };
+                    clientNetwork?: {
+                        /**
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @example [
+                         *       "1.1.1.1",
+                         *       "2606:4700:4700::1111"
+                         *     ]
+                         */
+                        ipAddresses: string[];
+                    };
                 };
                 "application/x-www-form-urlencoded": {
                     /**
@@ -11734,6 +11776,16 @@ export interface operations {
                     feeSubsidy?: {
                         percentage: number;
                         maxAmountUsd?: string;
+                    };
+                    clientNetwork?: {
+                        /**
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @example [
+                         *       "1.1.1.1",
+                         *       "2606:4700:4700::1111"
+                         *     ]
+                         */
+                        ipAddresses: string[];
                     };
                 };
                 "multipart/form-data": {
@@ -11768,6 +11820,16 @@ export interface operations {
                         percentage: number;
                         maxAmountUsd?: string;
                     };
+                    clientNetwork?: {
+                        /**
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @example [
+                         *       "1.1.1.1",
+                         *       "2606:4700:4700::1111"
+                         *     ]
+                         */
+                        ipAddresses: string[];
+                    };
                 };
             };
         };
@@ -11792,6 +11854,11 @@ export interface operations {
                         messageVersion: "v1";
                         /** @description Display-ready ACH authorization message */
                         message: string;
+                        /**
+                         * @description Short-lived, preparation-bound bearer capability returned for integrator preparations. Send it only to the authorizing client, which uses it to submit this preparation directly to Spritz.
+                         * @example ach_submit_eyJhbGciOiJIUzI1NiJ9...
+                         */
+                        submissionToken?: string;
                         summary: {
                             /** @enum {string} */
                             quoteType: "exact_input" | "exact_output";
@@ -12284,6 +12351,11 @@ export interface operations {
                      * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                      */
                     preparationId: string;
+                    /**
+                     * @description Public client IP observed by the integrator edge. Required when an integrator submits through its backend with HMAC authentication; omit for direct submission with a submissionToken.
+                     * @example 1.1.1.1
+                     */
+                    clientIp?: string;
                 };
                 "application/x-www-form-urlencoded": {
                     /**
@@ -12291,6 +12363,11 @@ export interface operations {
                      * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                      */
                     preparationId: string;
+                    /**
+                     * @description Public client IP observed by the integrator edge. Required when an integrator submits through its backend with HMAC authentication; omit for direct submission with a submissionToken.
+                     * @example 1.1.1.1
+                     */
+                    clientIp?: string;
                 };
                 "multipart/form-data": {
                     /**
@@ -12298,6 +12375,11 @@ export interface operations {
                      * @example prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
                      */
                     preparationId: string;
+                    /**
+                     * @description Public client IP observed by the integrator edge. Required when an integrator submits through its backend with HMAC authentication; omit for direct submission with a submissionToken.
+                     * @example 1.1.1.1
+                     */
+                    clientIp?: string;
                 };
             };
         };
@@ -13145,6 +13227,7 @@ export interface operations {
                              * @description Payment rails available for this account
                              * @example [
                              *       "ach_standard",
+                             *       "ach_same_day",
                              *       "rtp"
                              *     ]
                              */
@@ -13228,6 +13311,7 @@ export interface operations {
                              * @description Payment rails available for this account
                              * @example [
                              *       "ach_standard",
+                             *       "ach_same_day",
                              *       "rtp"
                              *     ]
                              */
@@ -13316,6 +13400,7 @@ export interface operations {
                              * @description Payment rails available for this account
                              * @example [
                              *       "ach_standard",
+                             *       "ach_same_day",
                              *       "rtp"
                              *     ]
                              */
@@ -13393,6 +13478,7 @@ export interface operations {
                              * @description Payment rails available for this account
                              * @example [
                              *       "ach_standard",
+                             *       "ach_same_day",
                              *       "rtp"
                              *     ]
                              */
@@ -17575,7 +17661,7 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique identifier for the debit card
-                             * @example 6aa8610c7b1776d095a938a2
+                             * @example 6aaacd26ca4e09cadce9388a
                              */
                             id: string;
                             /** @enum {string} */
@@ -18023,7 +18109,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6aa8610c7b1776d095a938a2
+                         * @example 6aaacd26ca4e09cadce9388a
                          */
                         id: string;
                         /** @enum {string} */
@@ -18240,7 +18326,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6aa8610c7b1776d095a938a2
+                         * @example 6aaacd26ca4e09cadce9388a
                          */
                         id: string;
                         /** @enum {string} */
@@ -18761,7 +18847,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6aa8610c7b1776d095a938a2
+                         * @example 6aaacd26ca4e09cadce9388a
                          */
                         id: string;
                         /** @enum {string} */
@@ -18884,6 +18970,267 @@ export interface operations {
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
                         resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    postV1ConnectSessionsBySessionIdReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Scoped return capability from the authorization URL fragment. */
+                    returnToken: string;
+                    /** @enum {string} */
+                    reason: "cancelled" | "failed";
+                };
+                "application/x-www-form-urlencoded": {
+                    /** @description Scoped return capability from the authorization URL fragment. */
+                    returnToken: string;
+                    /** @enum {string} */
+                    reason: "cancelled" | "failed";
+                };
+                "multipart/form-data": {
+                    /** @description Scoped return capability from the authorization URL fragment. */
+                    returnToken: string;
+                    /** @enum {string} */
+                    reason: "cancelled" | "failed";
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        callbackUri: string;
+                        /** @enum {string} */
+                        error: "access_denied" | "server_error" | "session_expired";
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -19683,7 +20030,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6aa8610c7b1776d095a938a6
+                         * @example 6aaacd27ca4e09cadce9388e
                          */
                         userId: string;
                         /**
@@ -19699,7 +20046,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-09-14T22:03:08.919Z
+                         * @example 2026-09-16T18:08:55.457Z
                          */
                         expiresAt: string;
                     };
@@ -19898,7 +20245,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-09-14T21:03:08.919Z
+                         * @example 2026-09-16T17:08:55.457Z
                          */
                         createdAt: string;
                     };
@@ -20111,7 +20458,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description The internal ID of the newly created user
-                         * @example 6aa8610c7b1776d095a938a8
+                         * @example 6aaacd27ca4e09cadce93890
                          */
                         userId: string;
                         /**
@@ -20342,6 +20689,75 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 503 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
         };
     };
     "getV1IntegratorAch-debitReturns": {
@@ -20386,7 +20802,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6aa8610c7b1776d095a938a5
+                             * @example 6aaacd27ca4e09cadce9388d
                              */
                             userId: string;
                             /**
@@ -20598,7 +21014,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6aa8610c7b1776d095a938a5
+                         * @example 6aaacd27ca4e09cadce9388d
                          */
                         userId: string;
                         /**
@@ -20791,7 +21207,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6aa8610c7b1776d095a938a7
+                         * @example 6aaacd27ca4e09cadce9388f
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -21022,7 +21438,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6aa8610c7b1776d095a938a7
+                         * @example 6aaacd27ca4e09cadce9388f
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -22990,7 +23406,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6aa8610c7b1776d095a938a7
+                         * @example 6aaacd27ca4e09cadce9388f
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -23407,7 +23823,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-09-14T21:08:08.920Z
+                         * @example 2026-09-16T17:13:55.458Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -23578,7 +23994,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6aa8610c7b1776d095a938a3
+                         * @example 6aaacd27ca4e09cadce9388b
                          */
                         id: string;
                         /**
@@ -23595,7 +24011,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-09-14T21:03:08.911Z
+                         * @example 2026-09-16T17:08:55.388Z
                          */
                         signedUpAt: string;
                         /**
@@ -23967,7 +24383,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6aa8610c7b1776d095a938a3
+                         * @example 6aaacd27ca4e09cadce9388b
                          */
                         id: string;
                         /**
@@ -23984,7 +24400,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-09-14T21:03:08.911Z
+                         * @example 2026-09-16T17:08:55.388Z
                          */
                         signedUpAt: string;
                         /**
@@ -24456,7 +24872,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6aa8610c7b1776d095a938a3
+                         * @example 6aaacd27ca4e09cadce9388b
                          */
                         id: string;
                         /**
@@ -24473,7 +24889,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-09-14T21:03:08.911Z
+                         * @example 2026-09-16T17:08:55.388Z
                          */
                         signedUpAt: string;
                         /**
@@ -34695,6 +35111,16 @@ export interface operations {
                         percentage: number;
                         maxAmountUsd?: string;
                     };
+                    clientNetwork?: {
+                        /**
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @example [
+                         *       "1.1.1.1",
+                         *       "2606:4700:4700::1111"
+                         *     ]
+                         */
+                        ipAddresses: string[];
+                    };
                     programControlSimulation: {
                         /**
                          * @description Sandbox-only program state to evaluate through the normal deposit policy gate.
@@ -34736,6 +35162,16 @@ export interface operations {
                     feeSubsidy?: {
                         percentage: number;
                         maxAmountUsd?: string;
+                    };
+                    clientNetwork?: {
+                        /**
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @example [
+                         *       "1.1.1.1",
+                         *       "2606:4700:4700::1111"
+                         *     ]
+                         */
+                        ipAddresses: string[];
                     };
                     programControlSimulation: {
                         /**
@@ -34779,6 +35215,16 @@ export interface operations {
                         percentage: number;
                         maxAmountUsd?: string;
                     };
+                    clientNetwork?: {
+                        /**
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @example [
+                         *       "1.1.1.1",
+                         *       "2606:4700:4700::1111"
+                         *     ]
+                         */
+                        ipAddresses: string[];
+                    };
                     programControlSimulation: {
                         /**
                          * @description Sandbox-only program state to evaluate through the normal deposit policy gate.
@@ -34812,6 +35258,11 @@ export interface operations {
                         messageVersion: "v1";
                         /** @description Display-ready ACH authorization message */
                         message: string;
+                        /**
+                         * @description Short-lived, preparation-bound bearer capability returned for integrator preparations. Send it only to the authorizing client, which uses it to submit this preparation directly to Spritz.
+                         * @example ach_submit_eyJhbGciOiJIUzI1NiJ9...
+                         */
+                        submissionToken?: string;
                         summary: {
                             /** @enum {string} */
                             quoteType: "exact_input" | "exact_output";
@@ -36830,6 +37281,7 @@ export interface operations {
                              * @description Payment rails available for this account
                              * @example [
                              *       "ach_standard",
+                             *       "ach_same_day",
                              *       "rtp"
                              *     ]
                              */
@@ -36913,6 +37365,7 @@ export interface operations {
                              * @description Payment rails available for this account
                              * @example [
                              *       "ach_standard",
+                             *       "ach_same_day",
                              *       "rtp"
                              *     ]
                              */
@@ -37001,6 +37454,7 @@ export interface operations {
                              * @description Payment rails available for this account
                              * @example [
                              *       "ach_standard",
+                             *       "ach_same_day",
                              *       "rtp"
                              *     ]
                              */
@@ -37078,6 +37532,7 @@ export interface operations {
                              * @description Payment rails available for this account
                              * @example [
                              *       "ach_standard",
+                             *       "ach_same_day",
                              *       "rtp"
                              *     ]
                              */

@@ -397,15 +397,75 @@ Blocked create attempts consume the `preparationId`. After a blocked or expired 
 
 `POST /v1/deposits/direct` requires an `idempotency-key`. Persist one unique key per deposit intent _before_ calling `create`; if the request times out or the response is lost, retry with the exact same key and body to recover the original deposit instead of authorizing a second ACH debit. A new intent (fresh preparation) needs a fresh key.
 
+**`clientIp` is required for backend creates.** When your server calls `create` over
+integrator HMAC auth, the request body must carry the public IP your edge observed for
+the authorizing client. It must be a public address and must differ from your backend's
+own address, or the create is rejected before risk evaluation. The generated type marks
+`clientIp` optional because the contract allows omitting it only for a direct client
+submission authenticated with a `submissionToken` — that path does not go through this
+SDK, so a backend create without `clientIp` will fail at runtime rather than at compile
+time.
+
+Integrator JWT is not accepted on `create`, because it cannot bind the claimed `clientIp`.
+It remains valid on `prepare` and the deposit read methods.
+
 ```typescript
 // Persist this key with your deposit intent *before* calling create so a
 // retry after a timeout sends the exact same key and body.
 const idempotencyKey = crypto.randomUUID()
 const deposit = await client.deposit.create(
-    { preparationId: preparation.preparationId },
+    {
+        preparationId: preparation.preparationId,
+        // Public address your edge observed for the authorizing client —
+        // not your backend's address.
+        clientIp: req.ip,
+    },
     { idempotencyKey }
 )
 ```
+
+### Direct client submission
+
+To move submission onto the customer's device, pass the addresses your edge observed to
+`prepare` and forward the returned `submissionToken` to that client:
+
+```typescript
+const preparation = await client.deposit.prepare({
+    // ...quote fields
+    clientNetwork: { ipAddresses: [req.ip] },
+})
+
+// Send preparation.submissionToken to the authorizing client. It is
+// preparation-bound, short-lived, and can submit nothing else.
+```
+
+The client then calls `POST /v1/deposits/direct` itself. This SDK signs every REST call
+with integrator HMAC, so it is not the right tool for that request — have the client call
+the endpoint directly:
+
+```http
+POST /v1/deposits/direct HTTP/1.1
+Host: platform.spritz.finance
+Authorization: Bearer ach_submit_eyJhbGciOiJIUzI1NiJ9...
+Idempotency-Key: <one unique key per deposit intent>
+Content-Type: application/json
+
+{ "preparationId": "prep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X" }
+```
+
+The `submissionToken` is the **only** credential on this request: it goes in
+`Authorization` as a bearer token, and replaces the user API key, the integrator key and
+the HMAC headers rather than accompanying them. Send **no** `clientIp` — the token is
+already bound to the addresses you claimed at prepare time.
+
+`Idempotency-Key` is required here exactly as it is for a backend create. Have your
+server generate and persist the key alongside the preparation, and hand it to the client
+with the token, so a client-side retry replays the original deposit instead of
+authorizing a second debit.
+
+Spritz matches the submission against the addresses claimed at prepare time and rejects a
+submission that comes from the preparing backend. The capability can submit only its own
+preparation, expires shortly after issue, and grants nothing else.
 
 **Deposit response (selected fields):**
 

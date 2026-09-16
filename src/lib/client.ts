@@ -119,6 +119,17 @@ export class SpritzClient {
             .then(({ response }) => response)
     }
 
+    /**
+     * Whether REST requests are signed as a backend integrator.
+     *
+     * Mirrors the exact condition `sendRestApiRequest` stamps on, so a service
+     * can tell which of the API's authentication modes its call will use when
+     * the contract requires different fields for each.
+     */
+    public get usesIntegratorAuth(): boolean {
+        return Boolean(this.integrationKey && this.integratorSecret)
+    }
+
     public async restApi<P extends RestPath, M extends RestMethod<P>>(
         route: RestRoute<P, M>
     ): Promise<PathResponse<P, M>>
