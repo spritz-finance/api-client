@@ -90,13 +90,13 @@ export class DepositService {
      *
      * **`clientIp` is required when calling this from your backend over
      * integrator HMAC auth**, even though the generated type marks it optional —
-     * the contract only allows it to be omitted for a direct client submission
-     * authenticated with the preparation's `submissionToken`, which this SDK
-     * does not send. Pass the public address your edge observed for the
-     * authorizing client; it must be a public IP and must differ from the
-     * submitting backend's own address, or the create is rejected before risk
-     * evaluation. When this client is configured with integrator HMAC
-     * credentials, `create` throws before sending if `clientIp` is missing.
+     * see `assertClientIpForIntegratorCreate` for why the contract has to keep
+     * it optional across the route's other authentication modes. Pass the public
+     * address your edge observed for the authorizing client; it must be a public
+     * IP and must differ from the submitting backend's own address, or the
+     * create is rejected before risk evaluation. When this client is configured
+     * with integrator HMAC credentials, `create` throws before sending if
+     * `clientIp` is missing.
      *
      * Integrator JWT is not accepted on this route because it cannot bind the
      * claimed `clientIp`; it remains valid on `prepare` and the read methods.
