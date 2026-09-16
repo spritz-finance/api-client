@@ -20,12 +20,12 @@ try {
 
 **New**
 
-- `ProblemDetails` and `ProblemDetailsError` types, modelling the documented problem response: `type`, `title`, `status`, `detail`, `instance`, `code`, `field`, `errors[]`, `retryable`, `retryAfter`, `suggestedAction`, `clearsAt`, `availableAt`, `permanent`.
+- `ProblemDetails`, `ProblemFieldError` and `ProblemSuggestedAction` types, modelling the fields common to every documented problem: `type`, `title`, `status`, `detail`, `instance`, `code`, `field`, `errors[]`, `retryable`, `retryAfter`, `suggestedAction`, `clearsAt`, `availableAt`, `permanent`. Endpoint-specific fields (`realm`/`scope` on some 401s, `resourceType`/`resourceId` on 404s) are not modelled and stay readable from `error`.
 - `APIError.problem?: ProblemDetails`, parsed from the response body.
 - `APIError.requestId?: string` and `APIError.traceId?: string`, lifted from the `x-amzn-requestid` and `x-amzn-trace-id` headers.
 - Type guards `isAPIError`, `hasProblemType` and `hasProblemCode`. The latter two narrow `problem.type` / `problem.code` to the literal passed in.
 
-The payload is untrusted, so it is validated at runtime with no new dependency: a field appears on `problem` only when the response carried it with its documented type, each `errors[]` entry is validated individually, and documented nulls (`clearsAt`, `availableAt`) are preserved as distinct from absence. A malformed error body never throws — it just yields fewer fields, or no `problem` at all.
+The payload is untrusted, so it is validated at runtime with no new dependency: a field appears on `problem` only when the response carried it with its documented type, each `errors[]` entry is validated individually, and documented nulls (`clearsAt`, `availableAt`) are preserved as distinct from absence. Inherited properties are ignored, so a polluted prototype cannot add a field the response never sent. A malformed error body never throws — it just yields fewer fields, or no `problem` at all.
 
 **Additive.** `error` still holds the untouched parsed payload, including fields `ProblemDetails` does not model, and `headers` still holds the correlation ids. The status subclasses and transport errors are unchanged, and no class was added per problem code.
 

@@ -151,7 +151,7 @@ describe('ProblemDetails', () => {
         }
         const error = APIError.generate(400, problem, undefined, headers)
 
-        expect(error.problem).toEqual(problem)
+        expect(error.problem).toStrictEqual(problem)
         expect(error.problem?.clearsAt).toBe('2026-01-02T00:00:00.000Z')
         // `null` is documented and distinct from absence.
         expect(error.problem?.availableAt).toBeNull()
@@ -204,6 +204,10 @@ describe('ProblemDetails', () => {
         expect(hasProblemCode(error, 'minimum_deposit')).toBe(true)
         expect(hasProblemCode(error, 'transaction_limit')).toBe(false)
         expect(hasProblemCode(new Error('nope'), 'minimum_deposit')).toBe(false)
+        // A plain object that merely looks like an APIError must not match.
+        expect(hasProblemCode({ problem: { code: 'minimum_deposit' } }, 'minimum_deposit')).toBe(
+            false
+        )
     })
 
     it('normalizes a multi-field errors array', () => {
@@ -246,11 +250,61 @@ describe('ProblemDetails', () => {
             headers
         )
 
-        expect(error.problem?.errors).toEqual([
+        expect(error.problem?.errors).toStrictEqual([
             { field: 'amountUsd', message: 'ok' },
             // The invalid `code` is dropped, the valid entry is kept.
             { field: 'badCode', message: 'ok' },
         ])
+    })
+
+    it('omits errors entirely when no entry survives, leaving problem absent', () => {
+        // An array that yielded nothing is no more informative than no array,
+        // so it must not make `problem` truthy for an otherwise empty payload.
+        expect(APIError.generate(400, { errors: [] }, undefined, headers).problem).toBeUndefined()
+        expect(
+            APIError.generate(400, { errors: ['garbage', null, {}] }, undefined, headers).problem
+        ).toBeUndefined()
+
+        const withTitle = APIError.generate(400, { title: 'Kept', errors: [] }, undefined, headers)
+        expect(withTitle.problem).toStrictEqual({ title: 'Kept' })
+    })
+
+    it('ignores inherited properties on the payload', () => {
+        // A polluted prototype must not put a field onto a problem the response
+        // never sent. See src/utils/graphqlSecurity.ts for the same concern.
+        const polluted = Object.create({ title: 'inherited', status: 500 }) as Record<
+            string,
+            unknown
+        >
+        polluted['detail'] = 'own property'
+
+        const error = APIError.generate(400, polluted, undefined, headers)
+
+        expect(error.problem).toStrictEqual({ detail: 'own property' })
+    })
+
+    it('leaves problem undefined for prototype-pollution shaped payloads', () => {
+        const payload = JSON.parse('{"__proto__": {"title": "polluted"}, "title": "real"}')
+
+        const error = APIError.generate(400, payload, undefined, headers)
+
+        expect(error.problem).toStrictEqual({ title: 'real' })
+        expect({}.constructor).toBe(Object)
+        expect(Object.prototype).not.toHaveProperty('title')
+    })
+
+    it('leaves problem undefined for non-object JSON bodies', () => {
+        // gracefulParseJSON can return an array, string or number, and client.ts
+        // passes whatever it got straight through.
+        for (const payload of [[{ title: 'x' }], 'just a string', 123, null, true]) {
+            const error = APIError.generate(
+                400,
+                payload as unknown as Record<string, unknown>,
+                undefined,
+                headers
+            )
+            expect(error.problem).toBeUndefined()
+        }
     })
 
     it('omits fields whose runtime type does not match the contract', () => {
@@ -267,7 +321,9 @@ describe('ProblemDetails', () => {
         }
         const error = APIError.generate(400, payload, undefined, headers)
 
-        expect(error.problem).toEqual({ title: 'Kept' })
+        // toStrictEqual, not toEqual: `{ title: 'Kept', status: undefined }`
+        // satisfies toEqual, so only the strict form proves the omission.
+        expect(error.problem).toStrictEqual({ title: 'Kept' })
         // The untouched payload is still available for debugging.
         expect(error.error).toEqual(payload)
     })
@@ -284,7 +340,7 @@ describe('ProblemDetails', () => {
         }
         const error = APIError.generate(401, payload, undefined, headers)
 
-        expect(error.problem).toEqual({
+        expect(error.problem).toStrictEqual({
             type: 'urn:problem-type:auth:unauthorized',
             title: 'Unauthorized',
             status: 401,

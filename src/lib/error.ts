@@ -3,28 +3,37 @@ import { castToError, Headers } from './util'
 type APIErrorPayload = Record<string, unknown>
 
 /** One field-level cause inside a problem's `errors` array. */
-export type ProblemDetailsError = {
+export type ProblemFieldError = {
     field: string
     message: string
     code?: string
 }
 
 /**
+ * The values the contract documents for `suggestedAction`, left open so a value
+ * the API adds later still parses instead of being silently dropped.
+ */
+export type ProblemSuggestedAction = 'auto_ramp' | 'wait_for_settlement' | (string & {})
+
+/**
  * The API's RFC 9457 problem response.
  *
  * Every field is optional because this is parsed defensively from an untrusted
- * error payload: the contract marks `title` and `status` required, but an error
+ * error payload: the contract marks `title` and `status` required, but a
  * response that omits them should still surface whatever it did send rather
- * than collapsing to nothing. A field is present here only when the payload
- * carried it with its documented runtime type; anything else is dropped, and
- * the untouched payload stays on `APIError.error`.
+ * than collapsing to nothing.
+ *
+ * This models the fields common to every documented problem. A few are
+ * endpoint-specific and deliberately not modelled here — `realm` and `scope` on
+ * some 401s, `resourceType` and `resourceId` on 404s — so read those from
+ * `APIError.error`, which keeps the payload untouched.
  */
 export type ProblemDetails = {
     /** Problem type URI, e.g. `urn:problem-type:idempotency-conflict`. */
     type?: string
     title?: string
     status?: number
-    /** Human-facing explanation. Trusted server-side consumers only. */
+    /** Human-facing explanation. Written for integrators, not end users. */
     detail?: string
     instance?: string
     /** Machine-readable cause, present when exactly one thing failed. */
@@ -32,10 +41,10 @@ export type ProblemDetails = {
     /** The offending request field, present alongside `code`. */
     field?: string
     /** Field-level causes, present when more than one thing failed. */
-    errors?: ProblemDetailsError[]
+    errors?: ProblemFieldError[]
     retryable?: boolean
     retryAfter?: number
-    suggestedAction?: string
+    suggestedAction?: ProblemSuggestedAction
     clearsAt?: string | null
     availableAt?: string | null
     permanent?: boolean
@@ -45,38 +54,50 @@ function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+/**
+ * Readers ignore inherited properties, so a polluted `Object.prototype` cannot
+ * put a field onto a problem the response never sent.
+ */
 function readString(source: Record<string, unknown>, key: string): string | undefined {
+    if (!Object.hasOwn(source, key)) return undefined
     const value = source[key]
     return typeof value === 'string' ? value : undefined
 }
 
 function readNumber(source: Record<string, unknown>, key: string): number | undefined {
+    if (!Object.hasOwn(source, key)) return undefined
     const value = source[key]
     return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
 function readBoolean(source: Record<string, unknown>, key: string): boolean | undefined {
+    if (!Object.hasOwn(source, key)) return undefined
     const value = source[key]
     return typeof value === 'boolean' ? value : undefined
 }
 
 /**
- * `null` is a documented value for these, and distinct from absence: the API
- * uses it to say "known to be unbounded" rather than "not reported".
+ * `null` is documented for these and is distinct from absence: it says "not
+ * bounded by time" rather than "not reported".
  */
 function readNullableString(
     source: Record<string, unknown>,
     key: string
 ): string | null | undefined {
+    if (!Object.hasOwn(source, key)) return undefined
     const value = source[key]
     if (value === null) return null
     return typeof value === 'string' ? value : undefined
 }
 
-function parseProblemErrors(value: unknown): ProblemDetailsError[] | undefined {
+function readProblemErrors(
+    source: Record<string, unknown>,
+    key: string
+): ProblemFieldError[] | undefined {
+    const value = Object.hasOwn(source, key) ? source[key] : undefined
     if (!Array.isArray(value)) return undefined
 
-    const errors: ProblemDetailsError[] = []
+    const errors: ProblemFieldError[] = []
 
     for (const item of value) {
         if (!isRecord(item)) continue
@@ -91,62 +112,47 @@ function parseProblemErrors(value: unknown): ProblemDetailsError[] | undefined {
         errors.push({ field, message, ...(code !== undefined ? { code } : {}) })
     }
 
-    return errors
+    // An array that yielded nothing is no more informative than no array at
+    // all, and leaving it out keeps `problem` absent for a payload with nothing
+    // documented in it.
+    return errors.length > 0 ? errors : undefined
+}
+
+/** Assigns only when the reader found a value, so absent fields stay absent. */
+function set<K extends keyof ProblemDetails>(
+    problem: ProblemDetails,
+    key: K,
+    value: ProblemDetails[K] | undefined
+) {
+    if (value !== undefined) problem[key] = value
 }
 
 /**
  * Build a `ProblemDetails` from an untrusted error payload.
  *
- * Returns undefined when nothing documented survived, so the presence of
+ * Returns undefined when nothing documented survived, so a present
  * `APIError.problem` means the response really was RFC 9457-shaped. Never
  * throws: a malformed error response must not replace the real failure.
  */
-export function parseProblemDetails(payload: unknown): ProblemDetails | undefined {
+function parseProblemDetails(payload: unknown): ProblemDetails | undefined {
     if (!isRecord(payload)) return undefined
 
     const problem: ProblemDetails = {}
 
-    const type = readString(payload, 'type')
-    if (type !== undefined) problem.type = type
-
-    const title = readString(payload, 'title')
-    if (title !== undefined) problem.title = title
-
-    const status = readNumber(payload, 'status')
-    if (status !== undefined) problem.status = status
-
-    const detail = readString(payload, 'detail')
-    if (detail !== undefined) problem.detail = detail
-
-    const instance = readString(payload, 'instance')
-    if (instance !== undefined) problem.instance = instance
-
-    const code = readString(payload, 'code')
-    if (code !== undefined) problem.code = code
-
-    const field = readString(payload, 'field')
-    if (field !== undefined) problem.field = field
-
-    const errors = parseProblemErrors(payload['errors'])
-    if (errors !== undefined) problem.errors = errors
-
-    const retryable = readBoolean(payload, 'retryable')
-    if (retryable !== undefined) problem.retryable = retryable
-
-    const retryAfter = readNumber(payload, 'retryAfter')
-    if (retryAfter !== undefined) problem.retryAfter = retryAfter
-
-    const suggestedAction = readString(payload, 'suggestedAction')
-    if (suggestedAction !== undefined) problem.suggestedAction = suggestedAction
-
-    const clearsAt = readNullableString(payload, 'clearsAt')
-    if (clearsAt !== undefined) problem.clearsAt = clearsAt
-
-    const availableAt = readNullableString(payload, 'availableAt')
-    if (availableAt !== undefined) problem.availableAt = availableAt
-
-    const permanent = readBoolean(payload, 'permanent')
-    if (permanent !== undefined) problem.permanent = permanent
+    set(problem, 'type', readString(payload, 'type'))
+    set(problem, 'title', readString(payload, 'title'))
+    set(problem, 'status', readNumber(payload, 'status'))
+    set(problem, 'detail', readString(payload, 'detail'))
+    set(problem, 'instance', readString(payload, 'instance'))
+    set(problem, 'code', readString(payload, 'code'))
+    set(problem, 'field', readString(payload, 'field'))
+    set(problem, 'errors', readProblemErrors(payload, 'errors'))
+    set(problem, 'retryable', readBoolean(payload, 'retryable'))
+    set(problem, 'retryAfter', readNumber(payload, 'retryAfter'))
+    set(problem, 'suggestedAction', readString(payload, 'suggestedAction'))
+    set(problem, 'clearsAt', readNullableString(payload, 'clearsAt'))
+    set(problem, 'availableAt', readNullableString(payload, 'availableAt'))
+    set(problem, 'permanent', readBoolean(payload, 'permanent'))
 
     return Object.keys(problem).length > 0 ? problem : undefined
 }
@@ -189,11 +195,6 @@ export class SpritzApiError extends Error {
     }
 }
 
-function readCorrelationId(headers: Headers | undefined, key: string): string | undefined {
-    const value = headers?.[key]
-    return typeof value === 'string' && value.length > 0 ? value : undefined
-}
-
 export class APIError extends Error {
     readonly status: number | undefined
     /**
@@ -203,13 +204,7 @@ export class APIError extends Error {
      * not model. Prefer `problem` for anything you branch on.
      */
     readonly error: APIErrorPayload | undefined
-    /**
-     * The response's RFC 9457 problem details, when it sent one.
-     *
-     * Only documented fields carrying their documented runtime type appear
-     * here. Undefined for a transport failure, a non-JSON body, or a payload
-     * with nothing recognizable in it.
-     */
+    /** The response's RFC 9457 problem details, when it sent one. */
     readonly problem?: ProblemDetails
     readonly headers: Headers | undefined
     /** Correlation id from `x-amzn-requestid`, also present in `headers`. */
@@ -233,10 +228,10 @@ export class APIError extends Error {
         const problem = parseProblemDetails(error)
         if (problem) this.problem = problem
 
-        const requestId = readCorrelationId(headers, 'requestId')
+        const requestId = headers?.['requestId']
         if (requestId) this.requestId = requestId
 
-        const traceId = readCorrelationId(headers, 'traceId')
+        const traceId = headers?.['traceId']
         if (traceId) this.traceId = traceId
     }
 
@@ -365,7 +360,6 @@ export class InternalServerError extends APIError {
     override readonly name = 'InternalServerError'
 }
 
-/** Narrows an unknown caught value to an `APIError`. */
 export function isAPIError(error: unknown): error is APIError {
     return error instanceof APIError
 }

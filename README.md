@@ -1075,24 +1075,39 @@ try {
 
 ### `ProblemDetails`
 
-| Field             | Type                               | Notes                                                 |
-| ----------------- | ---------------------------------- | ----------------------------------------------------- |
-| `type`            | `string`                           | Problem type URI — the stable thing to branch on      |
-| `title`           | `string`                           | Short summary of the problem type                     |
-| `status`          | `number`                           | HTTP status restated in the body                      |
-| `detail`          | `string`                           | Human-facing explanation of this occurrence           |
-| `instance`        | `string`                           | URI for this specific occurrence                      |
-| `code`            | `string`                           | Machine-readable cause, when exactly one thing failed |
-| `field`           | `string`                           | The offending request field, alongside `code`         |
-| `errors`          | `Array<{ field, message, code? }>` | Field-level causes, when more than one thing failed   |
-| `retryable`       | `boolean`                          | Whether the same request may succeed later            |
-| `retryAfter`      | `number`                           | Seconds to wait before retrying                       |
-| `suggestedAction` | `string`                           | What the API suggests doing next                      |
-| `clearsAt`        | `string \| null`                   | When a limit clears; `null` means not bounded by time |
-| `availableAt`     | `string \| null`                   | When the resource becomes available                   |
-| `permanent`       | `boolean`                          | Whether retrying can ever succeed                     |
+| Field             | Type                                                    | Notes                                                            |
+| ----------------- | ------------------------------------------------------- | ---------------------------------------------------------------- |
+| `type`            | `string`                                                | Problem type URI — the stable thing to branch on                 |
+| `title`           | `string`                                                | Short summary of the problem type                                |
+| `status`          | `number`                                                | HTTP status restated in the body                                 |
+| `detail`          | `string`                                                | Human-facing explanation of this occurrence                      |
+| `instance`        | `string`                                                | URI for this specific occurrence                                 |
+| `code`            | `string`                                                | Machine-readable cause, when exactly one thing failed            |
+| `field`           | `string`                                                | The offending request field, alongside `code`                    |
+| `errors`          | `Array<{ field, message, code? }>`                      | Field-level causes, when more than one thing failed              |
+| `retryable`       | `boolean`                                               | Whether the same request may succeed later                       |
+| `retryAfter`      | `number`                                                | Seconds to wait before retrying                                  |
+| `suggestedAction` | `'auto_ramp' \| 'wait_for_settlement' \| (string & {})` | What the API suggests doing next; open so new values still parse |
+| `clearsAt`        | `string \| null`                                        | When a limit clears; `null` means not bounded by time            |
+| `availableAt`     | `string \| null`                                        | When the resource becomes available                              |
+| `permanent`       | `boolean`                                               | Whether retrying can ever succeed                                |
 
-Every field is optional. The payload is untrusted, so a field appears only when the response carried it with its documented type — anything malformed or unrecognized is dropped, and a malformed body never turns into a thrown parse error. `problem` itself is undefined for transport failures, non-JSON bodies, and payloads with nothing recognizable in them.
+Every field is optional. The payload is untrusted, so a field appears only when the response carried it with its documented type — anything malformed is dropped, inherited properties are ignored, and a malformed body never turns into a thrown parse error. `problem` itself is undefined for transport failures, non-JSON bodies, and payloads with nothing documented in them.
+
+The table above is the set of fields common to every documented problem. A few are endpoint-specific and deliberately **not** modelled on `ProblemDetails`:
+
+| Field                        | Where it appears                        |
+| ---------------------------- | --------------------------------------- |
+| `realm`, `scope`             | Some `401` problems                     |
+| `resourceType`, `resourceId` | `404` problems, where they are required |
+
+Read those from `error.error`, which keeps the payload untouched:
+
+```typescript
+if (isAPIError(error) && error.status === 404) {
+    const resourceId = error.error?.['resourceId']
+}
+```
 
 The original parsed payload is always preserved on `error.error`, so fields `ProblemDetails` does not model stay reachable for logging:
 
