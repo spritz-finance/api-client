@@ -26,6 +26,9 @@ async function hmacSha256Hex(secret: string, data: string): Promise<string> {
 }
 
 const SURROGATE = /[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDFFF]/g
+// Built from a code point so the formatter cannot fold it into a literal
+// U+FFFD in the source, where it would be indistinguishable from mojibake.
+const REPLACEMENT_CHARACTER = String.fromCharCode(0xfffd)
 
 /**
  * Replace unpaired surrogates with U+FFFD, leaving valid pairs intact.
@@ -37,7 +40,7 @@ const SURROGATE = /[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDFFF]/g
  * a raw `URIError` from inside the client.
  */
 function toWellFormed(value: string): string {
-    return value.replace(SURROGATE, (match) => (match.length === 2 ? match : '�'))
+    return value.replace(SURROGATE, (match) => (match.length === 2 ? match : REPLACEMENT_CHARACTER))
 }
 
 /**
