@@ -2,7 +2,14 @@ import { createHmac } from 'node:crypto'
 import { http, HttpResponse } from 'msw'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { Environment } from '../../env'
-import { APIConnectionError, APIError, ConflictError } from '../../lib/error'
+import {
+    APIConnectionError,
+    APIError,
+    ConflictError,
+    UnprocessableEntityError,
+    hasProblemCode,
+    hasProblemType,
+} from '../../lib/error'
 import { SpritzApiClient } from '../../spritzApiClient'
 import { server } from '../../test/setup'
 import type { Deposit, DepositListQuery, DepositListResponse } from './depositService'
@@ -244,6 +251,72 @@ describe('DepositService REST integration', () => {
         expect(apiError.message).toBe('This deposit needs review.')
         expect(apiError.error).toEqual(problem)
         expect(apiError.headers).toEqual({ requestId: 'req_123', traceId: 'trace_123' })
+    })
+
+    it('surfaces a problem+json body as typed problem details end to end', async () => {
+        const problem = {
+            type: 'urn:problem-type:idempotency-conflict',
+            title: 'Idempotency Conflict',
+            status: 422,
+            detail: 'This idempotency key was already used with a different request body.',
+            instance: '/errors/1234567890',
+            code: 'idempotency_conflict',
+            retryable: false,
+            permanent: true,
+            availableAt: null,
+        }
+
+        server.use(
+            http.post(`${BASE}/v1/deposits/direct`, () =>
+                HttpResponse.json(problem, {
+                    status: 422,
+                    headers: {
+                        'content-type': 'application/problem+json',
+                        'x-amzn-requestid': 'req_conflict',
+                        'x-amzn-trace-id': 'trace_conflict',
+                    },
+                })
+            )
+        )
+
+        const error = await client.deposit
+            .create(
+                { preparationId: 'prep_123', clientIp: '1.1.1.1' },
+                { idempotencyKey: 'intent_123' }
+            )
+            .catch((err: unknown) => err)
+
+        // The documented consumer path: branch on the problem type, not the status.
+        expect(hasProblemType(error, 'urn:problem-type:idempotency-conflict')).toBe(true)
+        expect(hasProblemCode(error, 'idempotency_conflict')).toBe(true)
+        expect(error).toBeInstanceOf(UnprocessableEntityError)
+
+        if (!hasProblemType(error, 'urn:problem-type:idempotency-conflict')) {
+            throw new Error('expected an idempotency conflict')
+        }
+
+        expectTypeOf(error.problem.type).toEqualTypeOf<'urn:problem-type:idempotency-conflict'>()
+        expect(error.problem).toEqual(problem)
+        expect(error.problem.permanent).toBe(true)
+        expect(error.problem.availableAt).toBeNull()
+        expect(error.requestId).toBe('req_conflict')
+        expect(error.traceId).toBe('trace_conflict')
+        expect(error.error).toEqual(problem)
+    })
+
+    it('leaves problem undefined for a non-JSON error body', async () => {
+        server.use(
+            http.get(`${BASE}/v1/deposits/`, () =>
+                HttpResponse.text('upstream unavailable', { status: 503 })
+            )
+        )
+
+        const error = await client.deposit.list().catch((err: unknown) => err)
+
+        expect(error).toBeInstanceOf(APIError)
+        expect((error as APIError).status).toBe(503)
+        expect((error as APIError).message).toBe('upstream unavailable')
+        expect((error as APIError).problem).toBeUndefined()
     })
 
     it('normalizes transport failures into APIConnectionError', async () => {

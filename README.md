@@ -1051,6 +1051,67 @@ For a complete walkthrough with code examples, request/response schemas, and dep
 
 A standalone sandbox demo is available at `scripts/sandbox/ach-onramp.html`. Run `yarn build && node scripts/sandbox/evidence-server.mjs`, then open `http://localhost:3001/ach-onramp.html` to test the SDK-backed flow and save redacted QC evidence.
 
+## Error Handling
+
+Every non-2xx REST response throws an `APIError` subclass chosen by status (`BadRequestError`, `AuthenticationError`, `PermissionDeniedError`, `NotFoundError`, `ConflictError`, `UnprocessableEntityError`, `RateLimitError`, `InternalServerError`). Transport failures throw `APIConnectionError`, and a timeout throws `APIConnectionTimeoutError`.
+
+When the response carries an RFC 9457 problem body, it is parsed onto `error.problem` as typed `ProblemDetails`. Branch on the problem `type` or `code` rather than on the status, which is rarely specific enough:
+
+```typescript
+import { hasProblemType } from '@spritz-finance/api-client'
+
+try {
+    await client.deposit.create(input, options)
+} catch (error) {
+    if (hasProblemType(error, 'urn:problem-type:idempotency-conflict')) {
+        // The same idempotency key was used with a different request body.
+    }
+
+    throw error
+}
+```
+
+`hasProblemType` and `hasProblemCode` are type guards: inside the branch, `error` is narrowed to an `APIError` whose `problem.type` (or `problem.code`) is the literal you passed. `isAPIError(error)` narrows without checking either.
+
+### `ProblemDetails`
+
+| Field             | Type                               | Notes                                                 |
+| ----------------- | ---------------------------------- | ----------------------------------------------------- |
+| `type`            | `string`                           | Problem type URI — the stable thing to branch on      |
+| `title`           | `string`                           | Short summary of the problem type                     |
+| `status`          | `number`                           | HTTP status restated in the body                      |
+| `detail`          | `string`                           | Human-facing explanation of this occurrence           |
+| `instance`        | `string`                           | URI for this specific occurrence                      |
+| `code`            | `string`                           | Machine-readable cause, when exactly one thing failed |
+| `field`           | `string`                           | The offending request field, alongside `code`         |
+| `errors`          | `Array<{ field, message, code? }>` | Field-level causes, when more than one thing failed   |
+| `retryable`       | `boolean`                          | Whether the same request may succeed later            |
+| `retryAfter`      | `number`                           | Seconds to wait before retrying                       |
+| `suggestedAction` | `string`                           | What the API suggests doing next                      |
+| `clearsAt`        | `string \| null`                   | When a limit clears; `null` means not bounded by time |
+| `availableAt`     | `string \| null`                   | When the resource becomes available                   |
+| `permanent`       | `boolean`                          | Whether retrying can ever succeed                     |
+
+Every field is optional. The payload is untrusted, so a field appears only when the response carried it with its documented type — anything malformed or unrecognized is dropped, and a malformed body never turns into a thrown parse error. `problem` itself is undefined for transport failures, non-JSON bodies, and payloads with nothing recognizable in them.
+
+The original parsed payload is always preserved on `error.error`, so fields `ProblemDetails` does not model stay reachable for logging:
+
+```typescript
+if (isAPIError(error)) {
+    logger.warn({
+        status: error.status,
+        problem: error.problem,
+        payload: error.error, // untouched, including fields not modelled above
+        requestId: error.requestId,
+        traceId: error.traceId,
+    })
+}
+```
+
+`requestId` and `traceId` are lifted onto the error from the `x-amzn-requestid` and `x-amzn-trace-id` response headers, and remain available under `error.headers`.
+
+> **`detail` is for trusted consumers.** The SDK exposes upstream problem details faithfully, including `detail`, which is written for the integrator rather than for an end user. Decide what is safe to forward at your own frontend boundary — the SDK does not make that call for you.
+
 ## Sandbox
 
 Use `Environment.Sandbox` for development and testing. The sandbox environment is available at `https://sandbox.spritz.finance`.
