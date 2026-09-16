@@ -1015,6 +1015,22 @@ ACH onramp lets users convert USD from their bank account into USDC delivered to
 5. **Server:** prepare a quote with `client.deposit.prepare(...)`
 6. **Client:** show the quote and ACH authorization message to the user
 7. **Server:** create the deposit with `client.deposit.create(input, { idempotencyKey })`; Spritz runs risk checks before initiating the ACH pull. Persist one unique key per deposit intent and reuse it verbatim on retries so a timed-out request replays the original response instead of authorizing a second debit
+8. **Server:** track the deposit with `client.deposit.get(depositId)`, or reconcile a backlog by paging `client.deposit.list({ limit, cursor })`
+
+```typescript
+// Page the authenticated user's deposits, newest first
+const { data, hasMore, nextCursor } = await client.deposit.list({ limit: 25 })
+
+if (hasMore && nextCursor) {
+    const next = await client.deposit.list({ limit: 25, cursor: nextCursor })
+}
+
+// Read one deposit's ACH debit and crypto release state
+const deposit = await client.deposit.get('dep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X')
+console.log(deposit.status, deposit.debitStatus, deposit.releaseStatus)
+```
+
+`client.deposit.list()` is user-scoped, so an integrator-wide reconciliation iterates your own user roster and authorizes each user's read with `client.setApiKey(userApiKey)`. Webhooks are notifications, not the only record of deposits.
 
 Authorization is derived from the verified ACH funding source — no wallet signature is required.
 

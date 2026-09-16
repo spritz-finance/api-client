@@ -432,7 +432,28 @@ const deposit = await client.deposit.create(
 
 ## Step 5: Track Deposit Status
 
-Once a deposit is authorized, an **on-ramp record** is created and is the canonical place to observe its state going forward. Listing or fetching the deposit by ID directly is not exposed. The on-ramp model unifies all fiat→crypto transactions (ACH, wire, SEPA), so the same APIs work for any rail.
+Once a deposit is authorized you can track it from either side.
+
+Read the deposit itself to see both lifecycles — the ACH debit and the crypto release — on one record:
+
+```typescript
+// List the authenticated user's deposits, newest first
+const { data, hasMore, nextCursor } = await client.deposit.list({ limit: 25 })
+
+// Page with the cursor the previous page returned
+if (hasMore && nextCursor) {
+    const next = await client.deposit.list({ limit: 25, cursor: nextCursor })
+}
+
+// Fetch a single deposit by ID
+const deposit = await client.deposit.get('dep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X')
+```
+
+`GET /v1/deposits/` is **user-scoped**: an integrator-wide reconciliation iterates your own
+user roster and authorizes each user's read with `client.setApiKey(userApiKey)`.
+
+Alternatively, read the **on-ramp record** created alongside the deposit. The on-ramp model
+unifies all fiat→crypto transactions (ACH, wire, SEPA), so the same APIs work for any rail.
 
 ```typescript
 // List the user's recent on-ramps (newest first by default)
@@ -772,6 +793,8 @@ This endpoint returns 403 in production. The 200 response shape is the same as `
 | `GET`    | `/v1/funding-sources/{id}/deposit-limits`     | `client.fundingSource.getDepositLimits(id)`   | Get current ACH debit limits                                    |
 | `POST`   | `/v1/deposits/direct/prepare`                 | `client.deposit.prepare(...)`                 | Prepare deposit quote                                           |
 | `POST`   | `/v1/deposits/direct`                         | `client.deposit.create(...)`                  | Create deposit                                                  |
+| `GET`    | `/v1/deposits/`                               | `client.deposit.list(...)`                    | List the user's deposits (`limit`, `cursor`)                    |
+| `GET`    | `/v1/deposits/{depositId}`                    | `client.deposit.get(id)`                      | Get a single deposit                                            |
 | `GET`    | `/v1/on-ramps/`                               | `client.onrampPayment.list(...)`              | List on-ramps (canonical deposit lookup)                        |
 | `GET`    | `/v1/on-ramps/{onRampId}`                     | `client.onrampPayment.get(id)`                | Get a single on-ramp                                            |
 | `GET`    | `/v1/integrator/ach-debit/returns`            | `client.achDebitReturn.list(...)`             | List ACH debit returns                                          |

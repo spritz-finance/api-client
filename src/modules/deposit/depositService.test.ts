@@ -97,6 +97,50 @@ describe('DepositService', () => {
         expect(result).toEqual(response)
     })
 
+    it('lists deposits without a query', async () => {
+        const response = { data: [], hasMore: false, nextCursor: null }
+
+        vi.mocked(mockClient.restApi).mockResolvedValue(response)
+
+        const result = await depositService.list()
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'get',
+            path: '/v1/deposits/',
+        })
+        expect(result).toEqual(response)
+    })
+
+    it('lists deposits with the schema-defined paging query', async () => {
+        const query = { limit: 25, cursor: 'next page' } as const
+        const response = { data: [], hasMore: true, nextCursor: 'dep_cursor_2' }
+
+        vi.mocked(mockClient.restApi).mockResolvedValue(response)
+
+        const result = await depositService.list(query)
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'get',
+            path: '/v1/deposits/',
+            query,
+        })
+        expect(result).toEqual(response)
+    })
+
+    it('gets a deposit and encodes the id as a single path segment', async () => {
+        const response = { id: 'dep/one', status: 'authorized' }
+
+        vi.mocked(mockClient.restApi).mockResolvedValue(response)
+
+        const result = await depositService.get('dep/one')
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'get',
+            path: '/v1/deposits/dep%2Fone',
+        })
+        expect(result).toEqual(response)
+    })
+
     it('refuses to create a deposit without an idempotency key', async () => {
         await expect(
             depositService.create({ preparationId: 'prep_123' }, { idempotencyKey: '' } as {

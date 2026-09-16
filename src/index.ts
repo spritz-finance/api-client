@@ -57,6 +57,8 @@ export type {
 } from './modules/fundingSource/fundingSourceService'
 export type {
     Deposit,
+    DepositListQuery,
+    DepositListResponse,
     PrepareDepositRequest,
     PrepareDepositResponse,
     CreateDepositRequest,
