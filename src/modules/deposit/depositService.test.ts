@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SpritzClient } from '../../lib/client'
-import { DepositService } from './depositService'
+import { DepositService, type PrepareDepositRequest } from './depositService'
 
 describe('DepositService', () => {
     let depositService: DepositService
@@ -95,6 +95,50 @@ describe('DepositService', () => {
             headers: { 'idempotency-key': 'intent_123' },
         })
         expect(result).toEqual(response)
+    })
+
+    it('forwards clientNetwork on prepare and surfaces the submissionToken', async () => {
+        const input: PrepareDepositRequest = {
+            sourceId: 'fs_123',
+            address: '9n4nbM75f5Ui33ZbPYXn59EwSb9Y1zdyu3x2b1f8jQRY',
+            network: 'solana',
+            asset: 'USDC',
+            quoteType: 'exact_input',
+            amountUsd: '100.00',
+            priority: 'normal',
+            clientNetwork: { ipAddresses: ['1.1.1.1', '2606:4700:4700::1111'] },
+        }
+        const response = {
+            preparationId: 'prep_123',
+            kind: 'deposit_authorization',
+            submissionToken: 'ach_submit_token_123',
+        }
+
+        vi.mocked(mockClient.restApi).mockResolvedValue(response)
+
+        const result = await depositService.prepare(input)
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'post',
+            path: '/v1/deposits/direct/prepare',
+            body: input,
+        })
+        expect(result.submissionToken).toBe('ach_submit_token_123')
+    })
+
+    it('sends clientIp on a backend create', async () => {
+        const input = { preparationId: 'prep_123', clientIp: '1.1.1.1' }
+
+        vi.mocked(mockClient.restApi).mockResolvedValue({ id: 'dep_123' })
+
+        await depositService.create(input, { idempotencyKey: 'intent_123' })
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'post',
+            path: '/v1/deposits/direct',
+            body: input,
+            headers: { 'idempotency-key': 'intent_123' },
+        })
     })
 
     it('lists deposits without a query', async () => {

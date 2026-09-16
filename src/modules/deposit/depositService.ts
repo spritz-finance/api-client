@@ -34,6 +34,20 @@ export class DepositService {
         this.client = client
     }
 
+    /**
+     * Prepares a deposit authorization quote.
+     *
+     * Pass `clientNetwork.ipAddresses` — the public addresses your edge observed
+     * for the authorizing client, at most one IPv4 and one IPv6 — to receive a
+     * short-lived `submissionToken` on the response. Forward that token to the
+     * authorizing client so it can submit `POST /v1/deposits/direct` itself; the
+     * token is bound to this preparation and can submit nothing else. The
+     * addresses are matched against that later submission.
+     *
+     * Omitting `clientNetwork` keeps the migration path: no `submissionToken` is
+     * issued and the deposit must be created from your backend, which then has
+     * to send `clientIp` (see `create`).
+     */
     public async prepare(input: PrepareDepositRequest) {
         return this.client.restApi(
             restRoute('/v1/deposits/direct/prepare', 'post', {
@@ -42,6 +56,21 @@ export class DepositService {
         )
     }
 
+    /**
+     * Creates the prepared deposit.
+     *
+     * **`clientIp` is required when calling this from your backend over
+     * integrator HMAC auth**, even though the generated type marks it optional —
+     * the contract only allows it to be omitted for a direct client submission
+     * authenticated with the preparation's `submissionToken`, which this SDK
+     * does not send. Pass the public address your edge observed for the
+     * authorizing client; it must be a public IP and must differ from the
+     * submitting backend's own address, or the create is rejected before risk
+     * evaluation.
+     *
+     * Integrator JWT is not accepted on this route because it cannot bind the
+     * claimed `clientIp`; it remains valid on `prepare` and the read methods.
+     */
     public async create(input: CreateDepositRequest, options: CreateDepositOptions) {
         return this.client.restApi(
             restRoute('/v1/deposits/direct', 'post', {

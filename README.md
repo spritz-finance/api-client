@@ -1034,6 +1034,17 @@ console.log(deposit.status, deposit.debitStatus, deposit.releaseStatus)
 
 Authorization is derived from the verified ACH funding source — no wallet signature is required.
 
+**A backend `create` must send `clientIp`** — the public address your edge observed for the authorizing client, distinct from your backend's own address. The generated type marks it optional because the contract allows omitting it only for a direct client submission authenticated with a `submissionToken`, which this SDK does not send; a backend create without it fails at runtime, not at compile time.
+
+```typescript
+const deposit = await client.deposit.create(
+    { preparationId: preparation.preparationId, clientIp: req.ip },
+    { idempotencyKey }
+)
+```
+
+To move submission onto the customer's device, pass `clientNetwork: { ipAddresses: [req.ip] }` to `prepare` and forward the returned `submissionToken` to that client. The client calls `POST /v1/deposits/direct` directly with the token as its credential and no `clientIp`. This SDK signs every REST call with integrator HMAC, so that request should not go through it — see the [ACH Onramp Integration Guide](docs/ach-onramp-guide.md).
+
 If risk checks block the create step, the API returns 409 before any ACH debit is pulled. Prepare a new quote before retrying; blocked create attempts consume the original `preparationId`.
 
 For a complete walkthrough with code examples, request/response schemas, and deposit lifecycle documentation, see the **[ACH Onramp Integration Guide](docs/ach-onramp-guide.md)**.
