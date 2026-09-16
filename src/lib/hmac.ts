@@ -25,21 +25,59 @@ async function hmacSha256Hex(secret: string, data: string): Promise<string> {
     return hexEncode(signature)
 }
 
+const SURROGATE = /[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDFFF]/g
+// Built from a code point so the formatter cannot fold it into a literal
+// U+FFFD in the source, where it would be indistinguishable from mojibake.
+const REPLACEMENT_CHARACTER = String.fromCharCode(0xfffd)
+
+/**
+ * Replace unpaired surrogates with U+FFFD, leaving valid pairs intact.
+ *
+ * `encodeURIComponent` throws `URIError` on lone surrogates, which a caller can
+ * produce by slicing a string through an emoji before passing it as a free-text
+ * filter. `URLSearchParams` substitutes the replacement character instead, so
+ * doing the same here keeps such a request sendable rather than turning it into
+ * a raw `URIError` from inside the client.
+ */
+function toWellFormed(value: string): string {
+    return value.replace(SURROGATE, (match) => (match.length === 2 ? match : REPLACEMENT_CHARACTER))
+}
+
+/**
+ * Percent-encode a query component so that the result is a fixed point of the
+ * WHATWG URL parser.
+ *
+ * `encodeURIComponent` leaves `'` untouched but the URL parser escapes it in the
+ * query of a special scheme, which would make the transmitted query string
+ * differ from the signed one. Escaping it up front keeps the two identical.
+ */
+function encodeQueryComponent(value: string): string {
+    return encodeURIComponent(toWellFormed(value)).replace(/'/g, '%27')
+}
+
+/**
+ * Canonicalize query entries for HMAC signature.
+ * Params are sorted lexicographically by key and percent-encoded.
+ *
+ * This is the single serializer used both to build the request URL and to sign
+ * it, so the signed path always matches the requested path byte for byte.
+ */
+export function canonicalizeQueryEntries(entries: Iterable<[string, string]>): string {
+    const params = [...entries]
+    if (params.length === 0) return ''
+
+    return params
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .map(([key, value]) => `${encodeQueryComponent(key)}=${encodeQueryComponent(value)}`)
+        .join('&')
+}
+
 /**
  * Canonicalize query string for HMAC signature.
  * Params are sorted alphabetically by key and URL-encoded.
  */
 export function canonicalizeQueryString(url: URL): string {
-    const params = url.searchParams
-    if ([...params].length === 0) return ''
-
-    return [...params.keys()]
-        .sort()
-        .map((key) => {
-            const value = params.get(key) ?? ''
-            return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-        })
-        .join('&')
+    return canonicalizeQueryEntries(url.searchParams)
 }
 
 /**

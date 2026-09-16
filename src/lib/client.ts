@@ -6,7 +6,7 @@ import { validatePositiveInteger } from '../utils/validatePositiveInteger'
 import { APIConnectionError, APIConnectionTimeoutError, APIError, SpritzApiError } from './error'
 import { gracefulParseJSON } from '../utils/json'
 import { validateGraphQLQuery, sanitizeGraphQLVariables } from '../utils/graphqlSecurity'
-import { stampRequest } from './hmac'
+import { canonicalizeQueryEntries, stampRequest } from './hmac'
 import type { RestHeaders, RestQuery, RestRoute } from '../rest/route'
 import type { HttpMethod, PathResponse, RestMethod, RestPath } from '../rest/types'
 
@@ -355,11 +355,17 @@ export class SpritzClient {
         const url = new URL(normalizedPath, base)
 
         if (query) {
-            for (const [key, value] of Object.entries(query)) {
-                if (value !== undefined) {
-                    url.searchParams.set(key, String(value))
-                }
-            }
+            // Serialized with the signing canonicalizer so the transmitted query
+            // string is byte-identical to the one covered by the HMAC signature.
+            // `URLSearchParams` cannot be used here: it encodes spaces as `+`.
+            const entries = Object.entries(query)
+                .filter((entry): entry is [string, string | number | boolean] => {
+                    return entry[1] !== undefined
+                })
+                .map(([key, value]): [string, string] => [key, String(value)])
+
+            const search = canonicalizeQueryEntries(entries)
+            if (search) url.search = `?${search}`
         }
 
         return {

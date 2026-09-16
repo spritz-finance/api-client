@@ -1,11 +1,13 @@
 import { SpritzClient } from '../../lib/client'
 import { restRoute } from '../../rest/route'
-import type { PathRequestBody, PathResponse } from '../../rest/types'
+import type { PathQuery, PathRequestBody, PathResponse } from '../../rest/types'
 
 export type PrepareDepositRequest = PathRequestBody<'/v1/deposits/direct/prepare', 'post'>
 export type PrepareDepositResponse = PathResponse<'/v1/deposits/direct/prepare', 'post'>
 export type CreateDepositRequest = PathRequestBody<'/v1/deposits/direct', 'post'>
-export type Deposit = PathResponse<'/v1/deposits/direct', 'post'>
+export type Deposit = PathResponse<'/v1/deposits/{depositId}', 'get'>
+export type DepositListResponse = PathResponse<'/v1/deposits/', 'get'>
+export type DepositListQuery = PathQuery<'/v1/deposits/', 'get'>
 
 /**
  * `idempotencyKey` is required by `POST /v1/deposits/direct`: persist one
@@ -45,6 +47,25 @@ export class DepositService {
             restRoute('/v1/deposits/direct', 'post', {
                 body: input,
                 headers: idempotencyHeaders(options),
+            })
+        )
+    }
+
+    /**
+     * Lists the authenticated user's deposits, newest first.
+     *
+     * The endpoint is user-scoped: reconciling an integrator-wide backlog means
+     * iterating your own user roster and authorizing each user's read. Page with
+     * `cursor`, driven by `nextCursor`/`hasMore` on the response.
+     */
+    public async list(query?: DepositListQuery) {
+        return this.client.restApi(restRoute('/v1/deposits/', 'get', query ? { query } : undefined))
+    }
+
+    public async get(depositId: string) {
+        return this.client.restApi(
+            restRoute('/v1/deposits/{depositId}', 'get', {
+                params: { depositId },
             })
         )
     }

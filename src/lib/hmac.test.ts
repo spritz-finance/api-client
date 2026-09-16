@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+    canonicalizeQueryEntries,
     canonicalizeQueryString,
     buildPathWithQuery,
     generateHmacSignature,
@@ -32,6 +33,35 @@ describe('HMAC Request Stamping', () => {
             expect(canonicalizeQueryString(url)).toBe('filter=a%20b&query=hello%26world')
         })
 
+        it('encodes apostrophes so the serialization survives the URL parser', () => {
+            const url = new URL('https://api.example.com/v1/deposits/')
+            url.search = `?${canonicalizeQueryEntries([['cursor', "o'brien"]])}`
+
+            expect(canonicalizeQueryEntries([['cursor', "o'brien"]])).toBe('cursor=o%27brien')
+            expect(url.toString()).toBe('https://api.example.com/v1/deposits/?cursor=o%27brien')
+            expect(canonicalizeQueryString(url)).toBe('cursor=o%27brien')
+        })
+
+        it('substitutes unpaired surrogates instead of throwing', () => {
+            // `encodeURIComponent` throws URIError on a lone surrogate; the
+            // previous URLSearchParams serializer emitted U+FFFD and sent the
+            // request, so callers slicing through an emoji must keep working.
+            expect(canonicalizeQueryEntries([['search', 'R01\uD800admin']])).toBe(
+                'search=R01%EF%BF%BDadmin'
+            )
+            expect(canonicalizeQueryEntries([['search', '\uDC00lead']])).toBe(
+                'search=%EF%BF%BDlead'
+            )
+        })
+
+        it('leaves valid surrogate pairs intact', () => {
+            const url = new URL('https://api.example.com/v1/test')
+            url.search = `?${canonicalizeQueryEntries([['search', 'grin \uD83D\uDE00']])}`
+
+            expect(url.searchParams.get('search')).toBe('grin \uD83D\uDE00')
+            expect(canonicalizeQueryString(url)).toBe('search=grin%20%F0%9F%98%80')
+        })
+
         it('handles single param', () => {
             const url = new URL('https://api.example.com/v1/on-ramps?limit=20')
             expect(canonicalizeQueryString(url)).toBe('limit=20')
@@ -40,6 +70,16 @@ describe('HMAC Request Stamping', () => {
         it('handles empty value', () => {
             const url = new URL('https://api.example.com/v1/test?key=')
             expect(canonicalizeQueryString(url)).toBe('key=')
+        })
+
+        it('sorts entries lexicographically and omits nothing it is given', () => {
+            expect(
+                canonicalizeQueryEntries([
+                    ['limit', '25'],
+                    ['cursor', 'next page'],
+                ])
+            ).toBe('cursor=next%20page&limit=25')
+            expect(canonicalizeQueryEntries([])).toBe('')
         })
 
         it('produces consistent output regardless of param order', () => {
