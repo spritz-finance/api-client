@@ -1,6 +1,7 @@
 import { Environment } from './env'
 import { SpritzClient } from './lib/client'
 import { isRunningInBrowser } from './lib/util'
+import { AchDebitService } from './modules/achDebit/achDebitService'
 import { AchDebitReturnService } from './modules/achDebitReturn/achDebitReturnService'
 import { BankAccountService } from './modules/bankAccount/bankAccountService'
 import { BillService } from './modules/bill/billService'
@@ -67,6 +68,7 @@ export class SpritzApiClient {
     public bankAccount: BankAccountService
     public debitCard: DebitCardService
     public deposit: DepositService
+    public achDebit: AchDebitService
     public achDebitReturn: AchDebitReturnService
     public fundingSource: FundingSourceService
     public paymentRequest: PaymentRequestService
@@ -140,6 +142,7 @@ export class SpritzApiClient {
         this.bankAccount = new BankAccountService(this.client)
         this.debitCard = new DebitCardService(this.client)
         this.deposit = new DepositService(this.client)
+        this.achDebit = new AchDebitService(this.client)
         this.achDebitReturn = new AchDebitReturnService(this.client)
         this.fundingSource = new FundingSourceService(this.client)
         this.paymentRequest = new PaymentRequestService(this.client)

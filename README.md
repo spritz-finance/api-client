@@ -90,6 +90,7 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
     - [Virtual Accounts](#virtual-accounts)
     - [Supported Tokens](#supported-tokens)
 - [ACH Onramp (Direct Debit)](#ach-onramp-direct-debit)
+    - [Checking Eligibility](#checking-eligibility)
 - [Sandbox](#sandbox)
     - [Bypassing KYC](#bypassing-kyc)
 - [Webhooks](#webhooks)
@@ -1008,6 +1009,7 @@ const accounts = await client.virtualAccounts.list()
 
 ACH onramp lets users convert USD from their bank account into USDC delivered to a Solana wallet. The integration is a short server-side flow with one client-side Plaid step:
 
+0. **Server:** check that the bank deposit option can be offered at all with `client.achDebit.checkEligibility({ email })` (see [Checking Eligibility](#checking-eligibility))
 1. **Server:** create a Plaid link token with `client.bankAccount.createLinkToken()`
 2. **Client:** run Plaid Link and send the public token/account IDs back to your server
 3. **Server:** complete linking with `client.bankAccount.completeLinking(...)`
@@ -1050,6 +1052,24 @@ If risk checks block the create step, the API returns 409 before any ACH debit i
 For a complete walkthrough with code examples, request/response schemas, and deposit lifecycle documentation, see the **[ACH Onramp Integration Guide](docs/ach-onramp-guide.md)**.
 
 A standalone sandbox demo is available at `scripts/sandbox/ach-onramp.html`. Run `yarn build && node scripts/sandbox/evidence-server.mjs`, then open `http://localhost:3001/ach-onramp.html` to test the SDK-backed flow and save redacted QC evidence.
+
+### Checking Eligibility
+
+Before you show a bank deposit option to someone who is not yet a Spritz user, ask whether it is available for their email address:
+
+```typescript
+const { eligible } = await client.achDebit.checkEligibility({ email: 'user@example.com' })
+
+if (eligible) {
+    // Offer the bank deposit option
+}
+```
+
+This route authenticates as the integrator over HMAC and takes no user bearer key, because the address it asks about need not belong to an existing user yet.
+
+Eligibility only moves in one direction — once an address is eligible it stays eligible — so `eligible: false` may be transient. Re-check it rather than caching the negative against the address.
+
+Once the user exists, stop asking: the capabilities on `client.user.getUserAccess()` become the source of truth for whether the option is available to them.
 
 ## Error Handling
 
