@@ -69,6 +69,10 @@ export type {
     CreateDepositOptions,
 } from './modules/deposit/depositService'
 export type {
+    AchDebitEligibilityRequest,
+    AchDebitEligibilityResponse,
+} from './modules/achDebit/achDebitService'
+export type {
     AchDebitReturn,
     AchDebitReturnListResponse,
     AchDebitReturnListQuery,
