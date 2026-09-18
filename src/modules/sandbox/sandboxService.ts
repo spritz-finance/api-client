@@ -6,6 +6,25 @@ import { idempotencyHeaders, type CreateDepositOptions } from '../deposit/deposi
 export type BypassKycRequest = PathRequestBody<'/v1/sandbox/bypass-kyc', 'post'>
 export type CreateDepositWithReturnRequest = PathRequestBody<'/v1/sandbox/deposits/direct', 'post'>
 export type CreateDepositWithReturnResponse = PathResponse<'/v1/sandbox/deposits/direct', 'post'>
+export type PrepareDepositWithProgramControlRequest = PathRequestBody<
+    '/v1/sandbox/deposits/direct/prepare',
+    'post'
+>
+export type PrepareDepositWithProgramControlResponse = PathResponse<
+    '/v1/sandbox/deposits/direct/prepare',
+    'post'
+>
+export type AchDebitExposureResponse = PathResponse<'/v1/sandbox/ach-debit/exposure', 'get'>
+export type SetAchDebitExposureCapRequest = PathRequestBody<
+    '/v1/sandbox/ach-debit/exposure/cap',
+    'post'
+>
+export type SetAchDebitExposureCapResponse = PathResponse<
+    '/v1/sandbox/ach-debit/exposure/cap',
+    'post'
+>
+export type LinkBankAccountRequest = PathRequestBody<'/v1/sandbox/bank-accounts/link', 'post'>
+export type LinkBankAccountResponse = PathResponse<'/v1/sandbox/bank-accounts/link', 'post'>
 export type DeleteFundingSourceResponse = PathResponse<
     '/v1/sandbox/funding-sources/{fundingSourceId}',
     'delete'
@@ -48,6 +67,55 @@ export class SandboxService {
             restRoute('/v1/sandbox/deposits/direct', 'post', {
                 body: input,
                 headers: idempotencyHeaders(options),
+            })
+        )
+    }
+
+    /**
+     * Prepare a deposit under a deterministic program halt or new-user pause
+     * so integrators can exercise the production-equivalent 409 response.
+     *
+     * Only available in sandbox environments — returns 403 in production.
+     */
+    public async prepareDepositWithProgramControl(input: PrepareDepositWithProgramControlRequest) {
+        return this.client.restApi(
+            restRoute('/v1/sandbox/deposits/direct/prepare', 'post', {
+                body: input,
+            })
+        )
+    }
+
+    /**
+     * Read the authenticated integrator's sandbox W1/W2 exposure and caps.
+     *
+     * Only available in sandbox environments — returns 403 in production.
+     */
+    public async getAchDebitExposure() {
+        return this.client.restApi(restRoute('/v1/sandbox/ach-debit/exposure', 'get', {}))
+    }
+
+    /**
+     * Set the authenticated integrator's sandbox W1/W2 exposure caps.
+     *
+     * Only available in sandbox environments — returns 403 in production.
+     */
+    public async setAchDebitExposureCap(input: SetAchDebitExposureCapRequest) {
+        return this.client.restApi(
+            restRoute('/v1/sandbox/ach-debit/exposure/cap', 'post', {
+                body: input,
+            })
+        )
+    }
+
+    /**
+     * Link a deterministic sandbox bank account without opening Plaid Link.
+     *
+     * Only available in sandbox environments — returns 403 in production.
+     */
+    public async linkBankAccount(input: LinkBankAccountRequest) {
+        return this.client.restApi(
+            restRoute('/v1/sandbox/bank-accounts/link', 'post', {
+                body: input,
             })
         )
     }

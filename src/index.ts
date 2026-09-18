@@ -88,10 +88,17 @@ export type {
     CompleteLinkingResponse,
 } from './modules/bankAccount/bankAccountService'
 export type {
+    AchDebitExposureResponse,
     BypassKycRequest,
     CreateDepositWithReturnRequest,
     CreateDepositWithReturnResponse,
     DeleteFundingSourceResponse,
+    LinkBankAccountRequest,
+    LinkBankAccountResponse,
+    PrepareDepositWithProgramControlRequest,
+    PrepareDepositWithProgramControlResponse,
+    SetAchDebitExposureCapRequest,
+    SetAchDebitExposureCapResponse,
 } from './modules/sandbox/sandboxService'
 export type {
     OnRamp,
