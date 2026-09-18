@@ -1,5 +1,11 @@
 # @spritz-finance/api-client
 
+## 0.18.1
+
+### Patch Changes
+
+- 9e99f84: Expose deterministic ACH-debit program controls, exposure caps, and bank-account linking through the sandbox service.
+
 ## 0.18.0
 
 ### Minor Changes
