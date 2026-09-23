@@ -1047,6 +1047,8 @@ const deposit = await client.deposit.create(
 
 To move submission onto the customer's device, pass `clientNetwork: { ipAddresses: [req.ip] }` to `prepare` and forward the returned `submissionToken` to that client. The client then calls `POST /v1/deposits/direct` itself with `Authorization: Bearer ach_submit_...` as its only credential — no user API key, no integrator key, no HMAC headers — plus the `Idempotency-Key` header and a body of just `{ preparationId }`. This SDK signs every REST call with integrator HMAC, so that request should not go through it; see the [ACH Onramp Integration Guide](docs/ach-onramp-guide.md) for the full request.
 
+`prepare` also accepts an optional `customerContext` object (at most 8192 encoded UTF-8 bytes) carrying partner-side context for later fraud analysis. Its field mapping is agreed privately per integration; missing, unknown or invalid fields never block preparation. Never send credentials or bank data in it.
+
 If risk checks block the create step, the API returns 409 before any ACH debit is pulled. Prepare a new quote before retrying; blocked create attempts consume the original `preparationId`.
 
 For a complete walkthrough with code examples, request/response schemas, and deposit lifecycle documentation, see the **[ACH Onramp Integration Guide](docs/ach-onramp-guide.md)**.

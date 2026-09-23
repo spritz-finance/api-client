@@ -3983,7 +3983,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description Creation timestamp
-                         * @example 2026-09-17T18:15:20.160Z
+                         * @example 2026-09-23T08:12:57.990Z
                          */
                         createdAt?: string;
                     }[];
@@ -4148,7 +4148,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6aac2e387c3e374d463764d7
+                     * @example 6ab38a093ae8393c020db77f
                      */
                     accountId: string;
                     /**
@@ -4176,7 +4176,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6aac2e387c3e374d463764d7
+                     * @example 6ab38a093ae8393c020db77f
                      */
                     accountId: string;
                     /**
@@ -4204,7 +4204,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6aac2e387c3e374d463764d7
+                     * @example 6ab38a093ae8393c020db77f
                      */
                     accountId: string;
                     /**
@@ -4251,7 +4251,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-09-17T18:15:20.141Z
+                         * @example 2026-09-23T08:12:57.968Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4290,7 +4290,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6aac2e387c3e374d463764d8
+                             * @example 6ab38a093ae8393c020db780
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -4547,7 +4547,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-09-17T18:15:20.141Z
+                         * @example 2026-09-23T08:12:57.968Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4586,7 +4586,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6aac2e387c3e374d463764d8
+                             * @example 6ab38a093ae8393c020db780
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5182,7 +5182,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-09-17T18:15:20.141Z
+                         * @example 2026-09-23T08:12:57.968Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -5221,7 +5221,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6aac2e387c3e374d463764d8
+                             * @example 6ab38a093ae8393c020db780
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5524,7 +5524,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6aac2e387c3e374d463764d9
+                                 * @example 6ab38a093ae8393c020db781
                                  */
                                 accountId: string;
                                 /**
@@ -5815,7 +5815,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6aac2e387c3e374d463764d9
+                             * @example 6ab38a093ae8393c020db781
                              */
                             accountId: string;
                             /**
@@ -6056,7 +6056,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6aac2e387c3e374d463764da
+                     * @example 6ab38a093ae8393c020db782
                      */
                     accountId?: string;
                 };
@@ -6074,7 +6074,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6aac2e387c3e374d463764da
+                     * @example 6ab38a093ae8393c020db782
                      */
                     accountId?: string;
                 };
@@ -6092,7 +6092,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6aac2e387c3e374d463764da
+                     * @example 6ab38a093ae8393c020db782
                      */
                     accountId?: string;
                 };
@@ -6158,7 +6158,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6aac2e387c3e374d463764d9
+                             * @example 6ab38a093ae8393c020db781
                              */
                             accountId: string;
                             /**
@@ -11723,6 +11723,10 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
+                    /** @description Optional partner-provided customer context. Maximum 8192 encoded UTF-8 bytes. Missing, unrecognized or unsupported fields do not block preparation. Do not send credentials or bank data. */
+                    customerContext?: {
+                        [key: string]: unknown;
+                    };
                     /**
                      * @description Opaque public funding source identifier
                      * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
@@ -11766,6 +11770,10 @@ export interface operations {
                     };
                 };
                 "application/x-www-form-urlencoded": {
+                    /** @description Optional partner-provided customer context. Maximum 8192 encoded UTF-8 bytes. Missing, unrecognized or unsupported fields do not block preparation. Do not send credentials or bank data. */
+                    customerContext?: {
+                        [key: string]: unknown;
+                    };
                     /**
                      * @description Opaque public funding source identifier
                      * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
@@ -11809,6 +11817,10 @@ export interface operations {
                     };
                 };
                 "multipart/form-data": {
+                    /** @description Optional partner-provided customer context. Maximum 8192 encoded UTF-8 bytes. Missing, unrecognized or unsupported fields do not block preparation. Do not send credentials or bank data. */
+                    customerContext?: {
+                        [key: string]: unknown;
+                    };
                     /**
                      * @description Opaque public funding source identifier
                      * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
@@ -17917,7 +17929,7 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique identifier for the debit card
-                             * @example 6aac2e387c3e374d463764de
+                             * @example 6ab38a093ae8393c020db786
                              */
                             id: string;
                             /** @enum {string} */
@@ -18365,7 +18377,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6aac2e387c3e374d463764de
+                         * @example 6ab38a093ae8393c020db786
                          */
                         id: string;
                         /** @enum {string} */
@@ -18582,7 +18594,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6aac2e387c3e374d463764de
+                         * @example 6ab38a093ae8393c020db786
                          */
                         id: string;
                         /** @enum {string} */
@@ -19103,7 +19115,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6aac2e387c3e374d463764de
+                         * @example 6ab38a093ae8393c020db786
                          */
                         id: string;
                         /** @enum {string} */
@@ -20286,7 +20298,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6aac2e387c3e374d463764e2
+                         * @example 6ab38a0a3ae8393c020db78a
                          */
                         userId: string;
                         /**
@@ -20302,7 +20314,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-09-17T19:15:20.442Z
+                         * @example 2026-09-23T09:12:58.281Z
                          */
                         expiresAt: string;
                     };
@@ -20501,7 +20513,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-09-17T18:15:20.442Z
+                         * @example 2026-09-23T08:12:58.280Z
                          */
                         createdAt: string;
                     };
@@ -20714,7 +20726,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description The internal ID of the newly created user
-                         * @example 6aac2e387c3e374d463764e4
+                         * @example 6ab38a0a3ae8393c020db78c
                          */
                         userId: string;
                         /**
@@ -21058,7 +21070,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6aac2e387c3e374d463764e1
+                             * @example 6ab38a0a3ae8393c020db789
                              */
                             userId: string;
                             /**
@@ -21270,7 +21282,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6aac2e387c3e374d463764e1
+                         * @example 6ab38a0a3ae8393c020db789
                          */
                         userId: string;
                         /**
@@ -21463,7 +21475,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6aac2e387c3e374d463764e3
+                         * @example 6ab38a0a3ae8393c020db78b
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -21694,7 +21706,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6aac2e387c3e374d463764e3
+                         * @example 6ab38a0a3ae8393c020db78b
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -23662,7 +23674,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6aac2e387c3e374d463764e3
+                         * @example 6ab38a0a3ae8393c020db78b
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -24079,7 +24091,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-09-17T18:20:20.443Z
+                         * @example 2026-09-23T08:17:58.281Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -24250,7 +24262,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6aac2e387c3e374d463764df
+                         * @example 6ab38a0a3ae8393c020db787
                          */
                         id: string;
                         /**
@@ -24267,7 +24279,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-09-17T18:15:20.434Z
+                         * @example 2026-09-23T08:12:58.271Z
                          */
                         signedUpAt: string;
                         /**
@@ -24639,7 +24651,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6aac2e387c3e374d463764df
+                         * @example 6ab38a0a3ae8393c020db787
                          */
                         id: string;
                         /**
@@ -24656,7 +24668,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-09-17T18:15:20.434Z
+                         * @example 2026-09-23T08:12:58.271Z
                          */
                         signedUpAt: string;
                         /**
@@ -25128,7 +25140,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6aac2e387c3e374d463764df
+                         * @example 6ab38a0a3ae8393c020db787
                          */
                         id: string;
                         /**
@@ -25145,7 +25157,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-09-17T18:15:20.434Z
+                         * @example 2026-09-23T08:12:58.271Z
                          */
                         signedUpAt: string;
                         /**
@@ -35336,6 +35348,10 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
+                    /** @description Optional partner-provided customer context. Maximum 8192 encoded UTF-8 bytes. Missing, unrecognized or unsupported fields do not block preparation. Do not send credentials or bank data. */
+                    customerContext?: {
+                        [key: string]: unknown;
+                    };
                     /**
                      * @description Opaque public funding source identifier
                      * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
@@ -35388,6 +35404,10 @@ export interface operations {
                     };
                 };
                 "application/x-www-form-urlencoded": {
+                    /** @description Optional partner-provided customer context. Maximum 8192 encoded UTF-8 bytes. Missing, unrecognized or unsupported fields do not block preparation. Do not send credentials or bank data. */
+                    customerContext?: {
+                        [key: string]: unknown;
+                    };
                     /**
                      * @description Opaque public funding source identifier
                      * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
@@ -35440,6 +35460,10 @@ export interface operations {
                     };
                 };
                 "multipart/form-data": {
+                    /** @description Optional partner-provided customer context. Maximum 8192 encoded UTF-8 bytes. Missing, unrecognized or unsupported fields do not block preparation. Do not send credentials or bank data. */
+                    customerContext?: {
+                        [key: string]: unknown;
+                    };
                     /**
                      * @description Opaque public funding source identifier
                      * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
