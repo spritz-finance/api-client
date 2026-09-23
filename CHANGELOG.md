@@ -1,5 +1,11 @@
 # @spritz-finance/api-client
 
+## 0.18.2
+
+### Patch Changes
+
+- b9b5471: Type the optional `customerContext` object accepted by `client.deposit.prepare(...)` and `client.sandbox.prepareDepositWithProgramControl(...)`, regenerated from the sandbox contract.
+
 ## 0.18.1
 
 ### Patch Changes
