@@ -985,6 +985,16 @@ With `amountMode: 'input'`, `quote.input.amount` is the exact USD value collecte
 
 > **Retries:** this endpoint does not support an idempotency key. A retry creates a second quote. A quote that is never funded ends as `expired`.
 
+#### Retrieving a Quote
+
+```typescript
+const quote = await client.offRampQuote.get(quoteId)
+
+quote.status // 'created' | 'transaction_pending' | 'confirmed' | 'completed' | 'expired' | ...
+quote.confirmation // { transactionHash, explorerUrl } once the transaction is detected, else null
+quote.offRampId // the off-ramp (fiat leg) once it is created, else null
+```
+
 ## On-ramp
 
 The on-ramp feature allows users to purchase crypto stablecoins via ACH or wire transfer.

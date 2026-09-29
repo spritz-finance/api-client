@@ -60,4 +60,16 @@ describe('OffRampQuoteService', () => {
         })
         expect(result).toEqual(QUOTE)
     })
+
+    it('gets an off-ramp quote by URL-encoded ID', async () => {
+        vi.mocked(mockClient.restApi).mockResolvedValue(QUOTE)
+
+        const result = await offRampQuoteService.get('quote_123/with space')
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'get',
+            path: '/v1/off-ramp-quotes/quote_123%2Fwith%20space',
+        })
+        expect(result).toEqual(QUOTE)
+    })
 })
