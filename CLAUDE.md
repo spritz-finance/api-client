@@ -23,50 +23,14 @@
 - `yarn changeset` - Create a release note for a releasable change
 - `yarn changeset --empty` - Record an internal-only change so PR checks still pass
 - **Never run `yarn version-packages`** — this is handled by CI. Running it locally consumes the changesets and breaks the release pipeline.
-- Merging a PR with `.changeset/*.md` files triggers the Release workflow, which opens a "Version Packages" PR automatically. Merging _that_ PR triggers the Publish workflow (runs in the `production` environment).
+- Merging a PR with `.changeset/*.md` files triggers the Release workflow, which opens a "Version Packages" PR automatically. Merging _that_ PR bumps the version on `main`; the Publish workflow runs on every push to `main` and publishes only when npm doesn't have that version yet (runs in the `production` environment).
 - The repo's enterprise policy keeps `GITHUB_TOKEN` read-only. Set `CHANGESETS_GITHUB_TOKEN` in repo secrets so the release workflow can open the automated release PR.
 
-## Maintenance releases (diverged version chains)
+## Publishing only from `main`
 
-When `main` ships a breaking change but we still need to patch an older minor (e.g. a customer is pinned to `0.7.x` and won't upgrade), publish from a long-lived maintenance branch via the same `publish.yml` workflow that handles main-line releases.
+The `production` environment only accepts deployments from `main`, and `publish.yml` has no ref or dist-tag inputs. Every release is a reviewed merge to `main`; there are no maintenance branches or `legacy-*` dist-tags. A manual `gh workflow run publish.yml` re-runs the same check against `main`.
 
-### When to cut a maintenance branch
-
-- A breaking change is about to land on `main` AND at least one consumer can't upgrade soon.
-- Cut the branch _before_ merging the breaking change, from the last commit of the soon-to-be-old minor (the `Version Packages` merge commit for that version is the canonical fork point).
-- A minor having published versions does NOT mean it's maintained. `npm view @spritz-finance/api-client dist-tags` is the authority: a line is only being consumed if it has a `legacy-0.X` tag. Absent that, those versions were ordinary main-line releases that a later minor superseded — don't cut a branch for them.
-
-### Branch naming
-
-- `release/0.7`, `release/0.8`, … — one branch per maintained minor.
-- Push to origin so CI and other engineers can use it.
-
-### Authoring a patch on a maintenance branch
-
-1. Check out `release/0.X`, branch off, apply the fix.
-2. **Hand-bump `package.json`** (`0.7.1` → `0.7.2`). Maintenance branches do NOT use changesets to determine the version — changesets' `baseBranch` is `main` and trying to share its machinery across branches breaks. `package.json` is the source of truth here.
-3. **Add an empty changeset** (`yarn changeset --empty`). The required `changeset` PR check runs against `release/0.X` too and fails the PR without one. It is never consumed — `release/0.X` never runs `version-packages` — it exists purely to satisfy the check, so say so in the body along with the version being shipped.
-4. **Hand-edit `CHANGELOG.md`** with an entry for the new version. Follow the existing entries: `## 0.7.5` → `### Patch Changes` → a bullet describing the change, noting it's a backport.
-5. PR against `release/0.X`, get review, merge.
-
-### Publishing
-
-Trigger `publish.yml` manually with the `dist-tag` input set:
-
-```
-gh workflow run publish.yml --ref main \
-  -f ref=release/0.7 \
-  -f dist-tag=legacy-0.7
-```
-
-- `--ref main` is correct — `workflow_dispatch` reads the workflow file from the default branch, then checks out `inputs.ref` for the build.
-- `dist-tag` is optional. **Leave it blank** for normal main-line publishes (changesets handles `latest`). **Set it** for maintenance releases.
-- `dist-tag` **must not be `latest`** and **must not parse as a SemVer range** — `0.7`, `0.7.x`, `~0.7` all get rejected by npm. Use `legacy-0.7` or similar.
-- Consumers pin via `npm install @spritz-finance/api-client@legacy-0.7`.
-
-### Why one workflow
-
-npm trusted publishing allows only one trusted publisher per package, keyed on the workflow file path. Keeping all publishes in `publish.yml` means the single existing trusted-publishing entry covers both main and maintenance releases.
+npm trusted publishing is keyed on the workflow file path and the `production` environment, so keep publishing in `publish.yml`.
 
 ## Problem details contract
 
