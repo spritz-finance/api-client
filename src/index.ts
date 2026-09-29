@@ -112,6 +112,8 @@ export type { VerificationSession } from './modules/verification/verificationSer
 export type {
     ComplianceRequirements,
     ComplianceRequirementField,
+    SubmitComplianceRequest,
+    SubmitComplianceResponse,
 } from './modules/compliance/complianceService'
 export type {
     paths as RestApiPaths,
