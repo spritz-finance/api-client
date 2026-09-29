@@ -5,6 +5,7 @@ import { AchDebitService } from './modules/achDebit/achDebitService'
 import { AchDebitReturnService } from './modules/achDebitReturn/achDebitReturnService'
 import { BankAccountService } from './modules/bankAccount/bankAccountService'
 import { BillService } from './modules/bill/billService'
+import { ComplianceService } from './modules/compliance/complianceService'
 import { DebitCardService } from './modules/debitCard/debitCardService'
 import { DepositService } from './modules/deposit/depositService'
 import { FundingSourceService } from './modules/fundingSource/fundingSourceService'
@@ -65,6 +66,7 @@ export class SpritzApiClient {
     private client: SpritzClient
     public user: UserService
     public verification: VerificationService
+    public compliance: ComplianceService
     public bankAccount: BankAccountService
     public debitCard: DebitCardService
     public deposit: DepositService
@@ -139,6 +141,7 @@ export class SpritzApiClient {
         })
         this.user = new UserService(this.client)
         this.verification = new VerificationService(this.client)
+        this.compliance = new ComplianceService(this.client)
         this.bankAccount = new BankAccountService(this.client)
         this.debitCard = new DebitCardService(this.client)
         this.deposit = new DepositService(this.client)
