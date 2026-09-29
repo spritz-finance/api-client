@@ -107,6 +107,10 @@ export type {
     OnRampDetail,
 } from './modules/onrampPayment/onrampPaymentService'
 export type { OffRampRefundRequest, OffRampRefundResponse } from './modules/offramp/offrampService'
+export type {
+    CreateOffRampQuoteRequest,
+    OffRampQuote,
+} from './modules/offRampQuote/offRampQuoteService'
 export type { UserProfile } from './modules/user/userService'
 export type { VerificationSession } from './modules/verification/verificationService'
 export type { AcceptTermsRequest, AcceptTermsResponse } from './modules/terms/termsService'
