@@ -72,4 +72,54 @@ describe('OffRampQuoteService', () => {
         })
         expect(result).toEqual(QUOTE)
     })
+
+    it('gets transaction params for a sender and fee payer', async () => {
+        const input = {
+            senderAddress: '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d',
+            feePayer: '9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin',
+        }
+        const transaction = {
+            type: 'solana',
+            chain: 'solana',
+            inputToken: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+            outputToken: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+            requiredTokenInput: '101500000',
+            recipientAddress: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
+            transactionSerialized: 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+        }
+        vi.mocked(mockClient.restApi).mockResolvedValue(transaction)
+
+        const result = await offRampQuoteService.getTransaction('quote_123/with space', input)
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'post',
+            path: '/v1/off-ramp-quotes/quote_123%2Fwith%20space/transaction',
+            body: input,
+        })
+        expect(result).toEqual(transaction)
+    })
+
+    it('gets transaction params without a sender', async () => {
+        const transaction = {
+            type: 'evm',
+            chain: 'base',
+            inputToken: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+            outputToken: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+            requiredTokenInput: '101500000',
+            contractAddress: '0xbF7Abc15f00a8C2d6b13A952c58d12b7c194A8D0',
+            calldata: '0xd71d9632',
+            method: 'payWithToken',
+            value: null,
+        }
+        vi.mocked(mockClient.restApi).mockResolvedValue(transaction)
+
+        const result = await offRampQuoteService.getTransaction(QUOTE.id)
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'post',
+            path: `/v1/off-ramp-quotes/${QUOTE.id}/transaction`,
+            body: {},
+        })
+        expect(result).toEqual(transaction)
+    })
 })
