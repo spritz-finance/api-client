@@ -17,6 +17,7 @@ import { OnrampService } from './modules/onramp/onrampService'
 import { VirtualAccountsService } from './modules/virtualAccounts/virtualAccountsService'
 import { PaymentService } from './modules/payment/paymentService'
 import { PaymentRequestService } from './modules/paymentRequest/paymentRequestService'
+import { TermsService } from './modules/terms/termsService'
 import { UserService } from './modules/user/userService'
 import { VerificationService } from './modules/verification/verificationService'
 import { VirtualCardService } from './modules/virtualCard/virtualCardService'
@@ -67,6 +68,7 @@ export class SpritzApiClient {
     public user: UserService
     public verification: VerificationService
     public compliance: ComplianceService
+    public terms: TermsService
     public bankAccount: BankAccountService
     public debitCard: DebitCardService
     public deposit: DepositService
@@ -142,6 +144,7 @@ export class SpritzApiClient {
         this.user = new UserService(this.client)
         this.verification = new VerificationService(this.client)
         this.compliance = new ComplianceService(this.client)
+        this.terms = new TermsService(this.client)
         this.bankAccount = new BankAccountService(this.client)
         this.debitCard = new DebitCardService(this.client)
         this.deposit = new DepositService(this.client)
