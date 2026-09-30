@@ -1431,6 +1431,7 @@ The provider's sandbox cannot credit a virtual account, so this is the only way 
 const { onRampId, depositId, status } = await client.sandbox.simulateAutoRampDeposit(accountId, {
     amount: '2525.00', // in the account's currency
     gasFee: '4.20', // optional, defaults to '0.00'
+    exchangeFee: '2.53', // optional; otherwise derived from the provider's live spread
     settle: false, // optional, leaves the deposit at 'processing'
 })
 

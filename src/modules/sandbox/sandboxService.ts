@@ -151,7 +151,8 @@ export class SandboxService {
      * `amount` is in the account's own currency. Pass `settle: false` to leave the
      * deposit at `processing`, then pass the returned `depositId` back to advance that
      * same on-ramp. `gasFee` sets the network fee the provider reports (defaults to
-     * `0.00`).
+     * `0.00`); `exchangeFee` sets the conversion fee, which is otherwise derived from the
+     * provider's live bid/ask spread. Set both for a predictable fee breakdown.
      *
      * Only available in sandbox environments — returns 403 in production.
      */
