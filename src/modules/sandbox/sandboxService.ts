@@ -29,6 +29,14 @@ export type DeleteFundingSourceResponse = PathResponse<
     '/v1/sandbox/funding-sources/{fundingSourceId}',
     'delete'
 >
+export type SimulateAutoRampDepositRequest = PathRequestBody<
+    '/v1/sandbox/auto-ramp-accounts/{id}/deposit',
+    'post'
+>
+export type SimulateAutoRampDepositResponse = PathResponse<
+    '/v1/sandbox/auto-ramp-accounts/{id}/deposit',
+    'post'
+>
 
 export class SandboxService {
     private client: SpritzClient
@@ -130,6 +138,29 @@ export class SandboxService {
         return this.client.restApi(
             restRoute('/v1/sandbox/funding-sources/{fundingSourceId}', 'delete', {
                 params: { fundingSourceId },
+            })
+        )
+    }
+
+    /**
+     * Simulate a fiat deposit arriving in an auto-ramp account and settling to crypto
+     * (`POST /v1/sandbox/auto-ramp-accounts/{id}/deposit`). This is the only way to make
+     * an auto-ramp account settle in sandbox. The on-ramp it produces is an ordinary one:
+     * follow `onRampId` with `onrampPayment.get()`.
+     *
+     * `amount` is in the account's own currency. Pass `settle: false` to leave the
+     * deposit at `processing`, then pass the returned `depositId` back to advance that
+     * same on-ramp. `gasFee` sets the network fee the provider reports (defaults to
+     * `0.00`); `exchangeFee` sets the conversion fee, which is otherwise derived from the
+     * provider's live bid/ask spread. Set both for a predictable fee breakdown.
+     *
+     * Only available in sandbox environments — returns 403 in production.
+     */
+    public async simulateAutoRampDeposit(accountId: string, input: SimulateAutoRampDepositRequest) {
+        return this.client.restApi(
+            restRoute('/v1/sandbox/auto-ramp-accounts/{id}/deposit', 'post', {
+                params: { id: accountId },
+                body: input,
             })
         )
     }
