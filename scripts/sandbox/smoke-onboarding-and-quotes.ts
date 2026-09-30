@@ -29,9 +29,10 @@
  * - Users are created with `POST /v1/integrator/users` directly, so the script does not
  *   depend on which route `user.create()` takes.
  *
- * Required steps (exit code 1 if any fails): compliance.submit, terms.accept, the US quote
- * create. Every step's request and response is written to qc/evidence/ (gitignored), with
- * API keys redacted.
+ * Required steps (exit code 1 if any fails): compliance.submit (complianceFieldsComplete),
+ * terms.accept (termsAccepted), the US quote create, and, once the EU user's SEPA payout
+ * capability is active, the IBAN account and EUR quote create. Every step's request and
+ * response is written to qc/evidence/ (gitignored), with API keys redacted.
  */
 import { randomUUID } from 'node:crypto'
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -161,19 +162,51 @@ async function euFlow() {
         nationalities: ['DEU'],
         accountPurpose: 'personal_or_living_expenses' as const,
     }
-    await step('eu: compliance.submit', compliance, () => client.compliance.submit(compliance), {
-        required: true,
-    })
+    await step(
+        'eu: compliance.submit',
+        compliance,
+        async () => {
+            const submitted = await client.compliance.submit(compliance)
+            if (submitted.complianceFieldsComplete !== true) {
+                throw new Error('compliance.submit did not report complianceFieldsComplete: true')
+            }
+            return submitted
+        },
+        { required: true }
+    )
     await step('eu: compliance.getRequirements (after)', null, () =>
         client.compliance.getRequirements()
     )
 
     await step('eu: user.getMe (before terms)', null, () => client.user.getMe())
     const agreementId = args['agreement-id'] ?? randomUUID()
-    await step('eu: terms.accept', { agreementId }, () => client.terms.accept({ agreementId }), {
-        required: true,
-    })
-    await step('eu: user.getMe (after terms)', null, () => client.user.getMe())
+    await step(
+        'eu: terms.accept',
+        { agreementId },
+        async () => {
+            const accepted = await client.terms.accept({ agreementId })
+            if (accepted.termsAccepted !== true) {
+                throw new Error('terms.accept did not report termsAccepted: true')
+            }
+            return accepted
+        },
+        { required: true }
+    )
+    const me = (await step('eu: user.getMe (after terms)', null, () => client.user.getMe())) as
+        | { capabilities?: { product: string; method?: string; status: string }[] }
+        | undefined
+
+    // The EUR steps can only pass once SEPA payout is active. While Bridge reviews the user
+    // it is `pending` and they are expected to fail, so they only count once it is active.
+    const sepaPayoutActive = !!me?.capabilities?.some(
+        (c) =>
+            c.product === 'crypto_to_fiat' &&
+            c.method === 'sepa_credit_transfer' &&
+            c.status === 'active'
+    )
+    console.log(
+        `  info    SEPA payout ${sepaPayoutActive ? 'active: EUR steps are required' : 'not active: EUR steps are optional'}`
+    )
 
     const ibanInput = {
         type: 'iban' as const,
@@ -181,8 +214,11 @@ async function euFlow() {
         iban: 'DE89370400440532013000', // example from the API contract
         bic: 'COBADEFFXXX',
     }
-    const iban = (await step('eu: bankAccount.create (iban)', ibanInput, () =>
-        client.bankAccount.create(ibanInput)
+    const iban = (await step(
+        'eu: bankAccount.create (iban)',
+        ibanInput,
+        () => client.bankAccount.create(ibanInput),
+        { required: sepaPayoutActive }
     )) as { id: string } | undefined
     if (iban) {
         const eurQuoteInput = {
@@ -192,8 +228,11 @@ async function euFlow() {
             chain: 'solana' as const,
             tokenAddress: USDC_SOLANA,
         }
-        const eurQuote = (await step('eu: offRampQuote.create (EUR)', eurQuoteInput, () =>
-            client.offRampQuote.create(eurQuoteInput)
+        const eurQuote = (await step(
+            'eu: offRampQuote.create (EUR)',
+            eurQuoteInput,
+            () => client.offRampQuote.create(eurQuoteInput),
+            { required: sepaPayoutActive }
         )) as { id: string } | undefined
         if (eurQuote) {
             await step('eu: offRampQuote.get (EUR)', { quoteId: eurQuote.id }, () =>
@@ -201,7 +240,7 @@ async function euFlow() {
             )
         }
     } else {
-        skip('eu: offRampQuote.create (EUR)', 'no IBAN account created')
+        skip('eu: offRampQuote.create (EUR)', 'no IBAN account created', sepaPayoutActive)
     }
 
     const accountInput = { address: evmDest, network: 'base' as const, token: 'USDC' }
