@@ -208,4 +208,30 @@ describe('SandboxService', () => {
         })
         expect(result).toEqual(response)
     })
+
+    it('simulates a deposit into an auto-ramp account by URL-encoded ID', async () => {
+        const input = { amount: '2525.00', gasFee: '4.20', settle: false }
+        const response = {
+            onRampId: '507f1f77bcf86cd799439011',
+            depositId: '3f1a9c02-6c1c-4f0e-9a6a-2f9c8f6f4b21',
+            status: 'processing',
+            input: { amount: '2525.00', currency: 'EUR' },
+            fees: {
+                total: '31.98',
+                currency: 'EUR',
+                breakdown: { platform: '25.25', exchange: '2.53', network: '4.20' },
+            },
+            output: { amount: '2493.02', token: 'USDC' },
+        }
+        vi.mocked(mockClient.restApi).mockResolvedValue(response)
+
+        const result = await sandboxService.simulateAutoRampDeposit('account_123/with space', input)
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'post',
+            path: '/v1/sandbox/auto-ramp-accounts/account_123%2Fwith%20space/deposit',
+            body: input,
+        })
+        expect(result).toEqual(response)
+    })
 })
