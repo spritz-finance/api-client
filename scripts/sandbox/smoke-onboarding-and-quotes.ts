@@ -6,6 +6,7 @@
  *   ./scripts/sandbox/run.sh smoke-onboarding-and-quotes --only=eu
  *   ./scripts/sandbox/run.sh smoke-onboarding-and-quotes --only=us
  *   ./scripts/sandbox/run.sh smoke-onboarding-and-quotes --agreement-id=<signed agreement id>
+ *   ./scripts/sandbox/run.sh smoke-onboarding-and-quotes --wait-sepa=180   (seconds, default 120; 0 = check once)
  *
  * Requires SPRITZ_INTEGRATION_KEY and SPRITZ_INTEGRATOR_SECRET in .env. Each run creates
  * fresh users, so SPRITZ_API_KEY is not needed.
@@ -24,14 +25,17 @@
  * - Terms are accepted headlessly with a random agreement id by default. Sandbox accepts any
  *   id, as the platform's off-ramp conformance suite relies on. Pass --agreement-id to use
  *   one captured from the provider's hosted page instead.
- * - EUR steps need the user's SEPA capabilities active. While Bridge reviews the user they
- *   stay `pending`, and the IBAN account and auto-ramp account calls return 403.
+ * - Bridge activates SEPA asynchronously after terms. The EU flow polls `user.getMe()` every
+ *   10s (up to --wait-sepa seconds) until crypto_to_fiat and fiat_to_crypto on
+ *   sepa_credit_transfer are both active; before that, IBAN and auto-ramp calls return 403.
+ * - EUR quotes use `amountMode: 'input'`: the default `output` is rejected because the EUR
+ *   rate is only fixed at settlement.
  * - Users are created with `POST /v1/integrator/users` directly, so the script does not
  *   depend on which route `user.create()` takes.
  *
  * Required steps (exit code 1 if any fails): compliance.submit (complianceFieldsComplete),
- * terms.accept (termsAccepted), the US quote create, and, once the EU user's SEPA payout
- * capability is active, the IBAN account and EUR quote create. Every step's request and
+ * terms.accept (termsAccepted), the SEPA wait, the US quote create, and, once the EU user's
+ * SEPA capabilities are active, the IBAN account, EUR quote and auto-ramp account create. Every step's request and
  * response is written to qc/evidence/ (gitignored), with API keys redacted.
  */
 import { randomUUID } from 'node:crypto'
@@ -58,6 +62,11 @@ function parseArgs(args: string[]): Record<string, string> {
 
 const args = parseArgs(process.argv.slice(2))
 const only = args.only
+const waitSepaSeconds = Number(args['wait-sepa'] ?? 120)
+if (!Number.isFinite(waitSepaSeconds) || waitSepaSeconds < 0) {
+    console.error(`--wait-sepa must be a number of seconds >= 0, got "${args['wait-sepa']}"`)
+    process.exit(1)
+}
 const destination = optionalEnv('SPRITZ_DEST_ADDRESS')
 const evmDest =
     destination && /^0x[0-9a-fA-F]{40}$/.test(destination) ? destination : DEFAULT_EVM_DEST
@@ -192,21 +201,45 @@ async function euFlow() {
         },
         { required: true }
     )
-    const me = (await step('eu: user.getMe (after terms)', null, () => client.user.getMe())) as
-        | { capabilities?: { product: string; method?: string; status: string }[] }
-        | undefined
-
-    // The EUR steps can only pass once SEPA payout is active. While Bridge reviews the user
-    // it is `pending` and they are expected to fail, so they only count once it is active.
-    const sepaPayoutActive = !!me?.capabilities?.some(
-        (c) =>
-            c.product === 'crypto_to_fiat' &&
-            c.method === 'sepa_credit_transfer' &&
-            c.status === 'active'
+    // Bridge activates SEPA asynchronously after terms: poll the user until both SEPA
+    // capabilities are active before creating anything (or subscribe to
+    // `capabilities.updated`). The wait is required: if SEPA never becomes active, the run
+    // fails instead of silently skipping the EUR steps.
+    type Capability = { product: string; method?: string; status: string }
+    const sepaStatus = (capabilities: Capability[] | undefined, product: string) =>
+        capabilities?.find((c) => c.product === product && c.method === 'sepa_credit_transfer')
+            ?.status
+    let capabilities: Capability[] | undefined
+    await step(
+        `eu: wait for SEPA capabilities active (<= ${waitSepaSeconds}s)`,
+        null,
+        async () => {
+            const deadline = Date.now() + waitSepaSeconds * 1000
+            const started = Date.now()
+            for (;;) {
+                const me = (await client.user.getMe()) as { capabilities?: Capability[] }
+                capabilities = me.capabilities
+                const payout = sepaStatus(capabilities, 'crypto_to_fiat')
+                const onramp = sepaStatus(capabilities, 'fiat_to_crypto')
+                if (payout === 'active' && onramp === 'active') {
+                    return {
+                        crypto_to_fiat: payout,
+                        fiat_to_crypto: onramp,
+                        afterSeconds: Math.round((Date.now() - started) / 1000),
+                    }
+                }
+                if (Date.now() >= deadline) {
+                    throw new Error(
+                        `SEPA still crypto_to_fiat=${payout} fiat_to_crypto=${onramp} after ${waitSepaSeconds}s`
+                    )
+                }
+                await new Promise((resolve) => setTimeout(resolve, 10_000))
+            }
+        },
+        { required: true }
     )
-    console.log(
-        `  info    SEPA payout ${sepaPayoutActive ? 'active: EUR steps are required' : 'not active: EUR steps are optional'}`
-    )
+    const sepaPayoutActive = sepaStatus(capabilities, 'crypto_to_fiat') === 'active'
+    const sepaOnrampActive = sepaStatus(capabilities, 'fiat_to_crypto') === 'active'
 
     const ibanInput = {
         type: 'iban' as const,
@@ -244,8 +277,11 @@ async function euFlow() {
     }
 
     const accountInput = { address: evmDest, network: 'base' as const, token: 'USDC' }
-    const account = (await step('eu: autoRampAccount.create', accountInput, () =>
-        client.autoRampAccount.create(accountInput)
+    const account = (await step(
+        'eu: autoRampAccount.create',
+        accountInput,
+        () => client.autoRampAccount.create(accountInput),
+        { required: sepaOnrampActive }
     )) as { id: string } | undefined
     await step('eu: autoRampAccount.list', null, () => client.autoRampAccount.list())
     if (!account) return skip('eu: auto-ramp follow-ups', 'no account created')
