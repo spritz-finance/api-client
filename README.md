@@ -67,6 +67,7 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
     - [User Data](#user-data)
     - [Identity Verification](#identity-verification)
     - [Regional Compliance](#regional-compliance)
+    - [Accepting Terms](#accepting-terms)
 - [Accounts](#accounts)
     - [Bank Accounts](#bank-accounts)
     - [Debit Cards](#debit-cards)
@@ -316,6 +317,21 @@ const { complianceFieldsComplete, bridgeCustomerUpdated } = await client.complia
 | `accountPurposeOther`  | `string`            | Required when `accountPurpose` is `'other'`, not accepted otherwise   |
 
 `bridgeCustomerUpdated` is `false` when the user has not accepted the provider's terms yet. The fields are stored and sent when the provider customer is created, so this is not a failure.
+
+### Accepting Terms
+
+While terms are outstanding, the user's capabilities on `user.getMe()` carry a `terms_acceptance` requirement whose `actionUrl` is the provider's hosted flow. That flow produces a signed agreement id; pass it to `terms.accept()` (`POST /v1/users/me/terms`):
+
+```typescript
+const { termsAccepted } = await client.terms.accept({
+    agreementId, // from the hosted terms flow
+    sessionId, // optional fraud-session id from the provider's client SDK
+})
+```
+
+`agreementId` is opaque: the platform resolves which provider it belongs to. This is the REST replacement for the legacy GraphQL `onramp.acceptTermsOfService()`.
+
+> **Retries:** this endpoint does not accept an idempotency key. If a request times out, call `user.getMe()` and check whether the `terms_acceptance` requirement is still outstanding before submitting again.
 
 ## Accounts
 
