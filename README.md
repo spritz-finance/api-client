@@ -1042,10 +1042,10 @@ const quote = await client.offRampQuote.submit(quoteId, {
 })
 
 quote.status // 'transaction_pending'
-quote.offRampId // the off-ramp (fiat leg), created right away
+quote.offRampId // string | null
 ```
 
-`confirmed` still comes from the chain.
+`offRampId` can still be `null` in this response: the generated type allows it, and the field is documented as set once the crypto payment confirms. Handle `null` by reading the quote again later with `offRampQuote.get()`, or by waiting for the `payment.created` webhook. `confirmed` still comes from the chain.
 
 > **Retries:** reporting the same hash again is safe, including after a timeout. Reporting a different hash once one is on record throws a `BadRequestError`.
 

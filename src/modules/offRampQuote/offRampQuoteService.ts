@@ -87,8 +87,9 @@ export class OffRampQuoteService {
      * (`POST /v1/off-ramp-quotes/{quoteId}/submit`).
      *
      * Optional: the chain watcher detects the transaction on its own. Reporting it moves
-     * the quote to `transaction_pending` and creates its off-ramp (fiat leg) right away;
-     * `confirmed` still comes from the chain. Works for both fulfillment types.
+     * the quote to `transaction_pending` without waiting for the watcher; `confirmed` still
+     * comes from the chain. Works for both fulfillment types. `offRampId` on the response
+     * can still be `null`: read the quote again with `get` to pick it up.
      *
      * Safe to retry with the same hash, including after a timeout. Throws a
      * `BadRequestError` (400) when a different hash is already on record for the quote.
