@@ -1032,6 +1032,23 @@ Sui: pass `senderAddress` too, then restore the bytes with `Transaction.from(tra
 
 Without `senderAddress`, Solana and Sui quotes are rejected with a `BadRequestError` (problem code `sender_address_required`). A `send_to_address` quote (Bitcoin, Dash, Tron) has no transaction to sign and is rejected with an `UnprocessableEntityError`.
 
+#### Reporting the Transaction
+
+Optional. After broadcasting, report the transaction hash so tracking starts immediately instead of when the chain watcher notices it. This works for both fulfillment types: the transaction you signed, or the transfer you sent to `sendTo.address`.
+
+```typescript
+const quote = await client.offRampQuote.submit(quoteId, {
+    transactionHash: '0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060',
+})
+
+quote.status // 'transaction_pending'
+quote.offRampId // string | null
+```
+
+`offRampId` can still be `null` in this response: the generated type allows it, and the field is documented as set once the crypto payment confirms. Handle `null` by reading the quote again later with `offRampQuote.get()`, or by waiting for the `payment.created` webhook. `confirmed` still comes from the chain.
+
+> **Retries:** reporting the same hash again is safe, including after a timeout. Reporting a different hash once one is on record throws a `BadRequestError`.
+
 ## On-ramp
 
 The on-ramp feature allows users to purchase crypto stablecoins via ACH or wire transfer.
