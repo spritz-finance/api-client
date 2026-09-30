@@ -97,6 +97,7 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
     - [Checking Eligibility](#checking-eligibility)
 - [Sandbox](#sandbox)
     - [Bypassing KYC](#bypassing-kyc)
+    - [Simulating an Auto-ramp Deposit](#simulating-an-auto-ramp-deposit)
 - [Webhooks](#webhooks)
     - [Events](#events)
     - [Setup](#setup)
@@ -1426,6 +1427,26 @@ await client.sandbox.bypassKyc({ failed: true })
 ```
 
 This endpoint returns 403 in production.
+
+### Simulating an Auto-ramp Deposit
+
+The provider's sandbox cannot credit a virtual account, so this is the only way to make an [auto-ramp account](#auto-ramp-accounts) settle in sandbox:
+
+```typescript
+const { onRampId, depositId, status } = await client.sandbox.simulateAutoRampDeposit(accountId, {
+    amount: '2525.00', // in the account's currency
+    gasFee: '4.20', // optional, defaults to '0.00'
+    exchangeFee: '2.53', // optional; otherwise derived from the provider's live spread
+    settle: false, // optional, leaves the deposit at 'processing'
+})
+
+// Advance the same on-ramp
+await client.sandbox.simulateAutoRampDeposit(accountId, { amount: '2525.00', depositId })
+
+const onRamp = await client.onrampPayment.get(onRampId)
+```
+
+The on-ramp it produces is an ordinary one: it appears in `onrampPayment.list()`, fires the same `onramp.*` webhooks and carries the same fee breakdown. This endpoint returns 403 in production.
 
 ## Webhooks
 

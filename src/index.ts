@@ -105,6 +105,8 @@ export type {
     PrepareDepositWithProgramControlResponse,
     SetAchDebitExposureCapRequest,
     SetAchDebitExposureCapResponse,
+    SimulateAutoRampDepositRequest,
+    SimulateAutoRampDepositResponse,
 } from './modules/sandbox/sandboxService'
 export type {
     OnRamp,
