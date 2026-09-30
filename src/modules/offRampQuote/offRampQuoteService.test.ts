@@ -122,4 +122,21 @@ describe('OffRampQuoteService', () => {
         })
         expect(result).toEqual(transaction)
     })
+
+    it('reports the broadcast transaction for a quote', async () => {
+        const input = {
+            transactionHash: '0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060',
+        }
+        const submitted = { ...QUOTE, status: 'transaction_pending' }
+        vi.mocked(mockClient.restApi).mockResolvedValue(submitted)
+
+        const result = await offRampQuoteService.submit('quote_123/with space', input)
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'post',
+            path: '/v1/off-ramp-quotes/quote_123%2Fwith%20space/submit',
+            body: input,
+        })
+        expect(result).toEqual(submitted)
+    })
 })

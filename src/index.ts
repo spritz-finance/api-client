@@ -112,6 +112,7 @@ export type {
     OffRampQuote,
     OffRampQuoteTransactionRequest,
     OffRampQuoteTransaction,
+    SubmitOffRampQuoteRequest,
 } from './modules/offRampQuote/offRampQuoteService'
 export type { UserProfile } from './modules/user/userService'
 export type { VerificationSession } from './modules/verification/verificationService'
