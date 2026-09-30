@@ -91,6 +91,7 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
     - [Checking User Access](#checking-user-access)
     - [Activation Steps](#activation-steps)
     - [Virtual Accounts](#virtual-accounts)
+    - [Auto-ramp Accounts](#auto-ramp-accounts)
     - [Supported Tokens](#supported-tokens)
 - [ACH Onramp (Direct Debit)](#ach-onramp-direct-debit)
     - [Checking Eligibility](#checking-eligibility)
@@ -1157,6 +1158,93 @@ const { bankName, bankAccountNumber, bankRoutingNumber, bankAddress } =
 
 // List all virtual accounts
 const accounts = await client.virtualAccounts.list()
+```
+
+### Auto-ramp Accounts
+
+An auto-ramp account is a virtual bank account in the user's name: fiat deposited into it is converted to a token and sent to a wallet address. `client.autoRampAccount` is the REST replacement for the legacy GraphQL `client.virtualAccounts` above, and the one to use for EUR (SEPA) accounts.
+
+#### Listing Accounts
+
+```typescript
+const accounts = await client.autoRampAccount.list()
+
+// Example response
+[
+    {
+        id: '507f1f77bcf86cd799439011',
+        depositInstructions: {
+            type: 'iban',
+            bankName: 'Example Bank',
+            bankAddress: '1 Example Street, Berlin',
+            paymentRails: ['sepa'],
+            iban: 'DE89370400440532013000',
+            bic: 'COBADEFFXXX',
+        },
+        network: 'solana',
+        address: '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d',
+        token: 'USDC',
+        currency: 'EUR',
+        status: 'active',
+        createdAt: '2026-01-15T10:30:00.000Z',
+    },
+]
+```
+
+Branch on `depositInstructions.type`: `us` carries `bankRoutingNumber` and `bankAccountNumber`, `iban` carries `iban` and an optional `bic`.
+
+#### Getting an Account
+
+```typescript
+const account = await client.autoRampAccount.get(accountId)
+```
+
+#### Creating an Account
+
+```typescript
+const account = await client.autoRampAccount.create({
+    address: '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d',
+    network: 'solana',
+    token: 'USDC',
+})
+```
+
+The address must be valid for the network, and the network and token combination must be supported for the user's region (see `GET /v1/on-ramps/supported-pairs`); otherwise the call throws a `BadRequestError` whose `problem.field` is `address` or `network`. Confirm `account.status` is `active` before showing the deposit instructions to a user.
+
+> **Retries:** this endpoint does not support an idempotency key. After a timeout, call `autoRampAccount.list()` and look for the account before creating it again.
+
+#### Estimating a Deposit
+
+```typescript
+const estimate = await client.autoRampAccount.estimate(accountId, '2525.00')
+
+estimate.fees.total // every expected fee, in the account's currency (EUR on SEPA accounts)
+estimate.fees.maximum // upper bound on the total, when there is enough history
+estimate.output.amount // crypto expected at the destination
+estimate.output.minimum // lower bound on the amount, when there is enough history
+estimate.rate.asOf // when the rate was read
+```
+
+This is an estimate, not a quote: no rate is locked. The fee belongs to the account, so do not reuse an estimate across accounts.
+
+`fees.maximum` and `output.minimum` are omitted until enough deposits have settled on the network (`fees.networkFeeSamples` says how many). Do not promise a user a ceiling or a floor when they are absent.
+
+When no estimate can be produced, branch on the problem code:
+
+```typescript
+import { hasProblemCode } from '@spritz-finance/api-client'
+
+try {
+    await client.autoRampAccount.estimate(accountId, '2525.00')
+} catch (error) {
+    if (hasProblemCode(error, 'rate_unavailable')) {
+        // 503, transient: retry
+    } else if (hasProblemCode(error, 'unsupported_currency_pair')) {
+        // 400, permanent
+    } else if (hasProblemCode(error, 'exchange_rate_provider_error')) {
+        // 502, the rate provider failed
+    }
+}
 ```
 
 ### Supported Tokens

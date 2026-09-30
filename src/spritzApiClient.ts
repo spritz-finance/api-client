@@ -16,6 +16,7 @@ import { OffRampQuoteService } from './modules/offRampQuote/offRampQuoteService'
 import { OnrampPaymentService } from './modules/onrampPayment/onrampPaymentService'
 import { OnrampService } from './modules/onramp/onrampService'
 import { VirtualAccountsService } from './modules/virtualAccounts/virtualAccountsService'
+import { AutoRampAccountService } from './modules/autoRampAccount/autoRampAccountService'
 import { PaymentService } from './modules/payment/paymentService'
 import { PaymentRequestService } from './modules/paymentRequest/paymentRequestService'
 import { TermsService } from './modules/terms/termsService'
@@ -83,6 +84,7 @@ export class SpritzApiClient {
     public offramp: OfframpService
     public offRampQuote: OffRampQuoteService
     public virtualAccounts: VirtualAccountsService
+    public autoRampAccount: AutoRampAccountService
     public virtualCard: VirtualCardService
     public bill: BillService
     public institution: InstitutionService
@@ -160,6 +162,7 @@ export class SpritzApiClient {
         this.offramp = new OfframpService(this.client)
         this.offRampQuote = new OffRampQuoteService(this.client)
         this.virtualAccounts = new VirtualAccountsService(this.client)
+        this.autoRampAccount = new AutoRampAccountService(this.client)
         this.virtualCard = new VirtualCardService(this.client)
         this.bill = new BillService(this.client)
         this.institution = new InstitutionService(this.client)
