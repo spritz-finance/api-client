@@ -110,6 +110,8 @@ export type { OffRampRefundRequest, OffRampRefundResponse } from './modules/offr
 export type {
     CreateOffRampQuoteRequest,
     OffRampQuote,
+    OffRampQuoteTransactionRequest,
+    OffRampQuoteTransaction,
 } from './modules/offRampQuote/offRampQuoteService'
 export type { UserProfile } from './modules/user/userService'
 export type { VerificationSession } from './modules/verification/verificationService'
