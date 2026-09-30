@@ -995,6 +995,43 @@ quote.confirmation // { transactionHash, explorerUrl } once the transaction is d
 quote.offRampId // the off-ramp (fiat leg) once it is created, else null
 ```
 
+#### Getting the Transaction to Sign
+
+For a `sign_transaction` quote, fetch the transaction and branch on `type`.
+
+EVM: build the transaction from the contract call.
+
+```typescript
+const transaction = await client.offRampQuote.getTransaction(quote.id)
+
+if (transaction.type === 'evm') {
+    await walletClient.sendTransaction({
+        to: transaction.contractAddress,
+        data: transaction.calldata,
+        value: transaction.value ? BigInt(transaction.value) : undefined,
+    })
+}
+```
+
+Solana: the transaction is built for `senderAddress`, so pass it. `feePayer` is optional and defaults to `senderAddress`.
+
+```typescript
+const transaction = await client.offRampQuote.getTransaction(quote.id, {
+    senderAddress: wallet.publicKey.toBase58(),
+})
+
+if (transaction.type === 'solana') {
+    const tx = VersionedTransaction.deserialize(
+        Buffer.from(transaction.transactionSerialized, 'base64')
+    )
+    // sign and send tx
+}
+```
+
+Sui: pass `senderAddress` too, then restore the bytes with `Transaction.from(transaction.transactionSerialized)` from `@mysten/sui/transactions`, sign and execute.
+
+Without `senderAddress`, Solana and Sui quotes are rejected with a `BadRequestError` (problem code `sender_address_required`). A `send_to_address` quote (Bitcoin, Dash, Tron) has no transaction to sign and is rejected with an `UnprocessableEntityError`.
+
 ## On-ramp
 
 The on-ramp feature allows users to purchase crypto stablecoins via ACH or wire transfer.
