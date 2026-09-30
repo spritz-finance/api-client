@@ -85,6 +85,7 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
     - [Retrieving Payments](#retrieving-payments)
     - [Payment Limits](#payment-limits)
     - [Refunding a Payment](#refunding-a-payment)
+    - [Off-ramp Quotes](#off-ramp-quotes)
 - [On-ramp](#on-ramp)
     - [Prerequisites](#prerequisites)
     - [Checking User Access](#checking-user-access)
@@ -939,6 +940,50 @@ await client.offramp.refund(offRampId, { method: 'credit' })
 Only failed off-ramps settled through Modern Treasury or Checkbook are refundable — anything else is rejected. The response is the updated off-ramp record, with `status` moving to `refunded`.
 
 > **Retries:** the platform recommends an `Idempotency-Key` header so a retried request replays the original response rather than returning a stale "not refundable" error. The client does not currently send one, so if a refund request times out, re-fetch the off-ramp and check its `status` before issuing another.
+
+### Off-ramp Quotes
+
+Off-ramp quotes are the REST flow for converting crypto to fiat, including to EUR destinations: create a quote, fulfil it on-chain, then follow the quote until its off-ramp is created. For new integrations use `client.offRampQuote`; the payment-request flow above is the legacy GraphQL flow.
+
+#### Creating a Quote
+
+```typescript
+const quote = await client.offRampQuote.create({
+    accountId: bankAccount.id,
+    amount: '100.00',
+    amountMode: 'input',
+    chain: 'base',
+    tokenAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+})
+```
+
+| Field          | Type                  | Description                                                                                           |
+| -------------- | --------------------- | ----------------------------------------------------------------------------------------------------- |
+| `accountId`    | `string`              | Destination account ID                                                                                |
+| `amount`       | `string`              | Destination fiat amount in `output` mode, or USD collected in `input` mode                            |
+| `amountMode`   | `'output' \| 'input'` | Optional, defaults to `output`. **EUR destinations require `input`**                                  |
+| `chain`        | enum                  | Chain the crypto is sent on                                                                           |
+| `tokenAddress` | `string`              | Token contract address. Optional in the type, but **required on every chain except Bitcoin and Dash** |
+| `rail`         | enum (optional)       | Payout rail, e.g. `sepa`                                                                              |
+| `memo`         | `string` (optional)   | Payment note, bank account payouts only                                                               |
+
+Check `quote.fulfillment` for the next step:
+
+- `sign_transaction`: get the transaction to sign, sign it and broadcast it.
+- `send_to_address`: send exactly `sendTo.amount` of `sendTo.token` to `sendTo.address` before `sendTo.expiresAt`.
+
+`sendTo` is typed as nullable, and checking `fulfillment` does not narrow it, so check it too:
+
+```typescript
+if (quote.fulfillment === 'send_to_address' && quote.sendTo) {
+    const { address, amount, token, expiresAt } = quote.sendTo
+    // send exactly `amount` of `token` to `address` before `expiresAt`
+}
+```
+
+With `amountMode: 'input'`, `quote.input.amount` is the exact USD value collected and `quote.output.amount` is an estimate (`quote.output.estimated` is `true`). The settled amount is reported by the off-ramp.
+
+> **Retries:** this endpoint does not support an idempotency key. A retry creates a second quote. A quote that is never funded ends as `expired`.
 
 ## On-ramp
 
