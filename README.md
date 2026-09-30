@@ -970,7 +970,16 @@ const quote = await client.offRampQuote.create({
 Check `quote.fulfillment` for the next step:
 
 - `sign_transaction`: get the transaction to sign, sign it and broadcast it.
-- `send_to_address`: send exactly `quote.sendTo.amount` of `quote.sendTo.token` to `quote.sendTo.address` before `quote.sendTo.expiresAt`.
+- `send_to_address`: send exactly `sendTo.amount` of `sendTo.token` to `sendTo.address` before `sendTo.expiresAt`.
+
+`sendTo` is typed as nullable, and checking `fulfillment` does not narrow it, so check it too:
+
+```typescript
+if (quote.fulfillment === 'send_to_address' && quote.sendTo) {
+    const { address, amount, token, expiresAt } = quote.sendTo
+    // send exactly `amount` of `token` to `address` before `expiresAt`
+}
+```
 
 With `amountMode: 'input'`, `quote.input.amount` is the exact USD value collected and `quote.output.amount` is an estimate (`quote.output.estimated` is `true`). The settled amount is reported by the off-ramp.
 
