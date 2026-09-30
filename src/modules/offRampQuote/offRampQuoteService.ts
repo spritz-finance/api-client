@@ -36,4 +36,12 @@ export class OffRampQuoteService {
             })
         )
     }
+
+    public async get(quoteId: string) {
+        return this.client.restApi(
+            restRoute('/v1/off-ramp-quotes/{quoteId}', 'get', {
+                params: { quoteId },
+            })
+        )
+    }
 }
