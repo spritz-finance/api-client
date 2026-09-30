@@ -54,6 +54,12 @@ export {
 } from './modules/user/accessTypes'
 export { onrampSupportedTokens } from './modules/virtualAccounts/types'
 export type { CreateVirtualAccountInput } from './modules/virtualAccounts/types'
+export type {
+    AutoRampAccount,
+    AutoRampAccountEstimate,
+    AutoRampAccountList,
+    CreateAutoRampAccountRequest,
+} from './modules/autoRampAccount/autoRampAccountService'
 export type { PaymentLimitsResponse } from './modules/payment/paymentService'
 export type {
     FundingSource,
