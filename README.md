@@ -106,12 +106,15 @@ Spritz uses two levels of authentication:
 - **Integration key** — identifies your application. Provided by Spritz.
 - **User API key** — scoped to a single user. Returned when you create a user.
 
+Credentials issued by the Spritz Developer Console also include an **integrator secret**. Pass it on your backend to sign REST requests with HMAC. Never ship it to a browser or mobile app.
+
 ```typescript
 import { SpritzApiClient, Environment } from '@spritz-finance/api-client'
 
 const client = SpritzApiClient.initialize({
     environment: Environment.Sandbox,
     integrationKey: 'YOUR_INTEGRATION_KEY_HERE',
+    integratorSecret: process.env.SPRITZ_INTEGRATOR_SECRET, // backend only
     apiKey: 'YOUR_USER_API_KEY_HERE', // omit if no user exists yet
 })
 ```
@@ -140,6 +143,8 @@ const user = await client.user.create({
 ```
 
 Creating a user with an email that already exists will throw an error.
+
+With an integrator secret configured, `user.create()` calls `POST /v1/integrator/users` on the REST API, and an existing email throws a `ConflictError` (409). Without a secret it uses the legacy route, which does not accept Developer Console credentials.
 
 ### Reauthorization
 
