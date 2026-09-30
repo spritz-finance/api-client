@@ -110,6 +110,10 @@ export type { OffRampRefundRequest, OffRampRefundResponse } from './modules/offr
 export type { UserProfile } from './modules/user/userService'
 export type { VerificationSession } from './modules/verification/verificationService'
 export type {
+    ComplianceRequirements,
+    ComplianceRequirementField,
+} from './modules/compliance/complianceService'
+export type {
     paths as RestApiPaths,
     operations as RestApiOperations,
 } from './rest/__generated__/api'

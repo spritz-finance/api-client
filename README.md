@@ -66,6 +66,7 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
     - [Reauthorization](#reauthorization)
     - [User Data](#user-data)
     - [Identity Verification](#identity-verification)
+    - [Regional Compliance](#regional-compliance)
 - [Accounts](#accounts)
     - [Bank Accounts](#bank-accounts)
     - [Debit Cards](#debit-cards)
@@ -274,6 +275,25 @@ if (userData.verificationMetadata?.failureReason === 'duplicate_identity') {
     }
 }
 ```
+
+### Regional Compliance
+
+Some regions require additional fields before their capabilities unlock. In the EEA these are place of birth, nationalities and account purpose.
+
+#### Checking Requirements
+
+`compliance.getRequirements()` returns the additional fields the user's region requires (`GET /v1/users/me/compliance/requirements`), typed as `ComplianceRequirements`:
+
+```typescript
+const { required, region, complete, deadline, fields } = await client.compliance.getRequirements()
+
+// required: false outside a regulated region, with an empty `fields` array
+// region: e.g. 'EEA', or null when nothing is required
+// deadline: e.g. '2026-06-15', or null
+// fields: [{ field: 'placeOfBirth', status: 'complete' | 'missing' }, ...]
+```
+
+While `complete` is `false`, the region's capabilities on `user.getMe()` carry a `regional_compliance` requirement.
 
 ## Accounts
 
