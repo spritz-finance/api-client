@@ -12,6 +12,10 @@ export type OffRampQuoteTransaction = PathResponse<
     '/v1/off-ramp-quotes/{quoteId}/transaction',
     'post'
 >
+export type SubmitOffRampQuoteRequest = PathRequestBody<
+    '/v1/off-ramp-quotes/{quoteId}/submit',
+    'post'
+>
 
 export class OffRampQuoteService {
     private client: SpritzClient
@@ -72,6 +76,26 @@ export class OffRampQuoteService {
     public async getTransaction(quoteId: string, input: OffRampQuoteTransactionRequest = {}) {
         return this.client.restApi(
             restRoute('/v1/off-ramp-quotes/{quoteId}/transaction', 'post', {
+                params: { quoteId },
+                body: input,
+            })
+        )
+    }
+
+    /**
+     * Report the on-chain transaction broadcast for a quote
+     * (`POST /v1/off-ramp-quotes/{quoteId}/submit`).
+     *
+     * Optional: the chain watcher detects the transaction on its own. Reporting it moves
+     * the quote to `transaction_pending` and creates its off-ramp (fiat leg) right away;
+     * `confirmed` still comes from the chain. Works for both fulfillment types.
+     *
+     * Safe to retry with the same hash, including after a timeout. Throws a
+     * `BadRequestError` (400) when a different hash is already on record for the quote.
+     */
+    public async submit(quoteId: string, input: SubmitOffRampQuoteRequest) {
+        return this.client.restApi(
+            restRoute('/v1/off-ramp-quotes/{quoteId}/submit', 'post', {
                 params: { quoteId },
                 body: input,
             })
