@@ -51,7 +51,29 @@ export class UserService {
         this.client = client
     }
 
-    public async createUser(args: CreateUserParams) {
+    /**
+     * Create a user under the integrator and return their API key.
+     *
+     * With integrator HMAC credentials (`integrationKey` + `integratorSecret`, as issued
+     * by the Developer Console) this calls `POST /v1/integrator/users` on the REST API.
+     * Without a secret it uses the legacy `/users/integration` route, which does not
+     * accept Developer Console credentials.
+     *
+     * On the REST route an email that already exists is rejected with a `ConflictError`
+     * (409); use Spritz Connect to have that user authorize the integrator instead.
+     */
+    public async createUser(args: CreateUserParams): Promise<CreateUserResponse> {
+        if (this.client.usesIntegratorAuth) {
+            return this.client.restApi(
+                restRoute('/v1/integrator/users', 'post', {
+                    body: {
+                        email: args.email,
+                        ...(args.timezone ? { timezone: args.timezone } : {}),
+                    },
+                })
+            )
+        }
+
         return this.client.request<CreateUserResponse, CreateUserParams>({
             method: 'post',
             path: '/users/integration',

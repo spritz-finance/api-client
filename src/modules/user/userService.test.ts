@@ -54,4 +54,67 @@ describe('UserService', () => {
         })
         expect(result).toEqual(profile)
     })
+
+    it('creates a user on the REST API with integrator HMAC credentials', async () => {
+        const integratorClient = {
+            restApi: vi.fn(),
+            request: vi.fn(),
+            usesIntegratorAuth: true,
+        } as unknown as SpritzClient
+        const service = new UserService(integratorClient)
+        const created = { userId: 'usr_123', email: 'user@example.com', apiKey: 'ak_test' }
+        vi.mocked(integratorClient.restApi).mockResolvedValue(created)
+
+        const result = await service.create({
+            email: 'user@example.com',
+            timezone: 'Europe/Berlin',
+        })
+
+        expect(integratorClient.restApi).toHaveBeenCalledWith({
+            method: 'post',
+            path: '/v1/integrator/users',
+            body: { email: 'user@example.com', timezone: 'Europe/Berlin' },
+        })
+        expect(integratorClient.request).not.toHaveBeenCalled()
+        expect(result).toEqual(created)
+    })
+
+    it('omits a null timezone on the REST route', async () => {
+        const integratorClient = {
+            restApi: vi.fn(),
+            request: vi.fn(),
+            usesIntegratorAuth: true,
+        } as unknown as SpritzClient
+        const service = new UserService(integratorClient)
+        vi.mocked(integratorClient.restApi).mockResolvedValue({})
+
+        await service.create({ email: 'user@example.com', timezone: null })
+
+        expect(integratorClient.restApi).toHaveBeenCalledWith({
+            method: 'post',
+            path: '/v1/integrator/users',
+            body: { email: 'user@example.com' },
+        })
+    })
+
+    it('creates a user on the legacy route without an integrator secret', async () => {
+        const keyOnlyClient = {
+            restApi: vi.fn(),
+            request: vi.fn(),
+            usesIntegratorAuth: false,
+        } as unknown as SpritzClient
+        const service = new UserService(keyOnlyClient)
+        const created = { userId: 'usr_123', email: 'user@example.com', apiKey: 'ak_test' }
+        vi.mocked(keyOnlyClient.request).mockResolvedValue(created)
+
+        const result = await service.create({ email: 'user@example.com' })
+
+        expect(keyOnlyClient.request).toHaveBeenCalledWith({
+            method: 'post',
+            path: '/users/integration',
+            body: { email: 'user@example.com' },
+        })
+        expect(keyOnlyClient.restApi).not.toHaveBeenCalled()
+        expect(result).toEqual(created)
+    })
 })
