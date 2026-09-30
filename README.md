@@ -290,6 +290,28 @@ const { required, region, complete, deadline, fields } = await client.compliance
 
 While `complete` is `false`, the region's capabilities on `user.getMe()` carry a `regional_compliance` requirement.
 
+#### Submitting Fields
+
+`compliance.submit()` sends the fields (`POST /v1/users/me/compliance`). All required fields must be supplied together; a partial submission is rejected with field-level errors on `error.problem.errors` and nothing is stored.
+
+```typescript
+const { complianceFieldsComplete, bridgeCustomerUpdated } = await client.compliance.submit({
+    placeOfBirth: { country: 'DEU', city: 'Berlin' },
+    nationalities: ['DEU'],
+    accountPurpose: 'personal_or_living_expenses',
+})
+```
+
+| Field                  | Type                | Description                                                           |
+| ---------------------- | ------------------- | --------------------------------------------------------------------- |
+| `placeOfBirth.country` | `string`            | Country of birth, ISO 3166-1 alpha-3 (e.g. `DEU`)                     |
+| `placeOfBirth.city`    | `string` (optional) | City of birth. Recommended now, required by EU law from 2027          |
+| `nationalities`        | `string[]`          | Every nationality the user holds, ISO 3166-1 alpha-3                  |
+| `accountPurpose`       | enum                | What the account is for. See `SubmitComplianceRequest` for the values |
+| `accountPurposeOther`  | `string`            | Required when `accountPurpose` is `'other'`, not accepted otherwise   |
+
+`bridgeCustomerUpdated` is `false` when the user has not accepted the provider's terms yet. The fields are stored and sent when the provider customer is created, so this is not a failure.
+
 ## Accounts
 
 Spritz supports four account types: **Bank Account**, **Debit Card**, **Bill**, and **Virtual Card**. All are referred to as "accounts" within the platform and share common properties (`id`, `type`, `userId`, `country`, `currency`, `createdAt`), with additional fields specific to each type.

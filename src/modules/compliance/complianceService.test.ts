@@ -36,4 +36,25 @@ describe('ComplianceService', () => {
         })
         expect(result).toEqual(requirements)
     })
+
+    it('submits the regional compliance fields', async () => {
+        const input = {
+            placeOfBirth: { country: 'DEU', city: 'Berlin' },
+            nationalities: ['DEU'],
+            accountPurpose: 'other' as const,
+            accountPurposeOther: 'Paying contractors',
+        }
+        const response = { complianceFieldsComplete: true, bridgeCustomerUpdated: false }
+
+        vi.mocked(mockClient.restApi).mockResolvedValue(response)
+
+        const result = await complianceService.submit(input)
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'post',
+            path: '/v1/users/me/compliance',
+            body: input,
+        })
+        expect(result).toEqual(response)
+    })
 })
