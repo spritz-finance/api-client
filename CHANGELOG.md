@@ -1,5 +1,153 @@
 # @spritz-finance/api-client
 
+## 0.19.0
+
+### Minor Changes
+
+- 24698d0: Add `client.compliance.getRequirements()` for `GET /v1/users/me/compliance/requirements`.
+
+  ```typescript
+  const { required, complete, deadline, fields } =
+    await client.compliance.getRequirements();
+  ```
+
+  Returns the additional compliance fields the user's region requires and which of them are still missing. Users outside a regulated region get `required: false` with an empty `fields` array.
+
+  **New**
+
+  - `ComplianceService`, reachable as `client.compliance`.
+  - `ComplianceRequirements` and `ComplianceRequirementField` types, derived from the generated contract.
+
+- 9252dfa: Add `client.compliance.submit(...)` for `POST /v1/users/me/compliance`.
+
+  ```typescript
+  const { complianceFieldsComplete, bridgeCustomerUpdated } =
+    await client.compliance.submit({
+      placeOfBirth: { country: "DEU", city: "Berlin" },
+      nationalities: ["DEU"],
+      accountPurpose: "personal_or_living_expenses",
+    });
+  ```
+
+  All required fields must be supplied together; a partial submission is rejected with field-level errors on `error.problem.errors`. `accountPurposeOther` is required when `accountPurpose` is `'other'`.
+
+  **New**
+
+  - `SubmitComplianceRequest` and `SubmitComplianceResponse` types, derived from the generated contract.
+
+- 375a49b: Add `client.autoRampAccount` for the REST auto-ramp account endpoints: virtual bank accounts in the user's name that convert fiat deposits to crypto.
+
+  ```typescript
+  const account = await client.autoRampAccount.create({
+    address: "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
+    network: "solana",
+    token: "USDC",
+  });
+
+  const estimate = await client.autoRampAccount.estimate(account.id, "2525.00");
+  ```
+
+  `create` does not support an idempotency key: after a timeout, call `list()` before creating again. `estimate` returns an estimate, not a quote; branch on `error.problem.code` when it fails.
+
+  This is the REST replacement for the legacy GraphQL `client.virtualAccounts`.
+
+  **New**
+
+  - `AutoRampAccountService`, reachable as `client.autoRampAccount`, with `list()`, `get(accountId)`, `create(input)` and `estimate(accountId, amount)`.
+  - `AutoRampAccount`, `AutoRampAccountList`, `CreateAutoRampAccountRequest` and `AutoRampAccountEstimate` types, derived from the generated contract.
+
+- 3561430: Add `client.offRampQuote.create(...)` for `POST /v1/off-ramp-quotes/`.
+
+  ```typescript
+  const quote = await client.offRampQuote.create({
+    accountId: bankAccount.id,
+    amount: "100.00",
+    amountMode: "input",
+    chain: "base",
+    tokenAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  });
+  ```
+
+  Check `quote.fulfillment` for the next step. EUR destinations require `amountMode: 'input'`; the quote's `output.amount` is then an estimate. `tokenAddress` is required on every chain except Bitcoin and Dash. The endpoint does not support an idempotency key, so a retry creates a second quote.
+
+  **New**
+
+  - `client.offRampQuote.create(input)`.
+  - `CreateOffRampQuoteRequest` and `OffRampQuote` types, derived from the generated contract.
+
+- 9d8d70b: Add `client.offRampQuote.get(quoteId)` for `GET /v1/off-ramp-quotes/{quoteId}`.
+
+  ```typescript
+  const quote = await client.offRampQuote.get(quoteId);
+  ```
+
+  Returns the same `OffRampQuote` shape as `create`. Use it to follow `status`, `confirmation` and `offRampId`.
+
+- efa8d6f: Add `client.offRampQuote.getTransaction(quoteId, input?)` for `POST /v1/off-ramp-quotes/{quoteId}/transaction`.
+
+  ```typescript
+  const transaction = await client.offRampQuote.getTransaction(quote.id, {
+    senderAddress: wallet.publicKey.toBase58(),
+  });
+  ```
+
+  Returns the transaction to sign for a `sign_transaction` quote: EVM calldata, or a serialized Solana or Sui transaction; branch on `type`. Pass `senderAddress` on Solana and Sui. `feePayer` is Solana only.
+
+  **New**
+
+  - `client.offRampQuote.getTransaction(quoteId, input?)`.
+  - `OffRampQuoteTransactionRequest` and `OffRampQuoteTransaction` types, derived from the generated contract.
+
+- 9b1c6fd: Add `client.offRampQuote.submit(quoteId, { transactionHash })` for `POST /v1/off-ramp-quotes/{quoteId}/submit`.
+
+  ```typescript
+  const quote = await client.offRampQuote.submit(quote.id, { transactionHash });
+  ```
+
+  Optional step: reports the broadcast transaction so the quote moves to `transaction_pending` and its off-ramp is created right away, instead of when the chain watcher notices it. Safe to retry with the same hash.
+
+  **New**
+
+  - `client.offRampQuote.submit(quoteId, input)`.
+  - `SubmitOffRampQuoteRequest` type, derived from the generated contract.
+
+- 97894db: Add `client.sandbox.simulateAutoRampDeposit(accountId, { amount, ... })` for `POST /v1/sandbox/auto-ramp-accounts/{id}/deposit`.
+
+  ```typescript
+  const { onRampId, status } = await client.sandbox.simulateAutoRampDeposit(
+    accountId,
+    {
+      amount: "2525.00",
+    }
+  );
+  ```
+
+  This is the only way to make an auto-ramp account settle in sandbox. The on-ramp it produces is an ordinary one: follow `onRampId` with `client.onrampPayment.get()`. Returns 403 in production.
+
+  **New**
+
+  - `client.sandbox.simulateAutoRampDeposit(accountId, input)`.
+  - `SimulateAutoRampDepositRequest` and `SimulateAutoRampDepositResponse` types, derived from the generated contract.
+
+- 5cf4071: Add `client.terms.accept({ agreementId, sessionId? })` for `POST /v1/users/me/terms`.
+
+  ```typescript
+  const { termsAccepted } = await client.terms.accept({ agreementId });
+  ```
+
+  `agreementId` is the signed agreement id the user obtains from the provider's hosted flow. The URL of that flow is the `actionUrl` of the `terms_acceptance` requirement on `client.user.getMe()`. The endpoint does not accept an idempotency key. This is the REST replacement for the legacy GraphQL `client.onramp.acceptTermsOfService()`.
+
+  **New**
+
+  - `TermsService`, reachable as `client.terms`.
+  - `AcceptTermsRequest` and `AcceptTermsResponse` types, derived from the generated contract.
+
+### Patch Changes
+
+- b7f32fa: `client.user.create()` now calls `POST /v1/integrator/users` on the REST API when the client is configured with integrator HMAC credentials (`integrationKey` + `integratorSecret`), such as those issued by the Spritz Developer Console. The legacy `/users/integration` route denies those credentials, so user creation failed for Developer Console integrators.
+
+  Clients configured without an `integratorSecret` keep using the legacy route. The return type (`{ userId, email, apiKey }`) is unchanged. On the REST route an email that already exists throws a `ConflictError` (409).
+
 ## 0.18.2
 
 ### Patch Changes
