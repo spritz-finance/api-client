@@ -24310,7 +24310,7 @@ export interface operations {
                              * @enum {string|null}
                              */
                             failureReason: "verify_sms" | "documentary_verification" | "risk_check" | "kyc_check" | "address_invalid" | "selfie_check" | "watchlist_screening" | "vpn_detected" | "duplicate_identity" | null;
-                            /** @description Set only when failureReason is duplicate_identity and the matched account belongs to the same integrator and was matched on the user's government ID number; null otherwise, including duplicates matched only on name and date of birth, phone or address, and matches under another integrator. */
+                            /** @description Set only when failureReason is duplicate_identity and the matched account belongs to the same integrator and matched the user on government ID number, full name and date of birth; null otherwise, including duplicates matched on fewer of those or only on phone or address, and matches under another integrator. */
                             duplicateIdentity: {
                                 /**
                                  * @description Masked email of the matched account, lowercased. Before any `+` tag, shows the first two and last two characters from 8 characters, the first and last from 5, otherwise the first only, with a fixed `****` between. A `+` tag and the domain are shown in full. The raw email is never returned.
@@ -24708,7 +24708,7 @@ export interface operations {
                              * @enum {string|null}
                              */
                             failureReason: "verify_sms" | "documentary_verification" | "risk_check" | "kyc_check" | "address_invalid" | "selfie_check" | "watchlist_screening" | "vpn_detected" | "duplicate_identity" | null;
-                            /** @description Set only when failureReason is duplicate_identity and the matched account belongs to the same integrator and was matched on the user's government ID number; null otherwise, including duplicates matched only on name and date of birth, phone or address, and matches under another integrator. */
+                            /** @description Set only when failureReason is duplicate_identity and the matched account belongs to the same integrator and matched the user on government ID number, full name and date of birth; null otherwise, including duplicates matched on fewer of those or only on phone or address, and matches under another integrator. */
                             duplicateIdentity: {
                                 /**
                                  * @description Masked email of the matched account, lowercased. Before any `+` tag, shows the first two and last two characters from 8 characters, the first and last from 5, otherwise the first only, with a fixed `****` between. A `+` tag and the domain are shown in full. The raw email is never returned.
@@ -25205,7 +25205,7 @@ export interface operations {
                              * @enum {string|null}
                              */
                             failureReason: "verify_sms" | "documentary_verification" | "risk_check" | "kyc_check" | "address_invalid" | "selfie_check" | "watchlist_screening" | "vpn_detected" | "duplicate_identity" | null;
-                            /** @description Set only when failureReason is duplicate_identity and the matched account belongs to the same integrator and was matched on the user's government ID number; null otherwise, including duplicates matched only on name and date of birth, phone or address, and matches under another integrator. */
+                            /** @description Set only when failureReason is duplicate_identity and the matched account belongs to the same integrator and matched the user on government ID number, full name and date of birth; null otherwise, including duplicates matched on fewer of those or only on phone or address, and matches under another integrator. */
                             duplicateIdentity: {
                                 /**
                                  * @description Masked email of the matched account, lowercased. Before any `+` tag, shows the first two and last two characters from 8 characters, the first and last from 5, otherwise the first only, with a fixed `****` between. A `+` tag and the domain are shown in full. The raw email is never returned.
