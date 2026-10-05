@@ -24313,8 +24313,8 @@ export interface operations {
                             /** @description Set only when failureReason is duplicate_identity and the matched account belongs to the same integrator and has an email; null otherwise, including duplicates matched to another integrator's account. */
                             duplicateIdentity: {
                                 /**
-                                 * @description Masked email of the matched account: first character of the local part and the full domain. The raw email is never returned.
-                                 * @example j****@gmail.com
+                                 * @description Masked email of the matched account, lowercased. Before any `+` tag, shows the first two and last two characters from 8 characters, the first and last from 5, otherwise the first only, with a fixed `****` between. A `+` tag and the domain are shown in full. The raw email is never returned.
+                                 * @example ja****oe@gmail.com
                                  */
                                 maskedEmail: string;
                             } | null;
@@ -24711,8 +24711,8 @@ export interface operations {
                             /** @description Set only when failureReason is duplicate_identity and the matched account belongs to the same integrator and has an email; null otherwise, including duplicates matched to another integrator's account. */
                             duplicateIdentity: {
                                 /**
-                                 * @description Masked email of the matched account: first character of the local part and the full domain. The raw email is never returned.
-                                 * @example j****@gmail.com
+                                 * @description Masked email of the matched account, lowercased. Before any `+` tag, shows the first two and last two characters from 8 characters, the first and last from 5, otherwise the first only, with a fixed `****` between. A `+` tag and the domain are shown in full. The raw email is never returned.
+                                 * @example ja****oe@gmail.com
                                  */
                                 maskedEmail: string;
                             } | null;
@@ -25208,8 +25208,8 @@ export interface operations {
                             /** @description Set only when failureReason is duplicate_identity and the matched account belongs to the same integrator and has an email; null otherwise, including duplicates matched to another integrator's account. */
                             duplicateIdentity: {
                                 /**
-                                 * @description Masked email of the matched account: first character of the local part and the full domain. The raw email is never returned.
-                                 * @example j****@gmail.com
+                                 * @description Masked email of the matched account, lowercased. Before any `+` tag, shows the first two and last two characters from 8 characters, the first and last from 5, otherwise the first only, with a fixed `****` between. A `+` tag and the domain are shown in full. The raw email is never returned.
+                                 * @example ja****oe@gmail.com
                                  */
                                 maskedEmail: string;
                             } | null;
