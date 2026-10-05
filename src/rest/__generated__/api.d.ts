@@ -24310,6 +24310,14 @@ export interface operations {
                              * @enum {string|null}
                              */
                             failureReason: "verify_sms" | "documentary_verification" | "risk_check" | "kyc_check" | "address_invalid" | "selfie_check" | "watchlist_screening" | "vpn_detected" | "duplicate_identity" | null;
+                            /** @description Set only when failureReason is duplicate_identity and the matched account belongs to the same integrator and has an email; null otherwise, including duplicates matched to another integrator's account. */
+                            duplicateIdentity: {
+                                /**
+                                 * @description Masked email of the matched account: first character of the local part and the full domain. The raw email is never returned.
+                                 * @example j****@gmail.com
+                                 */
+                                maskedEmail: string;
+                            } | null;
                             /**
                              * @description ISO 3166-1 alpha-2 country code where user was verified
                              * @example US
@@ -24700,6 +24708,14 @@ export interface operations {
                              * @enum {string|null}
                              */
                             failureReason: "verify_sms" | "documentary_verification" | "risk_check" | "kyc_check" | "address_invalid" | "selfie_check" | "watchlist_screening" | "vpn_detected" | "duplicate_identity" | null;
+                            /** @description Set only when failureReason is duplicate_identity and the matched account belongs to the same integrator and has an email; null otherwise, including duplicates matched to another integrator's account. */
+                            duplicateIdentity: {
+                                /**
+                                 * @description Masked email of the matched account: first character of the local part and the full domain. The raw email is never returned.
+                                 * @example j****@gmail.com
+                                 */
+                                maskedEmail: string;
+                            } | null;
                             /**
                              * @description ISO 3166-1 alpha-2 country code where user was verified
                              * @example US
@@ -25189,6 +25205,14 @@ export interface operations {
                              * @enum {string|null}
                              */
                             failureReason: "verify_sms" | "documentary_verification" | "risk_check" | "kyc_check" | "address_invalid" | "selfie_check" | "watchlist_screening" | "vpn_detected" | "duplicate_identity" | null;
+                            /** @description Set only when failureReason is duplicate_identity and the matched account belongs to the same integrator and has an email; null otherwise, including duplicates matched to another integrator's account. */
+                            duplicateIdentity: {
+                                /**
+                                 * @description Masked email of the matched account: first character of the local part and the full domain. The raw email is never returned.
+                                 * @example j****@gmail.com
+                                 */
+                                maskedEmail: string;
+                            } | null;
                             /**
                              * @description ISO 3166-1 alpha-2 country code where user was verified
                              * @example US
