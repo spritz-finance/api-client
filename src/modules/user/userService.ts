@@ -60,7 +60,8 @@ export class UserService {
      * accept Developer Console credentials.
      *
      * On the REST route an email that already exists is rejected with a `ConflictError`
-     * (409); use Spritz Connect to have that user authorize the integrator instead.
+     * (409); use Spritz Connect (`client.connect.createSession` with that email) to have
+     * the existing user authorize the integrator instead.
      */
     public async createUser(args: CreateUserParams): Promise<CreateUserResponse> {
         if (this.client.usesIntegratorAuth) {

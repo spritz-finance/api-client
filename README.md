@@ -63,6 +63,7 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
 - [Authentication](#authentication)
 - [Users](#users)
     - [Creating a User](#creating-a-user)
+    - [Connecting an Existing User (Spritz Connect)](#connecting-an-existing-user-spritz-connect)
     - [Reauthorization](#reauthorization)
     - [User Data](#user-data)
     - [Identity Verification](#identity-verification)
@@ -150,6 +151,32 @@ const user = await client.user.create({
 Creating a user with an email that already exists will throw an error.
 
 With an integrator secret configured, `user.create()` calls `POST /v1/integrator/users` on the REST API, and an existing email throws a `ConflictError` (409). Without a secret it uses the legacy route, which does not accept Developer Console credentials.
+
+### Connecting an Existing User (Spritz Connect)
+
+When `user.create()` throws a `ConflictError` (409), that email already has a Spritz account. Ask the user to authorize your integrator with Spritz Connect. Run these calls on your backend; both need integrator credentials (`integrationKey` + `integratorSecret`).
+
+```typescript
+// 1. Start a session for the email that was rejected. Persist `state` with the
+//    user's attempt so you can verify the callback.
+const { authorizationUrl, sessionId, expiresAt } = await client.connect.createSession({
+    redirectUri: 'https://api.example.com/spritz/connect/callback', // registered with Spritz
+    state: crypto.randomUUID(),
+    email: 'bilbo@shiremail.net',
+})
+
+// 2. Send the user to `authorizationUrl` unchanged (including its #fragment; don't log it).
+//    On iOS/Android open it in the system auth session (ASWebAuthenticationSession /
+//    Custom Tabs), never an embedded WebView. The hosted page shows the email, the user
+//    signs in to that account and approves.
+
+// 3. Spritz redirects to your redirectUri with ?code=…&state=… (or error=access_denied |
+//    server_error | session_expired). Verify `state`, then exchange the code:
+const { apiKey, userId, email } = await client.connect.exchangeCode(code)
+// Store apiKey server-side only.
+```
+
+`redirectUri` must exactly match a callback URL Spritz has registered for your integrator; ask your Spritz contact to register it. Sessions expire after 10 minutes and codes are single-use.
 
 ### Reauthorization
 
