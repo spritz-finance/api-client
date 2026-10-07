@@ -9,8 +9,8 @@ export type ConnectTokenExchange = PathResponse<'/v1/integrator/connect/token', 
 /**
  * Spritz Connect: let an existing Spritz user authorize your integrator.
  *
- * Use it when `user.createUser` fails with a `ConflictError` (409) because the
- * email already has a Spritz account:
+ * Use it when `user.createUser` fails with a `ConflictError` whose
+ * `problem.code` is `USER_ALREADY_EXISTS` (the email already has a Spritz account):
  *
  * 1. `createSession({ redirectUri, state, email })` on your backend, passing the
  *    email that was rejected. Send the user to `authorizationUrl` unchanged

@@ -59,9 +59,11 @@ export class UserService {
      * Without a secret it uses the legacy `/users/integration` route, which does not
      * accept Developer Console credentials.
      *
-     * On the REST route an email that already exists is rejected with a `ConflictError`
-     * (409); use Spritz Connect (`client.connect.createSession` with that email) to have
-     * the existing user authorize the integrator instead.
+     * On the REST route a conflict is a `ConflictError` (409). Branch on `problem.code`:
+     * `USER_ALREADY_EXISTS` means the email already has a Spritz account, so use Spritz
+     * Connect (`client.connect.createSession` with that email) to have the existing user
+     * authorize the integrator; `USER_CREATE_IN_PROGRESS` means another request is
+     * creating that user, so retry shortly.
      */
     public async createUser(args: CreateUserParams): Promise<CreateUserResponse> {
         if (this.client.usesIntegratorAuth) {

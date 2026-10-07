@@ -150,13 +150,28 @@ const user = await client.user.create({
 
 Creating a user with an email that already exists will throw an error.
 
-With an integrator secret configured, `user.create()` calls `POST /v1/integrator/users` on the REST API, and an existing email throws a `ConflictError` (409). Without a secret it uses the legacy route, which does not accept Developer Console credentials.
+With an integrator secret configured, `user.create()` calls `POST /v1/integrator/users` on the REST API. A conflict throws a `ConflictError` (409); branch on its `problem.code`:
+
+| `code`                    | Meaning                                                   | What to do                        |
+| ------------------------- | --------------------------------------------------------- | --------------------------------- |
+| `USER_ALREADY_EXISTS`     | The email already has a Spritz account                    | Connect the existing user (below) |
+| `USER_CREATE_IN_PROGRESS` | Another request is creating this user (`retryable: true`) | Retry shortly                     |
+
+Without a secret it uses the legacy route, which does not accept Developer Console credentials.
 
 ### Connecting an Existing User (Spritz Connect)
 
-When `user.create()` throws a `ConflictError` (409), that email already has a Spritz account. Ask the user to authorize your integrator with Spritz Connect. Run these calls on your backend; both need integrator credentials (`integrationKey` + `integratorSecret`).
+When `user.create()` fails with `USER_ALREADY_EXISTS`, that email already has a Spritz account. Ask the user to authorize your integrator with Spritz Connect. Run these calls on your backend; both need integrator credentials (`integrationKey` + `integratorSecret`).
 
 ```typescript
+import { hasProblemCode } from '@spritz-finance/api-client'
+
+try {
+    return await client.user.create({ email })
+} catch (error) {
+    if (!hasProblemCode(error, 'USER_ALREADY_EXISTS')) throw error
+}
+
 // 1. Start a session for the email that was rejected. Persist `state` with the
 //    user's attempt so you can verify the callback.
 const { authorizationUrl, sessionId, expiresAt } = await client.connect.createSession({
