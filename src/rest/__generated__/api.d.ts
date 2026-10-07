@@ -597,7 +597,7 @@ export interface paths {
         };
         /**
          * List deposits
-         * @description Returns the authenticated user's ACH debit deposits newest first. Use nextCursor to retrieve subsequent pages and reconcile asynchronous debit, release, settlement, return, and failure states.
+         * @description Returns the authenticated user's ACH debit deposits newest first. Use nextCursor to retrieve subsequent pages and reconcile asynchronous debit, release, settlement, return, and failure states. Readable whenever the integrator has ACH debit enabled, including while ACH debit is paused, halted, or not offered to this user.
          */
         get: operations["getV1Deposits"];
         put?: never;
@@ -617,7 +617,7 @@ export interface paths {
         };
         /**
          * Get a deposit
-         * @description Returns the latest ACH debit and crypto release state for a deposit owned by the authenticated user.
+         * @description Returns the latest ACH debit and crypto release state for a deposit owned by the authenticated user. Readable whenever the integrator has ACH debit enabled, including while ACH debit is paused, halted, or not offered to this user.
          */
         get: operations["getV1DepositsByDepositId"];
         put?: never;
@@ -639,7 +639,7 @@ export interface paths {
         put?: never;
         /**
          * Prepare a direct deposit authorization
-         * @description Creates the canonical ACH authorization message for a deposit targeting a raw wallet address. Integrators can include the public client IP their edge observed to receive a short-lived submissionToken for direct client submission. During migration, an integrator can omit clientNetwork and submit through its HMAC-authenticated backend by including clientIp on create. Authorization is derived from the verified ACH funding source; no wallet signature is required.
+         * @description Creates the canonical ACH authorization message for a deposit targeting a raw wallet address. Integrators can include the public client IP their edge observed to receive a short-lived submissionToken for direct client submission. During migration, an integrator can omit clientNetwork and submit through its HMAC-authenticated backend by including clientIp on create. Authorization is derived from the verified ACH funding source; no wallet signature is required. Availability errors: 403 with code `ach_debit_temporarily_unavailable` means ACH debit is temporarily paused for this user (rollout pause) — offer another deposit method and do not retry. 409 with code `ach_debit_program_halted` means ACH debit is temporarily halted for this program (master stop, book halt, or integrator halt); 409 with code `ach_debit_new_user_paused` means new users temporarily cannot start ACH debit deposits. Both 409s are temporary: offer another method and retry later. The funding source's deposit-limits response reports the same stops as `rail_halted` / `new_user_admission_paused`, and the capability reports `not_available` while they last.
          */
         post: operations["postV1DepositsDirectPrepare"];
         delete?: never;
@@ -659,7 +659,7 @@ export interface paths {
         put?: never;
         /**
          * Create a direct deposit
-         * @description Authorizes and creates a deposit against a raw wallet address prepared via /direct/prepare. Integrators should send the preparation's short-lived submissionToken to the authorizing client and call this endpoint directly from that client; the capability can submit only its bound preparation. During migration, integrators can continue submitting with HMAC backend authentication but must include the public clientIp observed by their edge. Authorization is derived from the verified ACH funding source; no wallet signature is required. Idempotency-Key is required; reuse the same key and body after a timeout to recover the original response without creating another deposit.
+         * @description Authorizes and creates a deposit against a raw wallet address prepared via /direct/prepare. Integrators should send the preparation's short-lived submissionToken to the authorizing client and call this endpoint directly from that client; the capability can submit only its bound preparation. During migration, integrators can continue submitting with HMAC backend authentication but must include the public clientIp observed by their edge. Authorization is derived from the verified ACH funding source; no wallet signature is required. Idempotency-Key is required; reuse the same key and body after a timeout to recover the original response without creating another deposit. Availability errors: 403 with code `ach_debit_temporarily_unavailable` means ACH debit is temporarily paused for this user (rollout pause) — offer another deposit method and do not retry. 409 with code `ach_debit_program_halted` means ACH debit is temporarily halted for this program (master stop, book halt, or integrator halt); 409 with code `ach_debit_new_user_paused` means new users temporarily cannot start ACH debit deposits. Both 409s are temporary: offer another method and retry later. The funding source's deposit-limits response reports the same stops as `rail_halted` / `new_user_admission_paused`, and the capability reports `not_available` while they last.
          */
         post: operations["postV1DepositsDirect"];
         delete?: never;
@@ -679,7 +679,7 @@ export interface paths {
         put?: never;
         /**
          * Check ACH debit eligibility
-         * @description Once an email is eligible, it remains eligible. A false response may be transient, so re-check rather than caching it. Call this endpoint before showing a bank deposit option. Once the user exists, the capabilities returned by GET /v1/users/me remain the source of truth.
+         * @description Once an email is eligible, it remains eligible. While ACH debit is temporarily halted or paused for new users, the answer is false, even for an email that was eligible before, and nothing is recorded. A false response may be transient, so re-check rather than caching it. Call this endpoint before showing a bank deposit option. Once the user exists, the capabilities returned by GET /v1/users/me remain the source of truth.
          */
         post: operations["postV1Ach-debitEligibility"];
         delete?: never;
@@ -1240,6 +1240,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/connect/sessions/{sessionId}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview a connect session before sign-in
+         * @description Returns who is asking and which account the session is for, so the hosted page can render before sign-in. Requires the scoped returnToken from the authorization URL fragment; a session ID alone grants no authority. Read-only. Invalid or expired tokens return 404.
+         */
+        post: operations["postV1ConnectSessionsBySessionIdPreview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/integrator/connect/sessions": {
         parameters: {
             query?: never;
@@ -1311,7 +1331,7 @@ export interface paths {
         put?: never;
         /**
          * Approve connect session
-         * @description Approves the Spritz Connect session and returns a callback URI containing the authorization code.
+         * @description Approves the Spritz Connect session and returns a callback URI containing the authorization code. When the session was created with an email, the signed-in account must have that email; otherwise returns 403 CONNECT_ACCOUNT_MISMATCH and the session stays pending.
          */
         post: operations["postV1ConnectSessionsBySessionIdApprove"];
         delete?: never;
@@ -1383,7 +1403,7 @@ export interface paths {
          *
          *     The response includes the user's API key (`ak_...`), which is returned only once at creation - store it securely.
          *
-         *     **Conflict**: If a user with the given email already exists, the request fails with `409 Conflict`. In that case, use Spritz Connect (`POST /v1/integrator/connect/sessions`) to have the existing user authorize this integrator. A concurrent request to create a user with the same email also returns `409 Conflict`; retry shortly.
+         *     **Conflict**: If a user with the given email already exists, the request fails with `409 Conflict`. In that case, use Spritz Connect (`POST /v1/integrator/connect/sessions`) with the same `email` to have the existing user authorize this integrator; the hosted page shows that email and only that account can approve. A concurrent request to create a user with the same email also returns `409 Conflict`; retry shortly.
          */
         post: operations["postV1IntegratorUsers"];
         delete?: never;
@@ -3983,7 +4003,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description Creation timestamp
-                         * @example 2026-09-23T08:12:57.990Z
+                         * @example 2026-10-06T16:12:43.523Z
                          */
                         createdAt?: string;
                     }[];
@@ -4148,7 +4168,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6ab38a093ae8393c020db77f
+                     * @example 6ac51dfb61ca9c031e3c0433
                      */
                     accountId: string;
                     /**
@@ -4176,7 +4196,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6ab38a093ae8393c020db77f
+                     * @example 6ac51dfb61ca9c031e3c0433
                      */
                     accountId: string;
                     /**
@@ -4204,7 +4224,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6ab38a093ae8393c020db77f
+                     * @example 6ac51dfb61ca9c031e3c0433
                      */
                     accountId: string;
                     /**
@@ -4251,7 +4271,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-09-23T08:12:57.968Z
+                         * @example 2026-10-06T16:12:43.457Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4290,7 +4310,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6ab38a093ae8393c020db780
+                             * @example 6ac51dfb61ca9c031e3c0434
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -4547,7 +4567,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-09-23T08:12:57.968Z
+                         * @example 2026-10-06T16:12:43.457Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4586,7 +4606,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6ab38a093ae8393c020db780
+                             * @example 6ac51dfb61ca9c031e3c0434
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5182,7 +5202,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-09-23T08:12:57.968Z
+                         * @example 2026-10-06T16:12:43.457Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -5221,7 +5241,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6ab38a093ae8393c020db780
+                             * @example 6ac51dfb61ca9c031e3c0434
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5524,7 +5544,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6ab38a093ae8393c020db781
+                                 * @example 6ac51dfb61ca9c031e3c0435
                                  */
                                 accountId: string;
                                 /**
@@ -5815,7 +5835,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6ab38a093ae8393c020db781
+                             * @example 6ac51dfb61ca9c031e3c0435
                              */
                             accountId: string;
                             /**
@@ -6056,7 +6076,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6ab38a093ae8393c020db782
+                     * @example 6ac51dfb61ca9c031e3c0436
                      */
                     accountId?: string;
                 };
@@ -6074,7 +6094,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6ab38a093ae8393c020db782
+                     * @example 6ac51dfb61ca9c031e3c0436
                      */
                     accountId?: string;
                 };
@@ -6092,7 +6112,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6ab38a093ae8393c020db782
+                     * @example 6ac51dfb61ca9c031e3c0436
                      */
                     accountId?: string;
                 };
@@ -6158,7 +6178,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6ab38a093ae8393c020db781
+                             * @example 6ac51dfb61ca9c031e3c0435
                              */
                             accountId: string;
                             /**
@@ -17929,7 +17949,7 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique identifier for the debit card
-                             * @example 6ab38a093ae8393c020db786
+                             * @example 6ac51dfb61ca9c031e3c043a
                              */
                             id: string;
                             /** @enum {string} */
@@ -18377,7 +18397,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6ab38a093ae8393c020db786
+                         * @example 6ac51dfb61ca9c031e3c043a
                          */
                         id: string;
                         /** @enum {string} */
@@ -18594,7 +18614,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6ab38a093ae8393c020db786
+                         * @example 6ac51dfb61ca9c031e3c043a
                          */
                         id: string;
                         /** @enum {string} */
@@ -19115,7 +19135,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6ab38a093ae8393c020db786
+                         * @example 6ac51dfb61ca9c031e3c043a
                          */
                         id: string;
                         /** @enum {string} */
@@ -19573,6 +19593,198 @@ export interface operations {
             };
         };
     };
+    postV1ConnectSessionsBySessionIdPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Scoped capability from the authorization URL fragment. */
+                    returnToken: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    /** @description Scoped capability from the authorization URL fragment. */
+                    returnToken: string;
+                };
+                "multipart/form-data": {
+                    /** @description Scoped capability from the authorization URL fragment. */
+                    returnToken: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        sessionId: string;
+                        integratorId: string;
+                        integratorName: string | null;
+                        /** @description Account this session is bound to, or null when unbound. */
+                        email: string | null;
+                        /** @description `expired` once the 10-minute consent window has passed. */
+                        status: string;
+                        /** Format: date-time */
+                        expiresAt: string;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
     postV1IntegratorConnectSessions: {
         parameters: {
             query?: never;
@@ -19587,18 +19799,33 @@ export interface operations {
                     redirectUri: string;
                     /** @description Opaque integrator state returned unchanged after approval. */
                     state?: string;
+                    /**
+                     * Format: email
+                     * @description Email of the existing Spritz user this session is for: pass the email that `POST /v1/integrator/users` rejected with 409. The hosted page shows it and only that account can approve. Recommended; when omitted any signed-in Spritz user can approve.
+                     */
+                    email?: string;
                 };
                 "application/x-www-form-urlencoded": {
                     /** @description Callback URI that receives the authorization code. */
                     redirectUri: string;
                     /** @description Opaque integrator state returned unchanged after approval. */
                     state?: string;
+                    /**
+                     * Format: email
+                     * @description Email of the existing Spritz user this session is for: pass the email that `POST /v1/integrator/users` rejected with 409. The hosted page shows it and only that account can approve. Recommended; when omitted any signed-in Spritz user can approve.
+                     */
+                    email?: string;
                 };
                 "multipart/form-data": {
                     /** @description Callback URI that receives the authorization code. */
                     redirectUri: string;
                     /** @description Opaque integrator state returned unchanged after approval. */
                     state?: string;
+                    /**
+                     * Format: email
+                     * @description Email of the existing Spritz user this session is for: pass the email that `POST /v1/integrator/users` rejected with 409. The hosted page shows it and only that account can approve. Recommended; when omitted any signed-in Spritz user can approve.
+                     */
+                    email?: string;
                 };
             };
         };
@@ -20298,7 +20525,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6ab38a0a3ae8393c020db78a
+                         * @example 6ac51dfb61ca9c031e3c043e
                          */
                         userId: string;
                         /**
@@ -20314,7 +20541,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-09-23T09:12:58.281Z
+                         * @example 2026-10-06T17:12:43.834Z
                          */
                         expiresAt: string;
                     };
@@ -20513,7 +20740,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-09-23T08:12:58.280Z
+                         * @example 2026-10-06T16:12:43.833Z
                          */
                         createdAt: string;
                     };
@@ -20726,7 +20953,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description The internal ID of the newly created user
-                         * @example 6ab38a0a3ae8393c020db78c
+                         * @example 6ac51dfb61ca9c031e3c0440
                          */
                         userId: string;
                         /**
@@ -21070,7 +21297,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6ab38a0a3ae8393c020db789
+                             * @example 6ac51dfb61ca9c031e3c043d
                              */
                             userId: string;
                             /**
@@ -21282,7 +21509,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6ab38a0a3ae8393c020db789
+                         * @example 6ac51dfb61ca9c031e3c043d
                          */
                         userId: string;
                         /**
@@ -21475,7 +21702,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6ab38a0a3ae8393c020db78b
+                         * @example 6ac51dfb61ca9c031e3c043f
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -21706,7 +21933,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6ab38a0a3ae8393c020db78b
+                         * @example 6ac51dfb61ca9c031e3c043f
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -23674,7 +23901,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6ab38a0a3ae8393c020db78b
+                         * @example 6ac51dfb61ca9c031e3c043f
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -24091,7 +24318,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-09-23T08:17:58.281Z
+                         * @example 2026-10-06T16:17:43.835Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -24262,7 +24489,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6ab38a0a3ae8393c020db787
+                         * @example 6ac51dfb61ca9c031e3c043b
                          */
                         id: string;
                         /**
@@ -24279,7 +24506,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-09-23T08:12:58.271Z
+                         * @example 2026-10-06T16:12:43.824Z
                          */
                         signedUpAt: string;
                         /**
@@ -24659,7 +24886,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6ab38a0a3ae8393c020db787
+                         * @example 6ac51dfb61ca9c031e3c043b
                          */
                         id: string;
                         /**
@@ -24676,7 +24903,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-09-23T08:12:58.271Z
+                         * @example 2026-10-06T16:12:43.824Z
                          */
                         signedUpAt: string;
                         /**
@@ -25156,7 +25383,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6ab38a0a3ae8393c020db787
+                         * @example 6ac51dfb61ca9c031e3c043b
                          */
                         id: string;
                         /**
@@ -25173,7 +25400,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-09-23T08:12:58.271Z
+                         * @example 2026-10-06T16:12:43.824Z
                          */
                         signedUpAt: string;
                         /**

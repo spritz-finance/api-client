@@ -1,3 +1,4 @@
+import { ConnectService } from './modules/connect/connectService'
 import { Environment } from './env'
 import { SpritzClient } from './lib/client'
 import { isRunningInBrowser } from './lib/util'
@@ -90,6 +91,7 @@ export class SpritzApiClient {
     public institution: InstitutionService
     public sandbox: SandboxService
     public webhook: WebhookService
+    public connect: ConnectService
 
     constructor(
         environment: Environment,
@@ -168,6 +170,7 @@ export class SpritzApiClient {
         this.institution = new InstitutionService(this.client)
         this.sandbox = new SandboxService(this.client)
         this.webhook = new WebhookService(this.client)
+        this.connect = new ConnectService(this.client)
     }
 
     setApiKey(_apiKey: string) {

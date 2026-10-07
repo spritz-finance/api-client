@@ -53,6 +53,11 @@ export {
     CardFeatureType,
 } from './modules/user/accessTypes'
 export { onrampSupportedTokens } from './modules/virtualAccounts/types'
+export type {
+    ConnectSession,
+    ConnectTokenExchange,
+    CreateConnectSessionParams,
+} from './modules/connect/connectService'
 export type { CreateVirtualAccountInput } from './modules/virtualAccounts/types'
 export type {
     AutoRampAccount,
