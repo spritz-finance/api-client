@@ -52,18 +52,24 @@ export class UserService {
     }
 
     /**
-     * Create a user under the integrator and return their API key.
+     * Create an account under your integrator and return its access key.
+     * With an integrator secret this uses POST /v1/integrator/users; without
+     * one it uses the deprecated /users/integration route.
      *
-     * With integrator HMAC credentials (`integrationKey` + `integratorSecret`, as issued
-     * by the Developer Console) this calls `POST /v1/integrator/users` on the REST API.
-     * Without a secret it uses the legacy `/users/integration` route, which does not
-     * accept Developer Console credentials.
+     * Where reuse is enabled, a normalized email (trimmed, lowercased) resolves
+     * first to your own account, then to one currently authorized account.
+     * A repeat returns the same userId and current email with a fresh apiKey.
+     * Older keys can stay valid until revoked. Where reuse is disabled, handle
+     * USER_ALREADY_EXISTS for any existing account.
      *
-     * On the REST route a conflict is a `ConflictError` (409). Branch on `problem.code`:
-     * `USER_ALREADY_EXISTS` means the email already has a Spritz account, so use Spritz
-     * Connect (`client.connect.createSession` with that email) to have the existing user
-     * authorize the integrator; `USER_CREATE_IN_PROGRESS` means another request is
-     * creating that user, so retry shortly.
+     * Cross-tenant creation requires an approved rollout for your integrator.
+     * An email held elsewhere grants no access to that account. Both routes
+     * carry coded errors: USER_DELETED (the account resolved for you is closed),
+     * USER_SELECTION_REQUIRED (several authorized matches), USER_ALREADY_EXISTS
+     * (this call cannot return an existing account), USER_CREATE_IN_PROGRESS
+     * (retryable), and AUTHORIZATION_LOOKUP_UNAVAILABLE (retryable 503).
+     * Use hasProblemCode rather than branching on error text. Connect grants
+     * explicit access to an existing account; it does not link identities.
      */
     public async createUser(args: CreateUserParams): Promise<CreateUserResponse> {
         if (this.client.usesIntegratorAuth) {
@@ -84,10 +90,25 @@ export class UserService {
         })
     }
 
+    /**
+     * Alias of `createUser`: create the account for an email under your integrator, or
+     * reuse the one you already have, and return an API key for it. See `createUser`
+     * for the create-and-reuse contract and the conflict codes.
+     */
     public async create(args: CreateUserParams) {
         return this.createUser(args)
     }
 
+    /**
+     * Send a one-time code to an email for the legacy key recovery flow.
+     *
+     * @deprecated The email-only recovery flow is being retired: an email can belong to
+     * more than one Spritz account, so a code cannot say which account it is for. To
+     * recover the key of an account in your tenant call `createUser` again with the same
+     * email, which returns the same `userId` with a fresh `apiKey`; to act for an account
+     * you do not own run Spritz Connect (`client.connect`). Keeps working until the
+     * legacy routes are removed.
+     */
     public async requestApiKey(email: string) {
         return this.client.request<RequestApiKeyResponse, RequestApiKeyParams>({
             method: 'post',
@@ -98,6 +119,12 @@ export class UserService {
         })
     }
 
+    /**
+     * Exchange a one-time code from `requestApiKey` for the account's API key.
+     *
+     * @deprecated See `requestApiKey`: recover keys with `createUser` or Spritz Connect.
+     * Keeps working until the legacy routes are removed.
+     */
     public async authorizeApiKeyWithOTP(args: AuthorizeApiKeyParams) {
         return this.client.request<AuthorizeApiKeyResponse, AuthorizeApiKeyParams>({
             method: 'post',

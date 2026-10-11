@@ -148,20 +148,22 @@ const user = await client.user.create({
 }
 ```
 
-Creating a user with an email that already exists will throw an error.
+Where account reuse is enabled, `user.create()` is idempotent per integrator and normalized email (trimmed, lowercased). A repeat for an email that already has an account in your tenant, or an account you currently have authorized access to through Spritz Connect or a valid reauthorization, returns `200` with the same `userId`, its current `email` and a freshly minted `apiKey`; older keys may stay valid until revoked. Reuse never changes the account, so repeating the call is also how you recover a lost key. Where reuse is disabled, repeats return `USER_ALREADY_EXISTS`; handle both outcomes. Cross-tenant creation requires an approved rollout for your integrator and never grants access to another tenant's account.
 
-With an integrator secret configured, `user.create()` calls `POST /v1/integrator/users` on the REST API. A conflict throws a `ConflictError` (409); branch on its `problem.code`:
+With an integrator secret configured, `user.create()` calls `POST /v1/integrator/users` on the REST API; without one it uses the legacy `/users/integration` route, which does not accept Developer Console credentials. Both resolve the email the same way. The remaining `409` outcomes throw a `ConflictError` with a stable `problem.code` (branch on it with `hasProblemCode`):
 
-| `code`                    | Meaning                                                   | What to do                        |
-| ------------------------- | --------------------------------------------------------- | --------------------------------- |
-| `USER_ALREADY_EXISTS`     | The email already has a Spritz account                    | Connect the existing user (below) |
-| `USER_CREATE_IN_PROGRESS` | Another request is creating this user (`retryable: true`) | Retry shortly                     |
+| `code`                    | Meaning                                                                                   | What to do                                                   |
+| ------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `USER_DELETED`            | The account this email resolves to for you was deleted; closed accounts are not recreated | Contact Spritz support to restore it                         |
+| `USER_SELECTION_REQUIRED` | You are authorized for several Spritz accounts that use this email                        | Run Spritz Connect for the account you intend to use (below) |
+| `USER_ALREADY_EXISTS`     | This call cannot return an existing account, including when reuse is disabled             | Start Spritz Connect with the same email (below)             |
+| `USER_CREATE_IN_PROGRESS` | Another request is creating this user (`retryable: true`)                                 | Retry shortly                                                |
 
-Without a secret it uses the legacy route, which does not accept Developer Console credentials.
+An `InternalServerError` with `problem.code` `AUTHORIZATION_LOOKUP_UNAVAILABLE` (status `503`, `retryable: true`, `retryAfter: 5`) means the authorization lookup is temporarily unavailable; retry shortly. The legacy route reports the same codes in its error body, so `hasProblemCode` works on both. Creating an account never tells you about accounts you are not authorized for.
 
 ### Connecting an Existing User (Spritz Connect)
 
-When `user.create()` fails with `USER_ALREADY_EXISTS`, that email already has a Spritz account. Ask the user to authorize your integrator with Spritz Connect. Run these calls on your backend; both need integrator credentials (`integrationKey` + `integratorSecret`).
+Spritz Connect lets a Spritz user authorize your integrator to act for an account you do not own. It is an explicit authorization choice: where reuse is enabled, `user.create()` returns your own or currently authorized account. Use Connect when it fails with `USER_ALREADY_EXISTS` (this call cannot return an existing account) or `USER_SELECTION_REQUIRED` (you are authorized for several accounts with that email and must pick one), or whenever you want access to a specific existing account. Run these calls on your backend; both need integrator credentials (`integrationKey` + `integratorSecret`).
 
 ```typescript
 import { hasProblemCode } from '@spritz-finance/api-client'
@@ -169,11 +171,14 @@ import { hasProblemCode } from '@spritz-finance/api-client'
 try {
     return await client.user.create({ email })
 } catch (error) {
-    if (!hasProblemCode(error, 'USER_ALREADY_EXISTS')) throw error
+    const needsConnect =
+        hasProblemCode(error, 'USER_ALREADY_EXISTS') ||
+        hasProblemCode(error, 'USER_SELECTION_REQUIRED')
+    if (!needsConnect) throw error
 }
 
-// 1. Start a session for the email that was rejected. Persist `state` with the
-//    user's attempt so you can verify the callback.
+// 1. Start a session for the account's email. Persist `state` with the user's
+//    attempt so you can verify the callback.
 const { authorizationUrl, sessionId, expiresAt } = await client.connect.createSession({
     redirectUri: 'https://api.example.com/spritz/connect/callback', // registered with Spritz
     state: crypto.randomUUID(),
@@ -191,17 +196,21 @@ const { apiKey, userId, email } = await client.connect.exchangeCode(code)
 // Store apiKey server-side only.
 ```
 
-`redirectUri` must exactly match a callback URL Spritz has registered for your integrator; ask your Spritz contact to register it. Sessions expire after 10 minutes and codes are single-use.
+`redirectUri` must exactly match a callback URL Spritz has registered for your integrator; ask your Spritz contact to register it. Sessions expire after 10 minutes and codes are single-use. Keys issued through Connect are bound to that authorization: once it is disconnected they stop working, and a later `user.create()` for the same email no longer reuses that account.
 
 ### Reauthorization
 
-If you need to recover a user's API key (e.g., the user already has a Spritz account, or you've lost access), use the OTP reauthorization flow:
+> **Deprecated.** `user.requestApiKey()` and `user.authorizeApiKeyWithOTP()` are the legacy email-only key recovery flow. An email can belong to more than one Spritz account, so a code sent to it cannot say which account it is for, and the flow is being retired. Both methods keep working until the legacy routes are removed; do not build new integrations on them.
+
+To recover the API key of an account in your tenant, call `user.create()` again with the same email: it returns the same `userId` with a fresh `apiKey` (see [Creating a User](#creating-a-user)). To act for an account you do not own, use [Spritz Connect](#connecting-an-existing-user-spritz-connect); keys issued through Connect stay bound to that authorization and are revoked when it is disconnected.
+
+The legacy flow, for existing integrations only:
 
 ```typescript
-// Request an OTP code sent to the user's email
+// Deprecated: request an OTP code sent to the user's email
 const { success } = await client.user.requestApiKey('bilbo@shiremail.net')
 
-// Confirm with the OTP code the user provides
+// Deprecated: confirm with the OTP code the user provides
 const { apiKey, userId, email } = await client.user.authorizeApiKeyWithOTP({
     email: 'bilbo@shiremail.net',
     otp: '123456',
