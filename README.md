@@ -202,7 +202,7 @@ const { apiKey, userId, email } = await client.connect.exchangeCode(code)
 
 > **Deprecated.** `user.requestApiKey()` and `user.authorizeApiKeyWithOTP()` are the legacy email-only key recovery flow. An email can belong to more than one Spritz account, so a code sent to it cannot say which account it is for, and the flow is being retired. Both methods keep working until the legacy routes are removed; do not build new integrations on them.
 
-To recover the API key of an account in your tenant, call `user.create()` again with the same email: it returns the same `userId` with a fresh `apiKey` (see [Creating a User](#creating-a-user)). To act for an account you do not own, use [Spritz Connect](#connecting-an-existing-user-spritz-connect); keys issued through Connect stay bound to that authorization and are revoked when it is disconnected.
+Where account reuse is enabled, recover the API key of an account in your tenant by calling `user.create()` again with the same email: it returns the same `userId` with a fresh `apiKey` (see [Creating a User](#creating-a-user)). Where reuse is disabled, the repeat returns `USER_ALREADY_EXISTS`; use [Spritz Connect](#connecting-an-existing-user-spritz-connect) instead. Use Connect also to act for an account you do not own; keys issued through Connect stay bound to that authorization and are revoked when it is disconnected.
 
 The legacy flow, for existing integrations only:
 

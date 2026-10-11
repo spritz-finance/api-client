@@ -104,10 +104,11 @@ export class UserService {
      *
      * @deprecated The email-only recovery flow is being retired: an email can belong to
      * more than one Spritz account, so a code cannot say which account it is for. To
-     * recover the key of an account in your tenant call `createUser` again with the same
-     * email, which returns the same `userId` with a fresh `apiKey`; to act for an account
-     * you do not own run Spritz Connect (`client.connect`). Keeps working until the
-     * legacy routes are removed.
+     * recover the key of an account in your tenant where account reuse is enabled,
+     * call `createUser` again with the same email: it returns the same `userId` with a
+     * fresh `apiKey`. Where reuse is disabled it returns `USER_ALREADY_EXISTS`; use
+     * Spritz Connect (`client.connect`) instead, also for an account you do not own.
+     * Keeps working until the legacy routes are removed.
      */
     public async requestApiKey(email: string) {
         return this.client.request<RequestApiKeyResponse, RequestApiKeyParams>({
