@@ -117,4 +117,45 @@ describe('UserService', () => {
         expect(keyOnlyClient.restApi).not.toHaveBeenCalled()
         expect(result).toEqual(created)
     })
+
+    describe('legacy key recovery (deprecated)', () => {
+        it('still requests a one-time code on the legacy route', async () => {
+            const keyOnlyClient = {
+                restApi: vi.fn(),
+                request: vi.fn().mockResolvedValue({ success: true }),
+                usesIntegratorAuth: false,
+            } as unknown as SpritzClient
+            const service = new UserService(keyOnlyClient)
+
+            await expect(service.requestApiKey('user@example.com')).resolves.toEqual({
+                success: true,
+            })
+            expect(keyOnlyClient.request).toHaveBeenCalledWith({
+                method: 'post',
+                path: '/users/request-key',
+                body: { email: 'user@example.com' },
+            })
+            expect(keyOnlyClient.restApi).not.toHaveBeenCalled()
+        })
+
+        it('still exchanges a one-time code for the API key on the legacy route', async () => {
+            const authorized = { apiKey: 'ak_test', userId: 'usr_123', email: 'user@example.com' }
+            const integratorClient = {
+                restApi: vi.fn(),
+                request: vi.fn().mockResolvedValue(authorized),
+                usesIntegratorAuth: true,
+            } as unknown as SpritzClient
+            const service = new UserService(integratorClient)
+
+            await expect(
+                service.authorizeApiKeyWithOTP({ email: 'user@example.com', otp: '123456' })
+            ).resolves.toEqual(authorized)
+            expect(integratorClient.request).toHaveBeenCalledWith({
+                method: 'post',
+                path: '/users/validate-key',
+                body: { email: 'user@example.com', otp: '123456' },
+            })
+            expect(integratorClient.restApi).not.toHaveBeenCalled()
+        })
+    })
 })

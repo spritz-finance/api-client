@@ -7,13 +7,18 @@ export type ConnectSession = PathResponse<'/v1/integrator/connect/sessions', 'po
 export type ConnectTokenExchange = PathResponse<'/v1/integrator/connect/token', 'post'>
 
 /**
- * Spritz Connect: let an existing Spritz user authorize your integrator.
+ * Spritz Connect: let a Spritz user authorize your integrator to act for an account
+ * you do not own.
  *
- * Use it when `user.createUser` fails with a `ConflictError` whose
- * `problem.code` is `USER_ALREADY_EXISTS` (the email already has a Spritz account):
+ * Where reuse is enabled, `user.createUser` returns your own or currently
+ * authorized account. Connect explicitly grants access to a selected existing
+ * account. Use it when create fails with `USER_ALREADY_EXISTS` (this call cannot
+ * return an existing account, including when reuse is disabled), when it fails with `USER_SELECTION_REQUIRED`
+ * (you are authorized for several accounts with that email and must pick one), or
+ * whenever you want access to a specific existing account:
  *
  * 1. `createSession({ redirectUri, state, email })` on your backend, passing the
- *    email that was rejected. Send the user to `authorizationUrl` unchanged
+ *    email of the account. Send the user to `authorizationUrl` unchanged
  *    (it carries a `#return_token` fragment; never log it). On mobile open it
  *    in the system auth session, not a WebView.
  * 2. Spritz redirects to `redirectUri` with `code` and your `state`, or with
