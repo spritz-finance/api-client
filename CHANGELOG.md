@@ -1,5 +1,11 @@
 # @spritz-finance/api-client
 
+## 0.23.0
+
+### Minor Changes
+
+- c0cdea1: Document tenant-scoped create/reuse, access-key recovery and coded conflicts for both public signup paths.
+
 ## 0.22.0
 
 ### Minor Changes
