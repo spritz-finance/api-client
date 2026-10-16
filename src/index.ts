@@ -58,6 +58,16 @@ export type {
     ConnectTokenExchange,
     CreateConnectSessionParams,
 } from './modules/connect/connectService'
+export { linkTokenFromAuthorizationUrl } from './modules/identityLink/identityLinkService'
+export type {
+    CreateIdentityLinkSessionParams,
+    IdentityLinkComparison,
+    IdentityLinkResult,
+    IdentityLinkSession,
+    IdentityLinkSessionRef,
+    IdentityLinkSessionStatus,
+    IdentityLinkStatus,
+} from './modules/identityLink/identityLinkService'
 export type { CreateVirtualAccountInput } from './modules/virtualAccounts/types'
 export type {
     AutoRampAccount,
