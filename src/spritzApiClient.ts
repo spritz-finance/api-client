@@ -1,4 +1,5 @@
 import { ConnectService } from './modules/connect/connectService'
+import { IdentityLinkService } from './modules/identityLink/identityLinkService'
 import { Environment } from './env'
 import { SpritzClient } from './lib/client'
 import { isRunningInBrowser } from './lib/util'
@@ -92,6 +93,7 @@ export class SpritzApiClient {
     public sandbox: SandboxService
     public webhook: WebhookService
     public connect: ConnectService
+    public identityLink: IdentityLinkService
 
     constructor(
         environment: Environment,
@@ -171,6 +173,7 @@ export class SpritzApiClient {
         this.sandbox = new SandboxService(this.client)
         this.webhook = new WebhookService(this.client)
         this.connect = new ConnectService(this.client)
+        this.identityLink = new IdentityLinkService(this.client)
     }
 
     setApiKey(_apiKey: string) {

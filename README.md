@@ -104,6 +104,7 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
     - [Setup](#setup)
     - [Management](#management)
     - [Security and Signing](#security-and-signing)
+- [Linking a Verified Identity](#linking-a-verified-identity)
 
 ## Authentication
 
@@ -313,7 +314,7 @@ When verification fails, the `verificationMetadata` field on the user object pro
 | `address_invalid`          | Invalid address              |
 | `duplicate_identity`       | Identity already exists      |
 
-For `duplicate_identity` failures, `matchedEmail` indicates whether the duplicate was created through your integration:
+For `duplicate_identity` failures, offer [Linking a Verified Identity](#linking-a-verified-identity) to prove control of the original account. `matchedEmail` indicates whether the duplicate was created through your integration:
 
 ```typescript
 const userData = await client.user.getCurrentUser()
@@ -1606,3 +1607,36 @@ if (!signature || !verifySpritzWebhook(rawBody, signature, WEBHOOK_SECRET)) {
     throw new Error('Invalid webhook signature')
 }
 ```
+
+## Linking a Verified Identity
+
+A person who already verified with Spritz may sign up again through your app, for example with a different email. Verifying the new account again would fail as a `duplicate_identity`. An identity link session lets the person prove the new account is theirs instead: on a Spritz-hosted page they prove control of the original account (by signing in to it, or confirming a code sent to it) and pass a fresh liveness and face check against it. Linking never gives you a key for, or any detail about, the original account. Offer it before starting verification for a new account, or after verification failed as `duplicate_identity`.
+
+Identity linking is being rolled out. Until it is enabled for your environment `createSession` throws a `NotFoundError` (HTTP 404, with `problem.code` `IDENTITY_LINKING_UNAVAILABLE` when the API names the reason); treat any 404 from `createSession` as "not available" and continue with ordinary verification.
+
+`createSession` runs on your backend and needs integrator credentials (`integrationKey` + `integratorSecret`) plus the **new** account's API key set on the client (`client.setApiKey(user.apiKey)`):
+
+```typescript
+const { sessionId, authorizationUrl, expiresAt } = await client.identityLink.createSession({
+    redirectUri: 'https://api.example.com/spritz/link/callback', // a registered Connect redirect URI
+    state: crypto.randomUUID(), // persist it with the person's attempt
+})
+
+// Send the person to `authorizationUrl` unchanged (including its #fragment; don't log it).
+// On iOS/Android open it in the system auth session (ASWebAuthenticationSession /
+// Custom Tabs), never an embedded WebView.
+```
+
+When the hosted flow ends, Spritz redirects to `redirectUri` with your `state` and `result=linked | review | cancelled | failed | expired` (`IdentityLinkResult`). Verify `state`, then read the account again with `user.getMe()` for its verification status and capabilities. Sessions expire 15 minutes after creation. Starting a new session for the same account cancels the earlier one, so keep using the session while the person is in the hosted flow. `createSession` throws a `ConflictError` with `problem.code` `LINK_NOT_ELIGIBLE` when the account cannot start a link: it is already verified or linked, under review, disabled or closed, or an earlier session for it is still being confirmed.
+
+The redirect is the completion signal. To reconcile from your backend (for example when the redirect never arrived), read the session with the link token that `authorizationUrl` carries in its `#link_token` fragment. The token is the credential for the session: keep it server-side and never log it. Read it once when you need it rather than polling: reads are rate-limited per IP address across all your sessions, and past the limit they fail with a 429.
+
+```typescript
+import { linkTokenFromAuthorizationUrl } from '@spritz-finance/api-client'
+
+const linkToken = linkTokenFromAuthorizationUrl(authorizationUrl)
+
+const { status, comparison } = await client.identityLink.get({ sessionId, linkToken })
+```
+
+`status` moves through `pending` → `selected` → `authenticated` → `comparing` → `compared` → `linked` or `review`, or ends `cancelled`, `failed` or `expired`. `review` means the link needs review: keep this session and read its status later instead of restarting KYC; it moves on to `linked` or `failed`. `comparison` is `null` until the face check is decided, then `passed` or `failed` (a failed check also ends the session `failed`). An unknown session or a wrong token fails with a `NotFoundError` that carries no session details and no `problem.code`.
