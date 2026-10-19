@@ -15,6 +15,10 @@ describe('Spritz API Client - Core Functionality', () => {
         it('should initialize with valid configuration', () => {
             expect(client).toBeInstanceOf(SpritzApiClient)
         })
+
+        it('has no Spritz Connect client', () => {
+            expect('connect' in client).toBe(false)
+        })
     })
 
     describe('Address validation', () => {
