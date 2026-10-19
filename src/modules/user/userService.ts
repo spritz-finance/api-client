@@ -20,28 +20,9 @@ interface CreateUserResponse {
     apiKey: string
 }
 
-interface RequestApiKeyResponse {
-    success: boolean
-}
-
-interface RequestApiKeyParams {
-    email: string
-}
-
 interface CreateUserParams {
     email: string
     timezone?: string | null
-}
-
-interface AuthorizeApiKeyResponse {
-    apiKey: string
-    userId: string
-    email: string
-}
-
-interface AuthorizeApiKeyParams {
-    otp: string
-    email: string
 }
 
 export class UserService {
@@ -56,9 +37,9 @@ export class UserService {
      * With an integrator secret this uses POST /v1/integrator/users; without
      * one it uses the deprecated /users/integration route.
      *
-     * Where reuse is enabled, a normalized email (trimmed, lowercased) resolves
-     * first to your own account, then to one currently authorized account.
-     * A repeat returns the same userId and current email with a fresh apiKey.
+     * Where reuse is enabled, a repeat for a normalized email (trimmed,
+     * lowercased) that already has an account your integrator created returns
+     * the same userId and current email with a fresh apiKey.
      * Older keys can stay valid until revoked. Where reuse is disabled, handle
      * USER_ALREADY_EXISTS for any existing account.
      *
@@ -68,8 +49,7 @@ export class UserService {
      * USER_SELECTION_REQUIRED (several authorized matches), USER_ALREADY_EXISTS
      * (this call cannot return an existing account), USER_CREATE_IN_PROGRESS
      * (retryable), and AUTHORIZATION_LOOKUP_UNAVAILABLE (retryable 503).
-     * Use hasProblemCode rather than branching on error text. Connect grants
-     * explicit access to an existing account; it does not link identities.
+     * Use hasProblemCode rather than branching on error text.
      */
     public async createUser(args: CreateUserParams): Promise<CreateUserResponse> {
         if (this.client.usesIntegratorAuth) {
@@ -97,41 +77,6 @@ export class UserService {
      */
     public async create(args: CreateUserParams) {
         return this.createUser(args)
-    }
-
-    /**
-     * Send a one-time code to an email for the legacy key recovery flow.
-     *
-     * @deprecated The email-only recovery flow is being retired: an email can belong to
-     * more than one Spritz account, so a code cannot say which account it is for. To
-     * recover the key of an account in your tenant where account reuse is enabled,
-     * call `createUser` again with the same email: it returns the same `userId` with a
-     * fresh `apiKey`. Where reuse is disabled it returns `USER_ALREADY_EXISTS`; use
-     * Spritz Connect (`client.connect`) instead, also for an account you do not own.
-     * Keeps working until the legacy routes are removed.
-     */
-    public async requestApiKey(email: string) {
-        return this.client.request<RequestApiKeyResponse, RequestApiKeyParams>({
-            method: 'post',
-            path: '/users/request-key',
-            body: {
-                email,
-            },
-        })
-    }
-
-    /**
-     * Exchange a one-time code from `requestApiKey` for the account's API key.
-     *
-     * @deprecated See `requestApiKey`: recover keys with `createUser` or Spritz Connect.
-     * Keeps working until the legacy routes are removed.
-     */
-    public async authorizeApiKeyWithOTP(args: AuthorizeApiKeyParams) {
-        return this.client.request<AuthorizeApiKeyResponse, AuthorizeApiKeyParams>({
-            method: 'post',
-            path: '/users/validate-key',
-            body: args,
-        })
     }
 
     /**
