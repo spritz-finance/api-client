@@ -558,7 +558,7 @@ released. Instant deposits release crypto early, so they are rarely cancellable.
 read live on every request, but it is advisory; the cancel call checks again.
 
 ```typescript
-import { ConflictError, hasProblemCode } from '@spritz-finance/api-client'
+import { hasProblemCode } from '@spritz-finance/api-client'
 
 try {
     // From an on-ramp, use onRamp.source.depositId
@@ -568,9 +568,8 @@ try {
         // client.deposit.get(depositId) until status is 'cancelled'.
     }
 } catch (error) {
-    if (hasProblemCode(error, 'deposit_not_cancellable')) {
-        // Too late. error.error.reason: 'crypto_released' | 'debit_in_progress' | 'deposit_closed'
-    }
+    if (!hasProblemCode(error, 'deposit_not_cancellable')) throw error
+    // Too late. error.error.reason: 'crypto_released' | 'debit_in_progress' | 'deposit_closed'
 }
 ```
 
