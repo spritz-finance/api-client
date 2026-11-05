@@ -1386,8 +1386,9 @@ try {
 | `retryAfter`      | `number`                                                | Seconds to wait before retrying                                  |
 | `suggestedAction` | `'auto_ramp' \| 'wait_for_settlement' \| (string & {})` | What the API suggests doing next; open so new values still parse |
 | `clearsAt`        | `string \| null`                                        | When a limit clears; `null` means not bounded by time            |
-| `availableAt`     | `string \| null`                                        | When the resource becomes available                              |
+| `availableAt`     | `string \| null`                                        | When a temporary block lifts (funding source, cancel cooldown)   |
 | `permanent`       | `boolean`                                               | Whether retrying can ever succeed                                |
+| `reason`          | `DepositCancelRefusalReason`                            | Why a deposit cannot be cancelled, on `deposit_not_cancellable`  |
 | `realm`           | `string`                                                | Authentication realm, on some `401`s                             |
 | `scope`           | `string`                                                | Scope required for the resource, on some `401`s                  |
 | `resourceType`    | `string`                                                | Type of the missing resource; required on `404`s                 |

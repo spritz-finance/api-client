@@ -374,7 +374,8 @@ describe('DepositService REST integration', () => {
 
             expect(error).toBeInstanceOf(ConflictError)
             expect(hasProblemCode(error, 'deposit_not_cancellable')).toBe(true)
-            expect((error as ConflictError).error).toMatchObject({ reason: 'crypto_released' })
+            if (!hasProblemCode(error, 'deposit_not_cancellable')) throw error
+            expect(error.problem.reason).toBe('crypto_released')
         })
     })
 

@@ -19,7 +19,12 @@ export {
     hasProblemType,
     isAPIError,
 } from './lib/error'
-export type { ProblemDetails, ProblemFieldError, ProblemSuggestedAction } from './lib/error'
+export type {
+    DepositCancelRefusalReason,
+    ProblemDetails,
+    ProblemFieldError,
+    ProblemSuggestedAction,
+} from './lib/error'
 export type {
     CreateDirectPaymentInput,
     BankAccountInput,

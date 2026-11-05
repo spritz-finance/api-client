@@ -16,6 +16,16 @@ export type ProblemFieldError = {
 export type ProblemSuggestedAction = 'auto_ramp' | 'wait_for_settlement' | (string & {})
 
 /**
+ * Why a deposit cannot be cancelled, on `deposit_not_cancellable`. Open so a
+ * value the API adds later still parses.
+ */
+export type DepositCancelRefusalReason =
+    | 'crypto_released'
+    | 'debit_in_progress'
+    | 'deposit_closed'
+    | (string & {})
+
+/**
  * The API's RFC 9457 problem response.
  *
  * Every field is optional because this is parsed defensively from an untrusted
@@ -47,6 +57,8 @@ export type ProblemDetails = {
     clearsAt?: string | null
     availableAt?: string | null
     permanent?: boolean
+    /** Why a deposit cannot be cancelled, alongside `code: 'deposit_not_cancellable'`. */
+    reason?: DepositCancelRefusalReason
     /** Authentication realm, on some `401` problems. */
     realm?: string
     /** Scope required for the resource, on some `401` problems. */
@@ -160,6 +172,7 @@ function parseProblemDetails(payload: unknown): ProblemDetails | undefined {
     set(problem, 'clearsAt', readNullableString(payload, 'clearsAt'))
     set(problem, 'availableAt', readNullableString(payload, 'availableAt'))
     set(problem, 'permanent', readBoolean(payload, 'permanent'))
+    set(problem, 'reason', readString(payload, 'reason'))
     set(problem, 'realm', readString(payload, 'realm'))
     set(problem, 'scope', readString(payload, 'scope'))
     set(problem, 'resourceType', readString(payload, 'resourceType'))

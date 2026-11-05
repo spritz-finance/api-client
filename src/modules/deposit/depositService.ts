@@ -143,7 +143,7 @@ export class DepositService {
      * `cancelled`. Repeating the call is safe.
      *
      * Throws a `ConflictError` with `problem.code === 'deposit_not_cancellable'`
-     * when it is too late; `error.error.reason` says why (`crypto_released`,
+     * when it is too late; `problem.reason` says why (`crypto_released`,
      * `debit_in_progress` or `deposit_closed`). Cancelling the last three
      * deposits within 24 hours makes `prepare` and `create` refuse new deposits
      * with `ach_debit_cancel_cooldown` until `problem.availableAt`.

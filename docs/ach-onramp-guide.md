@@ -569,7 +569,7 @@ try {
     }
 } catch (error) {
     if (!hasProblemCode(error, 'deposit_not_cancellable')) throw error
-    // Too late. error.error.reason: 'crypto_released' | 'debit_in_progress' | 'deposit_closed'
+    // Too late. error.problem.reason: 'crypto_released' | 'debit_in_progress' | 'deposit_closed'
 }
 ```
 
