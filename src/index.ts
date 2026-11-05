@@ -19,7 +19,12 @@ export {
     hasProblemType,
     isAPIError,
 } from './lib/error'
-export type { ProblemDetails, ProblemFieldError, ProblemSuggestedAction } from './lib/error'
+export type {
+    DepositCancelRefusalReason,
+    ProblemDetails,
+    ProblemFieldError,
+    ProblemSuggestedAction,
+} from './lib/error'
 export type {
     CreateDirectPaymentInput,
     BankAccountInput,
@@ -53,11 +58,6 @@ export {
     CardFeatureType,
 } from './modules/user/accessTypes'
 export { onrampSupportedTokens } from './modules/virtualAccounts/types'
-export type {
-    ConnectSession,
-    ConnectTokenExchange,
-    CreateConnectSessionParams,
-} from './modules/connect/connectService'
 export type { CreateVirtualAccountInput } from './modules/virtualAccounts/types'
 export type {
     AutoRampAccount,
@@ -74,6 +74,7 @@ export type {
     Deposit,
     DepositListQuery,
     DepositListResponse,
+    CancelDepositResponse,
     PrepareDepositRequest,
     PrepareDepositResponse,
     CreateDepositRequest,

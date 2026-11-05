@@ -106,8 +106,8 @@ export class UserService {
      * more than one Spritz account, so a code cannot say which account it is for. To
      * recover the key of an account in your tenant where account reuse is enabled,
      * call `createUser` again with the same email: it returns the same `userId` with a
-     * fresh `apiKey`. Where reuse is disabled it returns `USER_ALREADY_EXISTS`; use
-     * Spritz Connect (`client.connect`) instead, also for an account you do not own.
+     * fresh `apiKey`. Where reuse is disabled it returns `USER_ALREADY_EXISTS`: use the
+     * API key you stored for the account, or contact Spritz support.
      * Keeps working until the legacy routes are removed.
      */
     public async requestApiKey(email: string) {
@@ -123,7 +123,7 @@ export class UserService {
     /**
      * Exchange a one-time code from `requestApiKey` for the account's API key.
      *
-     * @deprecated See `requestApiKey`: recover keys with `createUser` or Spritz Connect.
+     * @deprecated See `requestApiKey`: recover keys with `createUser`.
      * Keeps working until the legacy routes are removed.
      */
     public async authorizeApiKeyWithOTP(args: AuthorizeApiKeyParams) {

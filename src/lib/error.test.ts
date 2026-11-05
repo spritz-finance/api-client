@@ -148,6 +148,7 @@ describe('ProblemDetails', () => {
             clearsAt: '2026-01-02T00:00:00.000Z',
             availableAt: null,
             permanent: false,
+            reason: 'crypto_released',
         }
         const error = APIError.generate(400, problem, undefined, headers)
 
@@ -316,6 +317,7 @@ describe('ProblemDetails', () => {
             retryable: 'yes',
             retryAfter: 'soon',
             permanent: 1,
+            reason: 7,
             clearsAt: 5,
             errors: { field: 'notAnArray' },
         }

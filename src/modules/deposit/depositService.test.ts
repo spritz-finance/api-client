@@ -233,6 +233,20 @@ describe('DepositService', () => {
         expect(result).toEqual(response)
     })
 
+    it('cancels a deposit and encodes the id as a single path segment', async () => {
+        const response = { id: 'dep/one', status: 'cancelled' }
+
+        vi.mocked(mockClient.restApi).mockResolvedValue(response)
+
+        const result = await depositService.cancel('dep/one')
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'post',
+            path: '/v1/deposits/dep%2Fone/cancel',
+        })
+        expect(result).toEqual(response)
+    })
+
     it('refuses to create a deposit without an idempotency key', async () => {
         await expect(
             depositService.create({ preparationId: 'prep_123' }, { idempotencyKey: '' } as {

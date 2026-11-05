@@ -12,7 +12,12 @@ import {
 } from '../../lib/error'
 import { SpritzApiClient } from '../../spritzApiClient'
 import { server } from '../../test/setup'
-import type { Deposit, DepositListQuery, DepositListResponse } from './depositService'
+import type {
+    CancelDepositResponse,
+    Deposit,
+    DepositListQuery,
+    DepositListResponse,
+} from './depositService'
 
 const BASE = 'https://sandbox.spritz.finance'
 const INTEGRATION_KEY = 'ik_test_key'
@@ -73,6 +78,8 @@ const DEPOSIT = {
     releaseFailureCode: null,
     releaseFailureReason: null,
     payoutTxHash: null,
+    cancellable: true,
+    cancelledAt: null,
 } as const
 
 describe('DepositService REST integration', () => {
@@ -302,6 +309,111 @@ describe('DepositService REST integration', () => {
         expect(error.requestId).toBe('req_conflict')
         expect(error.traceId).toBe('trace_conflict')
         expect(error.error).toEqual(problem)
+    })
+
+    describe('cancel', () => {
+        function respondToCancel(body: Record<string, unknown>, status: number) {
+            const seen: { url?: string; headers?: Record<string, string> } = {}
+            server.use(
+                http.post(`${BASE}/v1/deposits/:depositId/cancel`, ({ request }) => {
+                    seen.url = request.url
+                    seen.headers = Object.fromEntries(request.headers.entries())
+                    return HttpResponse.json(body, {
+                        status,
+                        ...(status >= 400
+                            ? { headers: { 'content-type': 'application/problem+json' } }
+                            : {}),
+                    })
+                })
+            )
+            return seen
+        }
+
+        it('signs a bodiless POST and returns the cancelled deposit', async () => {
+            const cancelled = {
+                ...DEPOSIT,
+                status: 'cancelled',
+                debitStatus: 'failed',
+                cancellable: false,
+                cancelledAt: '2026-01-01T00:05:00.000Z',
+            }
+            const seen = respondToCancel(cancelled, 200)
+
+            const result = await client.deposit.cancel(DEPOSIT.id)
+
+            expectTypeOf(result).toEqualTypeOf<CancelDepositResponse>()
+            expect(result.status).toBe('cancelled')
+            expect(result.cancelledAt).toBe('2026-01-01T00:05:00.000Z')
+            expect(seen.url).toBe(`${BASE}/v1/deposits/${DEPOSIT.id}/cancel`)
+            expect(seen.headers?.['x-signature']).toBe(
+                expectedSignature(FROZEN_NOW, 'POST', `/v1/deposits/${DEPOSIT.id}/cancel`)
+            )
+        })
+
+        it('resolves with the still-open deposit while the bank has not confirmed', async () => {
+            respondToCancel({ ...DEPOSIT, status: 'processing', cancellable: false }, 202)
+
+            const result = await client.deposit.cancel(DEPOSIT.id)
+
+            expect(result.status).toBe('processing')
+            expect(result.cancelledAt).toBeNull()
+        })
+
+        it('throws a conflict whose reason says why it is too late', async () => {
+            const problem = {
+                type: 'urn:problem-type:conflict',
+                title: 'Conflict',
+                status: 409,
+                detail: 'This deposit can no longer be cancelled: its crypto has been released',
+                code: 'deposit_not_cancellable',
+                reason: 'crypto_released',
+            }
+            respondToCancel(problem, 409)
+
+            const error = await client.deposit.cancel(DEPOSIT.id).catch((err: unknown) => err)
+
+            expect(error).toBeInstanceOf(ConflictError)
+            expect(hasProblemCode(error, 'deposit_not_cancellable')).toBe(true)
+            if (!hasProblemCode(error, 'deposit_not_cancellable')) throw error
+            expect(error.problem.reason).toBe('crypto_released')
+        })
+    })
+
+    it('exposes when a cancel cooldown lifts on prepare', async () => {
+        const problem = {
+            type: 'urn:problem-type:conflict',
+            title: 'Conflict',
+            status: 409,
+            detail: 'Deposits are paused after repeated cancellations. Try again after 2026-01-02T00:05:00.000Z.',
+            code: 'ach_debit_cancel_cooldown',
+            field: 'userId',
+            availableAt: '2026-01-02T00:05:00.000Z',
+        }
+        server.use(
+            http.post(`${BASE}/v1/deposits/direct/prepare`, () =>
+                HttpResponse.json(problem, {
+                    status: 409,
+                    headers: { 'content-type': 'application/problem+json' },
+                })
+            )
+        )
+
+        const error = await client.deposit
+            .prepare({
+                sourceId: DEPOSIT.sourceId,
+                address: DEPOSIT.address,
+                network: 'solana',
+                asset: 'USDC',
+                quoteType: 'exact_input',
+                amountUsd: '100.00',
+                priority: 'normal',
+            })
+            .catch((err: unknown) => err)
+
+        if (!hasProblemCode(error, 'ach_debit_cancel_cooldown')) {
+            throw new Error('expected a cancel cooldown')
+        }
+        expect(error.problem.availableAt).toBe('2026-01-02T00:05:00.000Z')
     })
 
     it('leaves problem undefined for a non-JSON error body', async () => {

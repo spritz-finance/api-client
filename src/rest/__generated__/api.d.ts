@@ -194,6 +194,10 @@ export interface paths {
          * @description Returns transaction parameters for a `sign_transaction` quote. Use these to construct, sign, and submit the on-chain transaction.
          *
          *     Returns EVM calldata, or a serialized Solana or Sui transaction, depending on the quote's chain. Solana and Sui transactions are built for `senderAddress`, so pass it.
+         *
+         *     Each call builds a new transaction, so a Solana transaction whose blockhash expired can be rebuilt on the same quote. Rebuild only once the previous transaction can no longer land. Once the quote is no longer `created` (a transaction was submitted or confirmed), this returns 409 with `code: "quote_not_open"` and the current `quoteStatus`.
+         *
+         *     A Solana swap is simulated before it is returned. When the sender wallet cannot cover it, this returns 422 with `code: "insufficient_sol_balance"` (SOL for the swap, token account setup and network fees) or `"insufficient_token_balance"` and `retryable: false`: fund the wallet or quote a smaller amount. Any other simulation failure returns 502 with `code: "swap_simulation_failed"` and `retryable: true`.
          */
         post: operations["postV1Off-ramp-quotesByQuoteIdTransaction"];
         delete?: never;
@@ -641,6 +645,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/deposits/{depositId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel a deposit
+         * @description Cancels an ACH debit deposit owned by the authenticated user. Allowed only while the deposit's `cancellable` is true: before the bank debit is transmitted and before any crypto is released. 200 returns the deposit with status `cancelled`. 202 means the cancellation was requested but the bank has not confirmed it yet; the deposit's payout is held until it resolves, so poll the deposit for status `cancelled`. 409 with code `deposit_not_cancellable` means it is too late to cancel; `reason` is `crypto_released`, `debit_in_progress` or `deposit_closed`. Repeating the call on a cancelled deposit returns it unchanged. When the user cancels their three latest deposits within 24 hours, new deposits are refused for 24 hours after the latest cancel with 409 code `ach_debit_cancel_cooldown` and `availableAt` set to when they open again.
+         */
+        post: operations["postV1DepositsByDepositIdCancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/deposits/direct/prepare": {
         parameters: {
             query?: never;
@@ -692,7 +716,7 @@ export interface paths {
         put?: never;
         /**
          * Check ACH debit eligibility
-         * @description Once an email is eligible, it remains eligible. While ACH debit is temporarily halted or paused for new users, the answer is false, even for an email that was eligible before, and nothing is recorded. A false response may be transient, so re-check rather than caching it. Call this endpoint before showing a bank deposit option. Once the user exists, the capabilities returned by GET /v1/users/me remain the source of truth.
+         * @description Call only when the bank deposit option is about to be shown, such as when the deposit-method picker opens, never during startup or profile polling. This admits an existing user belonging to the integrator or evaluates a prospect. Existing users must also have an active or requirements_needed ACH debit capability under the same account, banking-country, and verification rules as their profile. Successful admission is retained, but account restrictions or temporary stops can make eligibility false. While ACH debit is halted or paused for new users, the answer is false and nothing is recorded. A false response may be transient: re-check on a later deposit-screen visit. GET /v1/users/me capabilities are passive previews; require eligible=true and an active or requirements_needed ACH debit capability when a profile exists. Prepare/create require actual access and never admit users.
          */
         post: operations["postV1Ach-debitEligibility"];
         delete?: never;
@@ -1233,126 +1257,6 @@ export interface paths {
         patch: operations["patchV1Debit-cardsByCardIdCardholder-info"];
         trace?: never;
     };
-    "/v1/connect/sessions/{sessionId}/return": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Return from an unfinished connect session
-         * @description Ends a pending session without granting access. Requires the scoped returnToken delivered in the authorization URL fragment; a session ID alone grants no authority. Sign-in is not required. The token expires 15 minutes after creation, including a five-minute grace period after consent expires. Invalid or expired tokens return 404. Returns only the registered callback with its original state and a server-selected error. Retries preserve the first terminal outcome. Approved sessions return 409.
-         */
-        post: operations["postV1ConnectSessionsBySessionIdReturn"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/connect/sessions/{sessionId}/preview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Preview a connect session before sign-in
-         * @description Returns who is asking and which account the session is for, so the hosted page can render before sign-in. Requires the scoped returnToken from the authorization URL fragment; a session ID alone grants no authority. Read-only. Invalid or expired tokens return 404.
-         */
-        post: operations["postV1ConnectSessionsBySessionIdPreview"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/integrator/connect/sessions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create a connect session
-         * @description Creates a Spritz Connect session for an existing Spritz user to authorize the integrator.
-         */
-        post: operations["postV1IntegratorConnectSessions"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/integrator/connect/token": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Exchange connect code for API key
-         * @description Exchanges an authorization code for the long-lived users-service API key minted for this integrator/user grant.
-         */
-        post: operations["postV1IntegratorConnectToken"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/connect/sessions/{sessionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get connect session
-         * @description Returns the pending Spritz Connect session for the signed-in user to review.
-         */
-        get: operations["getV1ConnectSessionsBySessionId"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/connect/sessions/{sessionId}/approve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Approve connect session
-         * @description Approves the Spritz Connect session and returns a callback URI containing the authorization code. When the session was created with an email, the signed-in account must have that email; otherwise returns 403 CONNECT_ACCOUNT_MISMATCH and the session stays pending.
-         */
-        post: operations["postV1ConnectSessionsBySessionIdApprove"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/integrator/tokens": {
         parameters: {
             query?: never;
@@ -1412,11 +1316,21 @@ export interface paths {
         put?: never;
         /**
          * Create a user
-         * @description Creates a new Spritz user under the authenticated integrator.
+         * @description Creates a Spritz user under the authenticated integrator or, where account reuse is enabled, returns the account this email already resolves to for you.
          *
-         *     The response includes the user's API key (`ak_...`), which is returned only once at creation - store it securely.
+         *     Account reuse is enabled per environment. Where it is enabled, `POST /v1/integrator/users` is idempotent per integrator and normalized email (trimmed, lowercased): a repeat for an email that already has an account your integrator created, or an account you currently have authorized access to through an existing authorization, returns `200` with the same `userId`, its current `email` and a freshly minted `apiKey`; older keys may stay valid until revoked. Where it is not enabled, that repeat answers `409` with `USER_ALREADY_EXISTS`, so handle both answers. Remaining `409` outcomes carry a stable `code`: `USER_DELETED`, `USER_SELECTION_REQUIRED`, `USER_ALREADY_EXISTS` (the email already has an account this call cannot return to you), `USER_CREATE_IN_PROGRESS` (`retryable: true`). Creating an account never tells you about accounts you are not authorized for.
          *
-         *     **Conflict** (`409`): branch on the problem `code`, not the title or detail. `USER_ALREADY_EXISTS` means the email already has a Spritz account: use Spritz Connect (`POST /v1/integrator/connect/sessions`) with the same `email` to have the existing user authorize this integrator; the hosted page shows that email and only that account can approve. `USER_CREATE_IN_PROGRESS` (`retryable: true`) means another request is already creating a user with this email; retry shortly.
+         *     The response has the same shape whether the account was created or reused. Every accepted call mints a new `apiKey` (`ak_...`) bound to your integrator and returns it only in this response, so store it securely. A reused account keeps its profile; `timezone` applies only to an account this call creates.
+         *
+         *     Branch on the problem `code`, never on the title or detail:
+         *
+         *     - `USER_DELETED` (`409`): the account this email resolves to for you was deleted. Deleted accounts are not recreated; contact Spritz support to restore it.
+         *     - `USER_SELECTION_REQUIRED` (`409`): you are authorized for several accounts that use this email. Contact Spritz support to choose the account you intend to use.
+         *     - `USER_ALREADY_EXISTS` (`409`): the email already has an account this call cannot return to you (for example one you did not create and are not authorized for) or, where account reuse is not enabled, any existing account. If your integrator created it, use the API key you stored for it; otherwise contact Spritz support.
+         *     - `USER_CREATE_IN_PROGRESS` (`409`, `retryable: true`): another request for this email is in progress; retry shortly.
+         *     - `AUTHORIZATION_LOOKUP_UNAVAILABLE` (`503`, `retryable: true`): Spritz could not check which accounts you are authorized for; retry after the `Retry-After` interval.
+         *
+         *     Every `409` code except `USER_CREATE_IN_PROGRESS` is `retryable: false`.
          */
         post: operations["postV1IntegratorUsers"];
         delete?: never;
@@ -1498,7 +1412,7 @@ export interface paths {
         };
         /**
          * Get webhook deliveries
-         * @description Returns recent webhook delivery attempts for the integrator, newest first.
+         * @description Returns recent webhook deliveries for the integrator, newest first. A delivery is one event sent to one webhook, including all of its retries.
          *
          *     Use this to tell **"Spritz never sent it"** apart from **"my endpoint rejected it"** — from the outside both look like silence.
          *
@@ -1511,17 +1425,55 @@ export interface paths {
          *
          *     > **An `error` does not prove the event was not processed.** A refused connection means it never arrived, but a timeout or a dropped connection may mean your endpoint received and fully handled the event and we simply never heard the answer. Treat these as *unknown*, not as *not delivered* — re-running non-idempotent work on the strength of an `error` is how you double-process. This is the case idempotent handlers exist for.
          *
-         *     `payload` is the exact body that was sent, and the body the `Signature` header was computed over, so it can be replayed against your own verification code.
+         *     `success`, `responseStatus`, `error` and `timestamp` describe the latest attempt. `status` describes the delivery as a whole:
+         *
+         *     - `pending` — the latest attempt failed and Spritz will retry at `nextAttemptAt`.
+         *     - `succeeded` — your endpoint returned a 2xx. Terminal.
+         *     - `failed` — Spritz stopped retrying. Terminal; use `POST /v1/integrator/webhooks/deliveries/{deliveryId}/redeliver` once your endpoint is fixed.
+         *
+         *     **Retries**: Spritz retries a failed delivery for about 24 hours, waiting roughly 30s, 2m, 10m, 30m, 1h, 2h, 4h, 8h, then 8h between attempts. Timings are approximate, not guaranteed. A 3xx response, or a 4xx other than 408 or 429, is not retried: the delivery becomes `failed` immediately.
+         *
+         *     **Delivery ID**: each delivery has a stable `id`, sent as the `Spritz-Delivery-Id` header on every attempt and redelivery. `eventId` identifies the event; deduplicate on it.
+         *
+         *     `payload` is the exact body that was sent, and the body the signature headers were computed over, so it can be replayed against your own verification code.
          *
          *     Cursor-paginated: pass the previous response's `nextCursor` as `cursor` to walk further back. `nextCursor` is `null` on the last page.
          *
-         *     No fixed retention period is guaranteed. Treat this endpoint as a diagnostic and prompt-recovery aid, not permanent event storage or a long-lived redelivery queue. Store accepted webhook events durably and reconcile failed deliveries promptly.
+         *     No fixed retention period is guaranteed. Treat this endpoint as a diagnostic and recovery aid, not permanent event storage. Store accepted webhook events durably, and reconcile or redeliver deliveries that end `failed`.
          *
          *     Deliveries are recorded for every webhook on the integrator. Scope is your own integrator only.
          */
         get: operations["getV1IntegratorWebhooksDeliveries"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/integrator/webhooks/deliveries/{deliveryId}/redeliver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Redeliver a webhook delivery
+         * @description Sends a webhook delivery again and returns the delivery with `status: "pending"`.
+         *
+         *     The redelivery uses the same `payload`, the same `eventId`, and the same delivery `id` (sent as the `Spritz-Delivery-Id` header), so a handler that deduplicates on `eventId` processes it at most once. Signatures are recomputed at send time with your current webhook secret. It goes to the webhook's current URL and starts a fresh retry schedule (about 24 hours); `attempts` keeps counting from its previous value.
+         *
+         *     Use it after fixing your endpoint for a delivery that ended `failed`. You can also redeliver a `succeeded` or `pending` delivery; a `pending` one is attempted again promptly instead of at its scheduled time. Follow progress with `GET /v1/integrator/webhooks/deliveries`.
+         *
+         *     **Not found** (`404`): `code: "WEBHOOK_DELIVERY_NOT_FOUND"` means no delivery with this ID exists for your integrator.
+         *
+         *     **Conflict** (`409`): `code: "WEBHOOK_NOT_FOUND"` (`retryable: false`) means the webhook this delivery was sent to has been deleted. Create a webhook and reconcile the event from the API instead.
+         */
+        post: operations["postV1IntegratorWebhooksDeliveriesByDeliveryIdRedeliver"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1565,11 +1517,15 @@ export interface paths {
          * Update webhook secret
          * @description Updates the webhook secret used for signing webhook payloads.
          *
-         *     **Webhook Security**: Each webhook request is signed using HMAC SHA256. The signature is computed from the exact JSON payload and included in the `Signature` HTTP header.
+         *     **Rotation**: The previous secret stays valid for signing for 24 hours after you set a new one; `previousSecretValidUntil` says when it stops. During that window each delivery carries one `v1=` signature per active secret, current secret first. Accept a delivery if any signature matches a secret you hold. `previousSecretValidUntil` is `null` when no different secret was replaced.
          *
-         *     **Verification**: Compute the HMAC signature using your secret and the raw request body, then compare it to the `Signature` header before processing.
+         *     **`Spritz-Signature` header**: `Spritz-Signature: t=<unix seconds>,v1=<hex HMAC-SHA256(secret, "<t>.<raw body>")>[,v1=...]`. To verify, for each secret you hold recompute HMAC-SHA256 over the `t` value, a `.`, and the exact raw request body, then compare it to each `v1` value with a constant-time comparison. Reject the delivery if no signature matches or if `t` is more than 300 seconds from your current time.
          *
-         *     If no webhook secret is set, webhook requests will not include a `Signature` header.
+         *     **Legacy `Signature` header**: Unchanged and still sent: the hex HMAC-SHA256 of the raw request body using the current secret only. It has no timestamp, so prefer `Spritz-Signature`.
+         *
+         *     If no webhook secret is set, webhook requests include neither header.
+         *
+         *     **Conflict** (`409`): `code: "WEBHOOK_SECRET_UPDATE_IN_PROGRESS"` (`retryable: true`) means another request changed the secret at the same time; retry the request.
          */
         post: operations["postV1IntegratorWebhook-secret"];
         delete?: never;
@@ -1667,6 +1623,10 @@ export interface paths {
         /**
          * Start an email update
          * @description Creates a pending email update session for the authenticated user and sends a one-time code to the requested email address.
+         *
+         *     **Conflict** (`409`): branch on the problem `code`, not the title or detail. `EMAIL_IN_USE_IN_TENANT` means another account in the same tenant (the same partner, or Spritz itself) already uses this email address. `EMAIL_IN_USE_BY_LOGIN` means the address is already used to sign in to another Spritz account. Both are `retryable: false`: ask for a different address. `EMAIL_CHANGE_IN_PROGRESS` (`retryable: true`) means an earlier email change for this account has not finished yet; retry shortly. A `409` without `code` is an in-use conflict from a deployment that predates these codes; treat it as `retryable: false`. The problem never says which account holds the address.
+         *
+         *     Other failures: `403` `EMAIL_CHANGE_FORBIDDEN` the login no longer resolves to this account; sign in again. `400` the address is not a valid email; `429` too many email update attempts for this account.
          */
         post: operations["postV1UsersMeEmail-update-sessions"];
         delete?: never;
@@ -1687,6 +1647,10 @@ export interface paths {
         /**
          * Confirm an email update
          * @description Confirms a pending email update session with the code sent to the new email address and returns the updated user profile.
+         *
+         *     The address is checked again at confirmation, so this call returns the same **conflicts** (`409`) as starting a session; branch on the problem `code`. `EMAIL_IN_USE_IN_TENANT` and `EMAIL_IN_USE_BY_LOGIN` are `retryable: false`: start a new session with a different address. `EMAIL_CHANGE_IN_PROGRESS` (`retryable: true`): retry this confirmation shortly; the change resumes where it stopped. A `409` without `code` is an in-use conflict from a deployment that predates these codes; treat it as `retryable: false`.
+         *
+         *     Other failures: `403` `EMAIL_CHANGE_FORBIDDEN` the login no longer resolves to this account; sign in again. `400` the code is wrong (a newer code may have been sent); `403` the session belongs to another account; `404` the session does not exist or has expired; `429` too many wrong codes, the session was discarded.
          */
         post: operations["postV1UsersMeEmail-update-sessionsBySessionIdConfirm"];
         delete?: never;
@@ -1926,7 +1890,7 @@ export interface paths {
         put?: never;
         /**
          * Provision embedded wallet
-         * @description Provisions a new embedded wallet for the authenticated user from a passkey challenge. Returns 409 if a wallet already exists.
+         * @description Provisions a new embedded wallet for the authenticated user from a passkey challenge. Returns 400 if the challenge cannot be parsed and 409 if a wallet already exists.
          */
         post: operations["postV1Wallet-kit"];
         delete?: never;
@@ -2375,6 +2339,8 @@ export interface paths {
          *     To simulate a successful verification, pass a `country` — the capability group to verify the user into. To simulate a failed check, pass `failed: true`. Exactly one of the two is required; an empty body is a 400. Add `retryable: true` with `failed: true` to simulate a retryable documentary failure, then POST /v1/users/me/verification-sessions to obtain a new Persona sandbox session.
          *
          *     `US` and `EU` can be simulated today. `CA` and `GB` are real capability groups with no sandbox fixture yet and return **501**, which is distinct from the **400** an unrecognised value gets.
+         *
+         *     When verification cannot run the bypass right now, the endpoint returns **503** SANDBOX_KYC_UNAVAILABLE with retryable=true, plus retryAfter (seconds) and a Retry-After header when verification names a wait; repeat the same request.
          */
         post: operations["postV1SandboxBypass-kyc"];
         delete?: never;
@@ -2896,11 +2862,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3135,11 +3103,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3247,11 +3217,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3349,11 +3321,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3418,11 +3392,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3689,11 +3665,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3883,11 +3861,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4028,11 +4008,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4097,11 +4079,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4166,11 +4150,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4223,7 +4209,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description Creation timestamp
-                         * @example 2026-10-08T15:15:02.544Z
+                         * @example 2026-11-05T10:45:43.272Z
                          */
                         createdAt?: string;
                     }[];
@@ -4364,11 +4350,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4388,7 +4376,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6ac7b3760f2ad32d458d1b1f
+                     * @example 6aec5e57c5d2ece6012831bf
                      */
                     accountId: string;
                     /**
@@ -4416,7 +4404,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6ac7b3760f2ad32d458d1b1f
+                     * @example 6aec5e57c5d2ece6012831bf
                      */
                     accountId: string;
                     /**
@@ -4444,7 +4432,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6ac7b3760f2ad32d458d1b1f
+                     * @example 6aec5e57c5d2ece6012831bf
                      */
                     accountId: string;
                     /**
@@ -4491,7 +4479,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-10-08T15:15:02.532Z
+                         * @example 2026-11-05T10:45:43.252Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4530,7 +4518,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6ac7b3760f2ad32d458d1b20
+                             * @example 6aec5e57c5d2ece6012831c0
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -4745,11 +4733,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4787,7 +4777,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-10-08T15:15:02.532Z
+                         * @example 2026-11-05T10:45:43.252Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4826,7 +4816,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6ac7b3760f2ad32d458d1b20
+                             * @example 6aec5e57c5d2ece6012831c0
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5041,11 +5031,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -5297,6 +5289,148 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 422 */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
             /** @description Response for status 500 */
             500: {
                 headers: {
@@ -5356,11 +5490,84 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 502 */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -5422,7 +5629,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-10-08T15:15:02.532Z
+                         * @example 2026-11-05T10:45:43.252Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -5461,7 +5668,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6ac7b3760f2ad32d458d1b20
+                             * @example 6aec5e57c5d2ece6012831c0
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5676,11 +5883,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -5764,7 +5973,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6ac7b3760f2ad32d458d1b21
+                                 * @example 6aec5e57c5d2ece6012831c1
                                  */
                                 accountId: string;
                                 /**
@@ -5973,11 +6182,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -6055,7 +6266,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6ac7b3760f2ad32d458d1b21
+                             * @example 6aec5e57c5d2ece6012831c1
                              */
                             accountId: string;
                             /**
@@ -6253,11 +6464,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -6296,7 +6509,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6ac7b3760f2ad32d458d1b22
+                     * @example 6aec5e57c5d2ece6012831c2
                      */
                     accountId?: string;
                 };
@@ -6314,7 +6527,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6ac7b3760f2ad32d458d1b22
+                     * @example 6aec5e57c5d2ece6012831c2
                      */
                     accountId?: string;
                 };
@@ -6332,7 +6545,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6ac7b3760f2ad32d458d1b22
+                     * @example 6aec5e57c5d2ece6012831c2
                      */
                     accountId?: string;
                 };
@@ -6398,7 +6611,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6ac7b3760f2ad32d458d1b21
+                             * @example 6aec5e57c5d2ece6012831c1
                              */
                             accountId: string;
                             /**
@@ -6596,11 +6809,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -6719,6 +6934,8 @@ export interface operations {
                                  */
                                 fundingSourceId: string;
                             } | null;
+                            /** @description Whether this on-ramp can be cancelled now. Only ACH-debit on-ramps qualify, and only before the bank debit is transmitted and before any crypto is released; cancel with POST /v1/deposits/{source.depositId}/cancel. Advisory: the cancel call re-checks and may still refuse. */
+                            cancellable: boolean;
                             deliverySummary?: {
                                 /**
                                  * @description Crypto amount delivered or submitted so far
@@ -6919,11 +7136,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7103,11 +7322,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7201,11 +7422,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7346,11 +7569,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7415,11 +7640,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7484,11 +7711,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7601,6 +7830,8 @@ export interface operations {
                              */
                             fundingSourceId: string;
                         } | null;
+                        /** @description Whether this on-ramp can be cancelled now. Only ACH-debit on-ramps qualify, and only before the bank debit is transmitted and before any crypto is released; cancel with POST /v1/deposits/{source.depositId}/cancel. Advisory: the cancel call re-checks and may still refuse. */
+                        cancellable: boolean;
                         deliverySummary?: {
                             /**
                              * @description Crypto amount delivered or submitted so far
@@ -7790,11 +8021,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -8288,11 +8521,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -9528,11 +9763,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -10028,11 +10265,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -10206,11 +10445,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -10288,6 +10529,39 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
             /** @description Response for status 500 */
             500: {
                 headers: {
@@ -10347,11 +10621,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -10580,11 +10856,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -10631,6 +10909,11 @@ export interface operations {
                                  * @example 10.00
                                  */
                                 minAmountUsd: string;
+                                /**
+                                 * @description Smallest `amountUsd` to accept on an `exact_input` quote: the fee comes out of the entered amount, so this is the amount whose principal after fees reaches `minAmountUsd`. Calculated without a fee subsidy; a subsidised request may be accepted from a lower amount. For `exact_output`, validate against `minAmountUsd`.
+                                 * @example 12.00
+                                 */
+                                minRequestedAmountUsd: string;
                                 /**
                                  * @description The largest single deposit amount accepted right now — all limits folded in, with headroom for the maximum fee already deducted. Build amount inputs against this value.
                                  * @example 742.57
@@ -10824,11 +11107,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11059,11 +11344,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11237,11 +11524,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11285,7 +11574,7 @@ export interface operations {
                              */
                             onRampId: string | null;
                             /** @enum {string} */
-                            status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed";
+                            status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed" | "cancelled";
                             /** @enum {string} */
                             quoteType: "exact_input" | "exact_output";
                             /** @enum {string} */
@@ -11346,6 +11635,13 @@ export interface operations {
                             releaseFailureCode: string | null;
                             releaseFailureReason: string | null;
                             payoutTxHash: string | null;
+                            /** @description Whether the user can cancel this deposit now via POST /v1/deposits/{depositId}/cancel. True only before the bank debit is transmitted and before any crypto is released. Advisory: the cancel call re-checks and may still refuse. */
+                            cancellable: boolean;
+                            /**
+                             * Format: date-time
+                             * @description When the user's cancellation was confirmed
+                             */
+                            cancelledAt: string | null;
                         }[];
                         /** @description Whether another page of deposits is available */
                         hasMore: boolean;
@@ -11413,11 +11709,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11525,11 +11823,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11627,11 +11927,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11673,7 +11975,7 @@ export interface operations {
                          */
                         onRampId: string | null;
                         /** @enum {string} */
-                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed";
+                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed" | "cancelled";
                         /** @enum {string} */
                         quoteType: "exact_input" | "exact_output";
                         /** @enum {string} */
@@ -11734,6 +12036,13 @@ export interface operations {
                         releaseFailureCode: string | null;
                         releaseFailureReason: string | null;
                         payoutTxHash: string | null;
+                        /** @description Whether the user can cancel this deposit now via POST /v1/deposits/{depositId}/cancel. True only before the bank debit is transmitted and before any crypto is released. Advisory: the cancel call re-checks and may still refuse. */
+                        cancellable: boolean;
+                        /**
+                         * Format: date-time
+                         * @description When the user's cancellation was confirmed
+                         */
+                        cancelledAt: string | null;
                     };
                 };
             };
@@ -11839,11 +12148,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11941,11 +12252,503 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    postV1DepositsByDepositIdCancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                depositId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description An ACH debit deposit authorized by the user and processed asynchronously through debit and crypto release lifecycles. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Opaque public deposit identifier
+                         * @example dep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        id: string;
+                        /**
+                         * @description Opaque public funding source identifier
+                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        sourceId: string;
+                        /**
+                         * @description Identifier of the on-ramp created for this deposit, or null until the on-ramp record exists.
+                         * @example onramp_xyz789
+                         */
+                        onRampId: string | null;
+                        /** @enum {string} */
+                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed" | "cancelled";
+                        /** @enum {string} */
+                        quoteType: "exact_input" | "exact_output";
+                        /** @enum {string} */
+                        requestedPriority: "normal" | "high";
+                        /** @enum {string} */
+                        priority: "normal" | "high";
+                        feeRateBps: number;
+                        principalAmountUsd: string;
+                        instantPortionUsd: string;
+                        settlementPortionUsd: string;
+                        expectedAssetAmount: string;
+                        grossFeeUsd: string;
+                        publishedFeeUsd: string;
+                        regularPublishedFeeUsd: string;
+                        instantPublishedFeeUsd: string;
+                        feeSubsidyUsd: string;
+                        userFeeUsd: string;
+                        totalDebitAmountUsd: string;
+                        feeSubsidy: {
+                            percentage: number;
+                            percentageBps: number;
+                            maxAmountUsd: string | null;
+                            appliedAmountUsd: string;
+                        } | null;
+                        /** @enum {string} */
+                        network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
+                        /**
+                         * @description Asset sent to the deposit destination
+                         * @example USDC
+                         * @enum {string}
+                         */
+                        asset: "USDC";
+                        assetAddress: string;
+                        /** @description Destination wallet address for the crypto release */
+                        address: string;
+                        /** @enum {string} */
+                        debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                        /** @enum {string} */
+                        releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                        /** @enum {string} */
+                        releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                        releasedAmountUsd: string;
+                        confirmedReleasedAmountUsd: string;
+                        /** Format: date-time */
+                        authorizedAt: string;
+                        /** Format: date-time */
+                        createdAt: string;
+                        /** Format: date-time */
+                        settledAt: string | null;
+                        /** Format: date-time */
+                        returnedAt: string | null;
+                        /** Format: date-time */
+                        completedAt: string | null;
+                        returnCode: string | null;
+                        returnReason: string | null;
+                        debitFailureCode: string | null;
+                        debitFailureReason: string | null;
+                        releaseFailureCode: string | null;
+                        releaseFailureReason: string | null;
+                        payoutTxHash: string | null;
+                        /** @description Whether the user can cancel this deposit now via POST /v1/deposits/{depositId}/cancel. True only before the bank debit is transmitted and before any crypto is released. Advisory: the cancel call re-checks and may still refuse. */
+                        cancellable: boolean;
+                        /**
+                         * Format: date-time
+                         * @description When the user's cancellation was confirmed
+                         */
+                        cancelledAt: string | null;
+                    };
+                };
+            };
+            /** @description An ACH debit deposit authorized by the user and processed asynchronously through debit and crypto release lifecycles. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Opaque public deposit identifier
+                         * @example dep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        id: string;
+                        /**
+                         * @description Opaque public funding source identifier
+                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        sourceId: string;
+                        /**
+                         * @description Identifier of the on-ramp created for this deposit, or null until the on-ramp record exists.
+                         * @example onramp_xyz789
+                         */
+                        onRampId: string | null;
+                        /** @enum {string} */
+                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed" | "cancelled";
+                        /** @enum {string} */
+                        quoteType: "exact_input" | "exact_output";
+                        /** @enum {string} */
+                        requestedPriority: "normal" | "high";
+                        /** @enum {string} */
+                        priority: "normal" | "high";
+                        feeRateBps: number;
+                        principalAmountUsd: string;
+                        instantPortionUsd: string;
+                        settlementPortionUsd: string;
+                        expectedAssetAmount: string;
+                        grossFeeUsd: string;
+                        publishedFeeUsd: string;
+                        regularPublishedFeeUsd: string;
+                        instantPublishedFeeUsd: string;
+                        feeSubsidyUsd: string;
+                        userFeeUsd: string;
+                        totalDebitAmountUsd: string;
+                        feeSubsidy: {
+                            percentage: number;
+                            percentageBps: number;
+                            maxAmountUsd: string | null;
+                            appliedAmountUsd: string;
+                        } | null;
+                        /** @enum {string} */
+                        network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
+                        /**
+                         * @description Asset sent to the deposit destination
+                         * @example USDC
+                         * @enum {string}
+                         */
+                        asset: "USDC";
+                        assetAddress: string;
+                        /** @description Destination wallet address for the crypto release */
+                        address: string;
+                        /** @enum {string} */
+                        debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                        /** @enum {string} */
+                        releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                        /** @enum {string} */
+                        releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                        releasedAmountUsd: string;
+                        confirmedReleasedAmountUsd: string;
+                        /** Format: date-time */
+                        authorizedAt: string;
+                        /** Format: date-time */
+                        createdAt: string;
+                        /** Format: date-time */
+                        settledAt: string | null;
+                        /** Format: date-time */
+                        returnedAt: string | null;
+                        /** Format: date-time */
+                        completedAt: string | null;
+                        returnCode: string | null;
+                        returnReason: string | null;
+                        debitFailureCode: string | null;
+                        debitFailureReason: string | null;
+                        releaseFailureCode: string | null;
+                        releaseFailureReason: string | null;
+                        payoutTxHash: string | null;
+                        /** @description Whether the user can cancel this deposit now via POST /v1/deposits/{depositId}/cancel. True only before the bank debit is transmitted and before any crypto is released. Advisory: the cancel call re-checks and may still refuse. */
+                        cancellable: boolean;
+                        /**
+                         * Format: date-time
+                         * @description When the user's cancellation was confirmed
+                         */
+                        cancelledAt: string | null;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12000,7 +12803,7 @@ export interface operations {
                     };
                     clientNetwork?: {
                         /**
-                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken. The later direct client submission is not currently matched against these addresses; it must come from a public network other than the preparing backend's.
                          * @example [
                          *       "1.1.1.1",
                          *       "2606:4700:4700::1111"
@@ -12047,7 +12850,7 @@ export interface operations {
                     };
                     clientNetwork?: {
                         /**
-                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken. The later direct client submission is not currently matched against these addresses; it must come from a public network other than the preparing backend's.
                          * @example [
                          *       "1.1.1.1",
                          *       "2606:4700:4700::1111"
@@ -12094,7 +12897,7 @@ export interface operations {
                     };
                     clientNetwork?: {
                         /**
-                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken. The later direct client submission is not currently matched against these addresses; it must come from a public network other than the preparing backend's.
                          * @example [
                          *       "1.1.1.1",
                          *       "2606:4700:4700::1111"
@@ -12240,11 +13043,16 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /**
+                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @enum {string}
+                         */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -12359,11 +13167,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12461,11 +13271,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12530,11 +13342,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12599,11 +13413,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12684,7 +13500,7 @@ export interface operations {
                          */
                         onRampId: string | null;
                         /** @enum {string} */
-                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed";
+                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed" | "cancelled";
                         /** @enum {string} */
                         quoteType: "exact_input" | "exact_output";
                         /** @enum {string} */
@@ -12745,6 +13561,13 @@ export interface operations {
                         releaseFailureCode: string | null;
                         releaseFailureReason: string | null;
                         payoutTxHash: string | null;
+                        /** @description Whether the user can cancel this deposit now via POST /v1/deposits/{depositId}/cancel. True only before the bank debit is transmitted and before any crypto is released. Advisory: the cancel call re-checks and may still refuse. */
+                        cancellable: boolean;
+                        /**
+                         * Format: date-time
+                         * @description When the user's cancellation was confirmed
+                         */
+                        cancelledAt: string | null;
                     };
                 };
             };
@@ -12810,11 +13633,16 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /**
+                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @enum {string}
+                         */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -12929,11 +13757,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13031,11 +13861,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13100,11 +13932,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13169,11 +14003,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13238,11 +14074,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13262,7 +14100,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * Format: email
-                     * @description Email address of the prospective Spritz user
+                     * @description Verified email address of the existing user or prospect
                      * @example user@example.com
                      */
                     email: string;
@@ -13270,7 +14108,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * Format: email
-                     * @description Email address of the prospective Spritz user
+                     * @description Verified email address of the existing user or prospect
                      * @example user@example.com
                      */
                     email: string;
@@ -13278,7 +14116,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * Format: email
-                     * @description Email address of the prospective Spritz user
+                     * @description Verified email address of the existing user or prospect
                      * @example user@example.com
                      */
                     email: string;
@@ -13357,11 +14195,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13469,11 +14309,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13632,11 +14474,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14127,11 +14971,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14196,11 +15042,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14265,11 +15113,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14534,11 +15384,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14803,11 +15655,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15074,11 +15928,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15143,11 +15999,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15321,11 +16179,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15528,11 +16388,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15696,11 +16558,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15875,11 +16739,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16032,11 +16898,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16185,11 +17053,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16342,11 +17212,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16514,11 +17386,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16712,11 +17586,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16883,11 +17759,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -17083,11 +17961,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -17293,11 +18173,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -17482,11 +18364,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -17687,11 +18571,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -17902,11 +18788,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18138,11 +19026,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18169,7 +19059,7 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique identifier for the debit card
-                             * @example 6ac7b3760f2ad32d458d1b26
+                             * @example 6aec5e57c5d2ece6012831c6
                              */
                             id: string;
                             /** @enum {string} */
@@ -18356,11 +19246,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18617,7 +19509,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6ac7b3760f2ad32d458d1b26
+                         * @example 6aec5e57c5d2ece6012831c6
                          */
                         id: string;
                         /** @enum {string} */
@@ -18802,11 +19694,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18834,7 +19728,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6ac7b3760f2ad32d458d1b26
+                         * @example 6aec5e57c5d2ece6012831c6
                          */
                         id: string;
                         /** @enum {string} */
@@ -19019,11 +19913,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -19188,11 +20084,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -19355,7 +20253,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6ac7b3760f2ad32d458d1b26
+                         * @example 6aec5e57c5d2ece6012831c6
                          */
                         id: string;
                         /** @enum {string} */
@@ -19540,1139 +20438,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
-                    } & {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
-    postV1ConnectSessionsBySessionIdReturn: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sessionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description Scoped return capability from the authorization URL fragment. */
-                    returnToken: string;
-                    /** @enum {string} */
-                    reason: "cancelled" | "failed";
-                };
-                "application/x-www-form-urlencoded": {
-                    /** @description Scoped return capability from the authorization URL fragment. */
-                    returnToken: string;
-                    /** @enum {string} */
-                    reason: "cancelled" | "failed";
-                };
-                "multipart/form-data": {
-                    /** @description Scoped return capability from the authorization URL fragment. */
-                    returnToken: string;
-                    /** @enum {string} */
-                    reason: "cancelled" | "failed";
-                };
-            };
-        };
-        responses: {
-            /** @description Response for status 200 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        callbackUri: string;
                         /** @enum {string} */
-                        error: "access_denied" | "server_error" | "session_expired";
-                    };
-                };
-            };
-            /** @description Response for status 401 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 401
-                         */
-                        status: number;
-                        /**
-                         * @description A human-readable explanation specific to this occurrence
-                         * @example Bearer token required
-                         */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The authentication realm
-                         * @example API
-                         */
-                        realm?: string;
-                        /**
-                         * @description The required scope for this resource
-                         * @example read:users
-                         */
-                        scope?: string;
-                    };
-                };
-            };
-            /** @description Response for status 404 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         */
-                        type: string;
-                        /** @description A short, human-readable summary of the problem type */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 404
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The type of resource that was not found
-                         * @example user
-                         */
-                        resourceType: string;
-                        /** @description The identifier of the resource that was not found */
-                        resourceId: string;
-                    };
-                };
-            };
-            /** @description Response for status 409 */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                        /**
-                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
-                         * @example transaction_limit
-                         */
-                        code?: string;
-                        /**
-                         * @description The offending request field, present alongside `code`.
-                         * @example amountUsd
-                         */
-                        field?: string;
-                        /**
-                         * @description Whether retrying the same request later may succeed without changing its inputs.
-                         * @example true
-                         */
-                        retryable?: boolean;
-                        /**
-                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
-                         * @example 5
-                         */
-                        retryAfter?: number;
-                        /** @enum {string} */
-                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
-                        /**
-                         * Format: date-time
-                         * @description Earliest known time the current temporary condition may clear.
-                         */
-                        clearsAt?: string | null;
-                        /**
-                         * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
-                         */
-                        availableAt?: string | null;
-                        /** @description Whether the current funding-source restriction will not clear automatically. */
-                        permanent?: boolean;
-                    } & {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Response for status 500 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                        /**
-                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
-                         * @example transaction_limit
-                         */
-                        code?: string;
-                        /**
-                         * @description The offending request field, present alongside `code`.
-                         * @example amountUsd
-                         */
-                        field?: string;
-                        /**
-                         * @description Whether retrying the same request later may succeed without changing its inputs.
-                         * @example true
-                         */
-                        retryable?: boolean;
-                        /**
-                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
-                         * @example 5
-                         */
-                        retryAfter?: number;
-                        /** @enum {string} */
-                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
-                        /**
-                         * Format: date-time
-                         * @description Earliest known time the current temporary condition may clear.
-                         */
-                        clearsAt?: string | null;
-                        /**
-                         * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
-                         */
-                        availableAt?: string | null;
-                        /** @description Whether the current funding-source restriction will not clear automatically. */
-                        permanent?: boolean;
-                    } & {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
-    postV1ConnectSessionsBySessionIdPreview: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sessionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description Scoped capability from the authorization URL fragment. */
-                    returnToken: string;
-                };
-                "application/x-www-form-urlencoded": {
-                    /** @description Scoped capability from the authorization URL fragment. */
-                    returnToken: string;
-                };
-                "multipart/form-data": {
-                    /** @description Scoped capability from the authorization URL fragment. */
-                    returnToken: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Response for status 200 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        sessionId: string;
-                        integratorId: string;
-                        integratorName: string | null;
-                        /** @description Account this session is bound to, or null when unbound. */
-                        email: string | null;
-                        /** @description `expired` once the 10-minute consent window has passed. */
-                        status: string;
-                        /** Format: date-time */
-                        expiresAt: string;
-                    };
-                };
-            };
-            /** @description Response for status 401 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 401
-                         */
-                        status: number;
-                        /**
-                         * @description A human-readable explanation specific to this occurrence
-                         * @example Bearer token required
-                         */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The authentication realm
-                         * @example API
-                         */
-                        realm?: string;
-                        /**
-                         * @description The required scope for this resource
-                         * @example read:users
-                         */
-                        scope?: string;
-                    };
-                };
-            };
-            /** @description Response for status 404 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         */
-                        type: string;
-                        /** @description A short, human-readable summary of the problem type */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 404
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The type of resource that was not found
-                         * @example user
-                         */
-                        resourceType: string;
-                        /** @description The identifier of the resource that was not found */
-                        resourceId: string;
-                    };
-                };
-            };
-            /** @description Response for status 500 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                        /**
-                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
-                         * @example transaction_limit
-                         */
-                        code?: string;
-                        /**
-                         * @description The offending request field, present alongside `code`.
-                         * @example amountUsd
-                         */
-                        field?: string;
-                        /**
-                         * @description Whether retrying the same request later may succeed without changing its inputs.
-                         * @example true
-                         */
-                        retryable?: boolean;
-                        /**
-                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
-                         * @example 5
-                         */
-                        retryAfter?: number;
-                        /** @enum {string} */
-                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
-                        /**
-                         * Format: date-time
-                         * @description Earliest known time the current temporary condition may clear.
-                         */
-                        clearsAt?: string | null;
-                        /**
-                         * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
-                         */
-                        availableAt?: string | null;
-                        /** @description Whether the current funding-source restriction will not clear automatically. */
-                        permanent?: boolean;
-                    } & {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
-    postV1IntegratorConnectSessions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description Callback URI that receives the authorization code. */
-                    redirectUri: string;
-                    /** @description Opaque integrator state returned unchanged after approval. */
-                    state?: string;
-                    /**
-                     * Format: email
-                     * @description Email of the existing Spritz user this session is for: pass the email that `POST /v1/integrator/users` rejected with 409. The hosted page shows it and only that account can approve. Recommended; when omitted any signed-in Spritz user can approve.
-                     */
-                    email?: string;
-                };
-                "application/x-www-form-urlencoded": {
-                    /** @description Callback URI that receives the authorization code. */
-                    redirectUri: string;
-                    /** @description Opaque integrator state returned unchanged after approval. */
-                    state?: string;
-                    /**
-                     * Format: email
-                     * @description Email of the existing Spritz user this session is for: pass the email that `POST /v1/integrator/users` rejected with 409. The hosted page shows it and only that account can approve. Recommended; when omitted any signed-in Spritz user can approve.
-                     */
-                    email?: string;
-                };
-                "multipart/form-data": {
-                    /** @description Callback URI that receives the authorization code. */
-                    redirectUri: string;
-                    /** @description Opaque integrator state returned unchanged after approval. */
-                    state?: string;
-                    /**
-                     * Format: email
-                     * @description Email of the existing Spritz user this session is for: pass the email that `POST /v1/integrator/users` rejected with 409. The hosted page shows it and only that account can approve. Recommended; when omitted any signed-in Spritz user can approve.
-                     */
-                    email?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Response for status 200 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        sessionId: string;
-                        authorizationUrl: string;
-                        /** Format: date-time */
-                        expiresAt: string;
-                    };
-                };
-            };
-            /** @description Response for status 401 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 401
-                         */
-                        status: number;
-                        /**
-                         * @description A human-readable explanation specific to this occurrence
-                         * @example Bearer token required
-                         */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The authentication realm
-                         * @example API
-                         */
-                        realm?: string;
-                        /**
-                         * @description The required scope for this resource
-                         * @example read:users
-                         */
-                        scope?: string;
-                    };
-                };
-            };
-            /** @description Response for status 404 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         */
-                        type: string;
-                        /** @description A short, human-readable summary of the problem type */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 404
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The type of resource that was not found
-                         * @example user
-                         */
-                        resourceType: string;
-                        /** @description The identifier of the resource that was not found */
-                        resourceId: string;
-                    };
-                };
-            };
-            /** @description Response for status 500 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                        /**
-                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
-                         * @example transaction_limit
-                         */
-                        code?: string;
-                        /**
-                         * @description The offending request field, present alongside `code`.
-                         * @example amountUsd
-                         */
-                        field?: string;
-                        /**
-                         * @description Whether retrying the same request later may succeed without changing its inputs.
-                         * @example true
-                         */
-                        retryable?: boolean;
-                        /**
-                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
-                         * @example 5
-                         */
-                        retryAfter?: number;
-                        /** @enum {string} */
-                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
-                        /**
-                         * Format: date-time
-                         * @description Earliest known time the current temporary condition may clear.
-                         */
-                        clearsAt?: string | null;
-                        /**
-                         * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
-                         */
-                        availableAt?: string | null;
-                        /** @description Whether the current funding-source restriction will not clear automatically. */
-                        permanent?: boolean;
-                    } & {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
-    postV1IntegratorConnectToken: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description Authorization code returned after the user approves the session. */
-                    code: string;
-                };
-                "application/x-www-form-urlencoded": {
-                    /** @description Authorization code returned after the user approves the session. */
-                    code: string;
-                };
-                "multipart/form-data": {
-                    /** @description Authorization code returned after the user approves the session. */
-                    code: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Response for status 200 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        apiKey: string;
-                        userId: string;
-                        email: string;
-                        grantId: string;
-                        tokenId: string | null;
-                        keyPrefix: string;
-                    };
-                };
-            };
-            /** @description Response for status 401 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 401
-                         */
-                        status: number;
-                        /**
-                         * @description A human-readable explanation specific to this occurrence
-                         * @example Bearer token required
-                         */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The authentication realm
-                         * @example API
-                         */
-                        realm?: string;
-                        /**
-                         * @description The required scope for this resource
-                         * @example read:users
-                         */
-                        scope?: string;
-                    };
-                };
-            };
-            /** @description Response for status 404 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         */
-                        type: string;
-                        /** @description A short, human-readable summary of the problem type */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 404
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The type of resource that was not found
-                         * @example user
-                         */
-                        resourceType: string;
-                        /** @description The identifier of the resource that was not found */
-                        resourceId: string;
-                    };
-                };
-            };
-            /** @description Response for status 500 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                        /**
-                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
-                         * @example transaction_limit
-                         */
-                        code?: string;
-                        /**
-                         * @description The offending request field, present alongside `code`.
-                         * @example amountUsd
-                         */
-                        field?: string;
-                        /**
-                         * @description Whether retrying the same request later may succeed without changing its inputs.
-                         * @example true
-                         */
-                        retryable?: boolean;
-                        /**
-                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
-                         * @example 5
-                         */
-                        retryAfter?: number;
-                        /** @enum {string} */
-                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
-                        /**
-                         * Format: date-time
-                         * @description Earliest known time the current temporary condition may clear.
-                         */
-                        clearsAt?: string | null;
-                        /**
-                         * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
-                         */
-                        availableAt?: string | null;
-                        /** @description Whether the current funding-source restriction will not clear automatically. */
-                        permanent?: boolean;
-                    } & {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
-    getV1ConnectSessionsBySessionId: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sessionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Response for status 200 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        sessionId: string;
-                        integratorId: string;
-                        integratorName: string | null;
-                        status: string;
-                        /** Format: date-time */
-                        expiresAt: string;
-                    };
-                };
-            };
-            /** @description Response for status 401 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 401
-                         */
-                        status: number;
-                        /**
-                         * @description A human-readable explanation specific to this occurrence
-                         * @example Bearer token required
-                         */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The authentication realm
-                         * @example API
-                         */
-                        realm?: string;
-                        /**
-                         * @description The required scope for this resource
-                         * @example read:users
-                         */
-                        scope?: string;
-                    };
-                };
-            };
-            /** @description Response for status 500 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                        /**
-                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
-                         * @example transaction_limit
-                         */
-                        code?: string;
-                        /**
-                         * @description The offending request field, present alongside `code`.
-                         * @example amountUsd
-                         */
-                        field?: string;
-                        /**
-                         * @description Whether retrying the same request later may succeed without changing its inputs.
-                         * @example true
-                         */
-                        retryable?: boolean;
-                        /**
-                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
-                         * @example 5
-                         */
-                        retryAfter?: number;
-                        /** @enum {string} */
-                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
-                        /**
-                         * Format: date-time
-                         * @description Earliest known time the current temporary condition may clear.
-                         */
-                        clearsAt?: string | null;
-                        /**
-                         * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
-                         */
-                        availableAt?: string | null;
-                        /** @description Whether the current funding-source restriction will not clear automatically. */
-                        permanent?: boolean;
-                    } & {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
-    postV1ConnectSessionsBySessionIdApprove: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sessionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Response for status 200 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        redirectUri: string;
-                        callbackUri: string;
-                        code: string;
-                        state: string | null;
-                        /** Format: date-time */
-                        expiresAt: string;
-                    };
-                };
-            };
-            /** @description Response for status 401 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 401
-                         */
-                        status: number;
-                        /**
-                         * @description A human-readable explanation specific to this occurrence
-                         * @example Bearer token required
-                         */
-                        detail?: string;
-                        /** @description A URI reference that identifies the specific occurrence */
-                        instance?: string;
-                        /**
-                         * @description The authentication realm
-                         * @example API
-                         */
-                        realm?: string;
-                        /**
-                         * @description The required scope for this resource
-                         * @example read:users
-                         */
-                        scope?: string;
-                    };
-                };
-            };
-            /** @description Response for status 500 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /**
-                         * @description A URI reference that identifies the problem type
-                         * @default about:blank
-                         * @example urn:problem-type:auth:unauthorized
-                         */
-                        type: string;
-                        /**
-                         * @description A short, human-readable summary of the problem type
-                         * @example Unauthorized
-                         */
-                        title: string;
-                        /**
-                         * @description The HTTP status code
-                         * @example 400
-                         */
-                        status: number;
-                        /** @description A human-readable explanation specific to this occurrence */
-                        detail?: string;
-                        /**
-                         * @description A URI reference that identifies the specific occurrence
-                         * @example /errors/1234567890
-                         */
-                        instance?: string;
-                        /**
-                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
-                         * @example transaction_limit
-                         */
-                        code?: string;
-                        /**
-                         * @description The offending request field, present alongside `code`.
-                         * @example amountUsd
-                         */
-                        field?: string;
-                        /**
-                         * @description Whether retrying the same request later may succeed without changing its inputs.
-                         * @example true
-                         */
-                        retryable?: boolean;
-                        /**
-                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
-                         * @example 5
-                         */
-                        retryAfter?: number;
-                        /** @enum {string} */
-                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
-                        /**
-                         * Format: date-time
-                         * @description Earliest known time the current temporary condition may clear.
-                         */
-                        clearsAt?: string | null;
-                        /**
-                         * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
-                         */
-                        availableAt?: string | null;
-                        /** @description Whether the current funding-source restriction will not clear automatically. */
-                        permanent?: boolean;
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -20745,7 +20517,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6ac7b3760f2ad32d458d1b2a
+                         * @example 6aec5e57c5d2ece6012831ca
                          */
                         userId: string;
                         /**
@@ -20761,7 +20533,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-10-08T16:15:02.830Z
+                         * @example 2026-11-05T11:45:43.555Z
                          */
                         expiresAt: string;
                     };
@@ -20902,11 +20674,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -20960,7 +20734,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-10-08T15:15:02.830Z
+                         * @example 2026-11-05T10:45:43.555Z
                          */
                         createdAt: string;
                     };
@@ -21101,11 +20875,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21125,12 +20901,12 @@ export interface operations {
                 "application/json": {
                     /**
                      * Format: email
-                     * @description Email address for the new user
+                     * @description Email address of the account to create or, where account reuse is enabled, to reuse. Matched after trimming and lowercasing; dots and plus suffixes are significant.
                      * @example user@example.com
                      */
                     email: string;
                     /**
-                     * @description IANA timezone identifier for the new user
+                     * @description IANA timezone identifier for an account this call creates. Ignored when the call reuses an existing account.
                      * @example America/New_York
                      */
                     timezone?: string;
@@ -21138,12 +20914,12 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * Format: email
-                     * @description Email address for the new user
+                     * @description Email address of the account to create or, where account reuse is enabled, to reuse. Matched after trimming and lowercasing; dots and plus suffixes are significant.
                      * @example user@example.com
                      */
                     email: string;
                     /**
-                     * @description IANA timezone identifier for the new user
+                     * @description IANA timezone identifier for an account this call creates. Ignored when the call reuses an existing account.
                      * @example America/New_York
                      */
                     timezone?: string;
@@ -21151,12 +20927,12 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * Format: email
-                     * @description Email address for the new user
+                     * @description Email address of the account to create or, where account reuse is enabled, to reuse. Matched after trimming and lowercasing; dots and plus suffixes are significant.
                      * @example user@example.com
                      */
                     email: string;
                     /**
-                     * @description IANA timezone identifier for the new user
+                     * @description IANA timezone identifier for an account this call creates. Ignored when the call reuses an existing account.
                      * @example America/New_York
                      */
                     timezone?: string;
@@ -21172,21 +20948,92 @@ export interface operations {
                 content: {
                     "application/json": {
                         /**
-                         * @description The internal ID of the newly created user
-                         * @example 6ac7b3760f2ad32d458d1b2c
+                         * @description ID of the account this request resolved to: the account it created or, where account reuse is enabled, the existing account this email resolves to for you (your own, or one you are currently authorized for through an existing authorization). With reuse enabled, a repeat for the same email returns the same ID.
+                         * @example 6aec5e57c5d2ece6012831cc
                          */
                         userId: string;
                         /**
                          * Format: email
-                         * @description Email address of the newly created user
+                         * @description The account's current email address.
                          * @example user@example.com
                          */
                         email: string;
                         /**
-                         * @description The user's API key (`ak_...`). Returned only once at creation - store it securely.
+                         * @description A freshly minted API key (`ak_...`) for this account, bound to your integrator. Every accepted call returns a new key and older keys may stay valid until revoked. Returned only in this response - store it securely.
                          * @example ak_N2FjZTk3ZjMtsTWiZF00MGU0LWIxYTMtMTY0ZmM3MzJiNTdm
                          */
                         apiKey: string;
+                    };
+                };
+            };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -21325,11 +21172,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21394,11 +21243,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21463,11 +21314,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21517,7 +21370,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6ac7b3760f2ad32d458d1b29
+                             * @example 6aec5e57c5d2ece6012831c9
                              */
                             userId: string;
                             /**
@@ -21537,7 +21390,7 @@ export interface operations {
                             lossAmountUsd: string;
                             atRiskAmountUsd: string;
                             /** @enum {string} */
-                            sourceAction: "disabled";
+                            sourceAction: "disabled" | "balance_verified";
                             /** @enum {string} */
                             userAction: "none" | "review_required" | "restricted" | "disabled";
                             /** @enum {string} */
@@ -21687,11 +21540,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21729,7 +21584,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6ac7b3760f2ad32d458d1b29
+                         * @example 6aec5e57c5d2ece6012831c9
                          */
                         userId: string;
                         /**
@@ -21749,7 +21604,7 @@ export interface operations {
                         lossAmountUsd: string;
                         atRiskAmountUsd: string;
                         /** @enum {string} */
-                        sourceAction: "disabled";
+                        sourceAction: "disabled" | "balance_verified";
                         /** @enum {string} */
                         userAction: "none" | "review_required" | "restricted" | "disabled";
                         /** @enum {string} */
@@ -21892,11 +21747,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21922,7 +21779,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6ac7b3760f2ad32d458d1b2b
+                         * @example 6aec5e57c5d2ece6012831cb
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -22081,11 +21938,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -22153,7 +22012,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6ac7b3760f2ad32d458d1b2b
+                         * @example 6aec5e57c5d2ece6012831cb
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -22312,11 +22171,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -22345,6 +22206,26 @@ export interface operations {
                     "application/json": {
                         /** @description Webhook delivery attempts available for inspection, newest first */
                         data: {
+                            /**
+                             * @description Stable delivery ID, sent as the `Spritz-Delivery-Id` header on every attempt and redelivery. Pass it to `POST /v1/integrator/webhooks/deliveries/{deliveryId}/redeliver`.
+                             * @example 6a7441a013a0c37c0d1facfe
+                             */
+                            id: string;
+                            /** @description The `eventId` of the delivered event, the same on every attempt and redelivery. Deduplicate on it. `null` for events sent without one. */
+                            eventId: string | null;
+                            /**
+                             * @description `pending`: Spritz will retry at `nextAttemptAt`. `succeeded`: your endpoint returned a 2xx (terminal). `failed`: retries are exhausted or your endpoint returned a non-retryable status (terminal); redeliver it once your endpoint is fixed.
+                             * @default pending
+                             * @enum {string}
+                             */
+                            status: "pending" | "succeeded" | "failed";
+                            /** @description Total HTTP attempts made for this delivery so far, across retries and redeliveries. `null` when not recorded. */
+                            attempts: number | null;
+                            /**
+                             * Format: date-time
+                             * @description When Spritz will next attempt this delivery. Set only while `status` is `pending`; otherwise `null`. Not a guarantee of exact timing.
+                             */
+                            nextAttemptAt: string | null;
                             /**
                              * @description The event that was delivered
                              * @example onramp.completed
@@ -22437,11 +22318,22 @@ export interface operations {
                                     id: string;
                                     amountUsd: string;
                                     /**
+                                     * @description NACHA return code, such as `R01`
+                                     * @example R01
+                                     */
+                                    returnCode: string | null;
+                                    /**
                                      * @description Crypto release state when the ACH return was recorded
                                      * @example not_released
                                      * @enum {string}
                                      */
                                     cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
+                                    /**
+                                     * @description Action applied to the funding source. `balance_verified`: an insufficient-funds return; the source stays usable, with stricter balance checks before each debit
+                                     * @example disabled
+                                     * @enum {string}
+                                     */
+                                    sourceAction: "disabled" | "balance_verified";
                                     /**
                                      * @description Action applied to the user after return policy evaluation
                                      * @example review_required
@@ -22530,11 +22422,22 @@ export interface operations {
                                     id: string;
                                     amountUsd: string;
                                     /**
+                                     * @description NACHA return code, such as `R01`
+                                     * @example R01
+                                     */
+                                    returnCode: string | null;
+                                    /**
                                      * @description Crypto release state when the ACH return was recorded
                                      * @example not_released
                                      * @enum {string}
                                      */
                                     cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
+                                    /**
+                                     * @description Action applied to the funding source. `balance_verified`: an insufficient-funds return; the source stays usable, with stricter balance checks before each debit
+                                     * @example disabled
+                                     * @enum {string}
+                                     */
+                                    sourceAction: "disabled" | "balance_verified";
                                     /**
                                      * @description Action applied to the user after return policy evaluation
                                      * @example review_required
@@ -22623,11 +22526,22 @@ export interface operations {
                                     id: string;
                                     amountUsd: string;
                                     /**
+                                     * @description NACHA return code, such as `R01`
+                                     * @example R01
+                                     */
+                                    returnCode: string | null;
+                                    /**
                                      * @description Crypto release state when the ACH return was recorded
                                      * @example not_released
                                      * @enum {string}
                                      */
                                     cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
+                                    /**
+                                     * @description Action applied to the funding source. `balance_verified`: an insufficient-funds return; the source stays usable, with stricter balance checks before each debit
+                                     * @example disabled
+                                     * @enum {string}
+                                     */
+                                    sourceAction: "disabled" | "balance_verified";
                                     /**
                                      * @description Action applied to the user after return policy evaluation
                                      * @example review_required
@@ -22716,11 +22630,22 @@ export interface operations {
                                     id: string;
                                     amountUsd: string;
                                     /**
+                                     * @description NACHA return code, such as `R01`
+                                     * @example R01
+                                     */
+                                    returnCode: string | null;
+                                    /**
                                      * @description Crypto release state when the ACH return was recorded
                                      * @example not_released
                                      * @enum {string}
                                      */
                                     cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
+                                    /**
+                                     * @description Action applied to the funding source. `balance_verified`: an insufficient-funds return; the source stays usable, with stricter balance checks before each debit
+                                     * @example disabled
+                                     * @enum {string}
+                                     */
+                                    sourceAction: "disabled" | "balance_verified";
                                     /**
                                      * @description Action applied to the user after return policy evaluation
                                      * @example review_required
@@ -22809,11 +22734,22 @@ export interface operations {
                                     id: string;
                                     amountUsd: string;
                                     /**
+                                     * @description NACHA return code, such as `R01`
+                                     * @example R01
+                                     */
+                                    returnCode: string | null;
+                                    /**
                                      * @description Crypto release state when the ACH return was recorded
                                      * @example not_released
                                      * @enum {string}
                                      */
                                     cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
+                                    /**
+                                     * @description Action applied to the funding source. `balance_verified`: an insufficient-funds return; the source stays usable, with stricter balance checks before each debit
+                                     * @example disabled
+                                     * @enum {string}
+                                     */
+                                    sourceAction: "disabled" | "balance_verified";
                                     /**
                                      * @description Action applied to the user after return policy evaluation
                                      * @example review_required
@@ -23544,11 +23480,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -23689,11 +23627,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -23758,11 +23698,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -23827,11 +23769,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -23896,11 +23840,1529 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    postV1IntegratorWebhooksDeliveriesByDeliveryIdRedeliver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deliveryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Response for status 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Stable delivery ID, sent as the `Spritz-Delivery-Id` header on every attempt and redelivery. Pass it to `POST /v1/integrator/webhooks/deliveries/{deliveryId}/redeliver`.
+                         * @example 6a7441a013a0c37c0d1facfe
+                         */
+                        id: string;
+                        /** @description The `eventId` of the delivered event, the same on every attempt and redelivery. Deduplicate on it. `null` for events sent without one. */
+                        eventId: string | null;
+                        /**
+                         * @description `pending`: Spritz will retry at `nextAttemptAt`. `succeeded`: your endpoint returned a 2xx (terminal). `failed`: retries are exhausted or your endpoint returned a non-retryable status (terminal); redeliver it once your endpoint is fixed.
+                         * @default pending
+                         * @enum {string}
+                         */
+                        status: "pending" | "succeeded" | "failed";
+                        /** @description Total HTTP attempts made for this delivery so far, across retries and redeliveries. `null` when not recorded. */
+                        attempts: number | null;
+                        /**
+                         * Format: date-time
+                         * @description When Spritz will next attempt this delivery. Set only while `status` is `pending`; otherwise `null`. Not a guarantee of exact timing.
+                         */
+                        nextAttemptAt: string | null;
+                        /**
+                         * @description The event that was delivered
+                         * @example onramp.completed
+                         */
+                        event: string;
+                        /**
+                         * @description The URL the delivery was attempted against
+                         * @example https://api.example.com/webhooks
+                         */
+                        webhookUrl: string;
+                        /** @description The exact body that was sent, and the body the signature was computed over. ACH debit, off-ramp, and credit on-ramp milestone events use the versioned semantic payload variants; other event families use their resource-change payload. */
+                        payload: ({
+                            /**
+                             * @description Version of the immutable ACH communication payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-deposit communication sequence. Reject an event whose sequence is not above the highest accepted sequence for this deposit. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            /**
+                             * @description Opaque public deposit identifier; identical to `deposit.id`
+                             * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                             */
+                            id: string;
+                            deposit: {
+                                /**
+                                 * @description Opaque public ACH debit deposit identifier
+                                 * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                /**
+                                 * @description Asset sent to the deposit destination
+                                 * @example USDC
+                                 * @enum {string}
+                                 */
+                                asset: "USDC";
+                                /**
+                                 * @description Shortened destination wallet address for user-facing copy
+                                 * @example 9xQeWv…wM9R
+                                 */
+                                destinationAddressDisplay: string;
+                                principalAmountUsd: string;
+                                totalDebitAmountUsd: string;
+                                confirmedReleasedAmountUsd: string;
+                                /**
+                                 * @description ACH debit lifecycle state for the deposit
+                                 * @example authorized
+                                 * @enum {string}
+                                 */
+                                debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                                /**
+                                 * @description Crypto release lifecycle state for the deposit
+                                 * @example not_started
+                                 * @enum {string}
+                                 */
+                                releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                                /**
+                                 * @description Policy mode used to decide when crypto is released
+                                 * @example after_settlement
+                                 * @enum {string}
+                                 */
+                                releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                                instantPortionUsd: string;
+                                settlementPortionUsd: string;
+                                userFeeUsd: string;
+                            };
+                            fundingSource: {
+                                /**
+                                 * @description Opaque public funding source identifier
+                                 * @example fs_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                institutionName: string | null;
+                                accountMask: string | null;
+                            };
+                            /** @enum {string} */
+                            event: "achDebit.authorized";
+                            /** @enum {string} */
+                            milestone: "authorized";
+                            achReturn: {
+                                /**
+                                 * @description Opaque public ACH debit return identifier
+                                 * @example dr_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                amountUsd: string;
+                                /**
+                                 * @description NACHA return code, such as `R01`
+                                 * @example R01
+                                 */
+                                returnCode: string | null;
+                                /**
+                                 * @description Crypto release state when the ACH return was recorded
+                                 * @example not_released
+                                 * @enum {string}
+                                 */
+                                cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
+                                /**
+                                 * @description Action applied to the funding source. `balance_verified`: an insufficient-funds return; the source stays usable, with stricter balance checks before each debit
+                                 * @example disabled
+                                 * @enum {string}
+                                 */
+                                sourceAction: "disabled" | "balance_verified";
+                                /**
+                                 * @description Action applied to the user after return policy evaluation
+                                 * @example review_required
+                                 * @enum {string}
+                                 */
+                                userAction: "none" | "review_required" | "restricted" | "disabled";
+                            } | null;
+                        } | {
+                            /**
+                             * @description Version of the immutable ACH communication payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-deposit communication sequence. Reject an event whose sequence is not above the highest accepted sequence for this deposit. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            /**
+                             * @description Opaque public deposit identifier; identical to `deposit.id`
+                             * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                             */
+                            id: string;
+                            deposit: {
+                                /**
+                                 * @description Opaque public ACH debit deposit identifier
+                                 * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                /**
+                                 * @description Asset sent to the deposit destination
+                                 * @example USDC
+                                 * @enum {string}
+                                 */
+                                asset: "USDC";
+                                /**
+                                 * @description Shortened destination wallet address for user-facing copy
+                                 * @example 9xQeWv…wM9R
+                                 */
+                                destinationAddressDisplay: string;
+                                principalAmountUsd: string;
+                                totalDebitAmountUsd: string;
+                                confirmedReleasedAmountUsd: string;
+                                /**
+                                 * @description ACH debit lifecycle state for the deposit
+                                 * @example authorized
+                                 * @enum {string}
+                                 */
+                                debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                                /**
+                                 * @description Crypto release lifecycle state for the deposit
+                                 * @example not_started
+                                 * @enum {string}
+                                 */
+                                releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                                /**
+                                 * @description Policy mode used to decide when crypto is released
+                                 * @example after_settlement
+                                 * @enum {string}
+                                 */
+                                releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                                instantPortionUsd: string;
+                                settlementPortionUsd: string;
+                                userFeeUsd: string;
+                            };
+                            fundingSource: {
+                                /**
+                                 * @description Opaque public funding source identifier
+                                 * @example fs_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                institutionName: string | null;
+                                accountMask: string | null;
+                            };
+                            /** @enum {string} */
+                            event: "achDebit.deliveryProgress";
+                            /** @enum {string} */
+                            milestone: "delivery_progress";
+                            achReturn: {
+                                /**
+                                 * @description Opaque public ACH debit return identifier
+                                 * @example dr_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                amountUsd: string;
+                                /**
+                                 * @description NACHA return code, such as `R01`
+                                 * @example R01
+                                 */
+                                returnCode: string | null;
+                                /**
+                                 * @description Crypto release state when the ACH return was recorded
+                                 * @example not_released
+                                 * @enum {string}
+                                 */
+                                cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
+                                /**
+                                 * @description Action applied to the funding source. `balance_verified`: an insufficient-funds return; the source stays usable, with stricter balance checks before each debit
+                                 * @example disabled
+                                 * @enum {string}
+                                 */
+                                sourceAction: "disabled" | "balance_verified";
+                                /**
+                                 * @description Action applied to the user after return policy evaluation
+                                 * @example review_required
+                                 * @enum {string}
+                                 */
+                                userAction: "none" | "review_required" | "restricted" | "disabled";
+                            } | null;
+                        } | {
+                            /**
+                             * @description Version of the immutable ACH communication payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-deposit communication sequence. Reject an event whose sequence is not above the highest accepted sequence for this deposit. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            /**
+                             * @description Opaque public deposit identifier; identical to `deposit.id`
+                             * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                             */
+                            id: string;
+                            deposit: {
+                                /**
+                                 * @description Opaque public ACH debit deposit identifier
+                                 * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                /**
+                                 * @description Asset sent to the deposit destination
+                                 * @example USDC
+                                 * @enum {string}
+                                 */
+                                asset: "USDC";
+                                /**
+                                 * @description Shortened destination wallet address for user-facing copy
+                                 * @example 9xQeWv…wM9R
+                                 */
+                                destinationAddressDisplay: string;
+                                principalAmountUsd: string;
+                                totalDebitAmountUsd: string;
+                                confirmedReleasedAmountUsd: string;
+                                /**
+                                 * @description ACH debit lifecycle state for the deposit
+                                 * @example authorized
+                                 * @enum {string}
+                                 */
+                                debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                                /**
+                                 * @description Crypto release lifecycle state for the deposit
+                                 * @example not_started
+                                 * @enum {string}
+                                 */
+                                releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                                /**
+                                 * @description Policy mode used to decide when crypto is released
+                                 * @example after_settlement
+                                 * @enum {string}
+                                 */
+                                releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                                instantPortionUsd: string;
+                                settlementPortionUsd: string;
+                                userFeeUsd: string;
+                            };
+                            fundingSource: {
+                                /**
+                                 * @description Opaque public funding source identifier
+                                 * @example fs_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                institutionName: string | null;
+                                accountMask: string | null;
+                            };
+                            /** @enum {string} */
+                            event: "achDebit.delivered";
+                            /** @enum {string} */
+                            milestone: "delivered";
+                            achReturn: {
+                                /**
+                                 * @description Opaque public ACH debit return identifier
+                                 * @example dr_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                amountUsd: string;
+                                /**
+                                 * @description NACHA return code, such as `R01`
+                                 * @example R01
+                                 */
+                                returnCode: string | null;
+                                /**
+                                 * @description Crypto release state when the ACH return was recorded
+                                 * @example not_released
+                                 * @enum {string}
+                                 */
+                                cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
+                                /**
+                                 * @description Action applied to the funding source. `balance_verified`: an insufficient-funds return; the source stays usable, with stricter balance checks before each debit
+                                 * @example disabled
+                                 * @enum {string}
+                                 */
+                                sourceAction: "disabled" | "balance_verified";
+                                /**
+                                 * @description Action applied to the user after return policy evaluation
+                                 * @example review_required
+                                 * @enum {string}
+                                 */
+                                userAction: "none" | "review_required" | "restricted" | "disabled";
+                            } | null;
+                        } | {
+                            /**
+                             * @description Version of the immutable ACH communication payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-deposit communication sequence. Reject an event whose sequence is not above the highest accepted sequence for this deposit. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            /**
+                             * @description Opaque public deposit identifier; identical to `deposit.id`
+                             * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                             */
+                            id: string;
+                            deposit: {
+                                /**
+                                 * @description Opaque public ACH debit deposit identifier
+                                 * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                /**
+                                 * @description Asset sent to the deposit destination
+                                 * @example USDC
+                                 * @enum {string}
+                                 */
+                                asset: "USDC";
+                                /**
+                                 * @description Shortened destination wallet address for user-facing copy
+                                 * @example 9xQeWv…wM9R
+                                 */
+                                destinationAddressDisplay: string;
+                                principalAmountUsd: string;
+                                totalDebitAmountUsd: string;
+                                confirmedReleasedAmountUsd: string;
+                                /**
+                                 * @description ACH debit lifecycle state for the deposit
+                                 * @example authorized
+                                 * @enum {string}
+                                 */
+                                debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                                /**
+                                 * @description Crypto release lifecycle state for the deposit
+                                 * @example not_started
+                                 * @enum {string}
+                                 */
+                                releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                                /**
+                                 * @description Policy mode used to decide when crypto is released
+                                 * @example after_settlement
+                                 * @enum {string}
+                                 */
+                                releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                                instantPortionUsd: string;
+                                settlementPortionUsd: string;
+                                userFeeUsd: string;
+                            };
+                            fundingSource: {
+                                /**
+                                 * @description Opaque public funding source identifier
+                                 * @example fs_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                institutionName: string | null;
+                                accountMask: string | null;
+                            };
+                            /** @enum {string} */
+                            event: "achDebit.refunded";
+                            /** @enum {string} */
+                            milestone: "refunded";
+                            achReturn: {
+                                /**
+                                 * @description Opaque public ACH debit return identifier
+                                 * @example dr_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                amountUsd: string;
+                                /**
+                                 * @description NACHA return code, such as `R01`
+                                 * @example R01
+                                 */
+                                returnCode: string | null;
+                                /**
+                                 * @description Crypto release state when the ACH return was recorded
+                                 * @example not_released
+                                 * @enum {string}
+                                 */
+                                cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
+                                /**
+                                 * @description Action applied to the funding source. `balance_verified`: an insufficient-funds return; the source stays usable, with stricter balance checks before each debit
+                                 * @example disabled
+                                 * @enum {string}
+                                 */
+                                sourceAction: "disabled" | "balance_verified";
+                                /**
+                                 * @description Action applied to the user after return policy evaluation
+                                 * @example review_required
+                                 * @enum {string}
+                                 */
+                                userAction: "none" | "review_required" | "restricted" | "disabled";
+                            } | null;
+                        } | {
+                            /**
+                             * @description Version of the immutable ACH communication payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-deposit communication sequence. Reject an event whose sequence is not above the highest accepted sequence for this deposit. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            /**
+                             * @description Opaque public deposit identifier; identical to `deposit.id`
+                             * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                             */
+                            id: string;
+                            deposit: {
+                                /**
+                                 * @description Opaque public ACH debit deposit identifier
+                                 * @example dep_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                /**
+                                 * @description Asset sent to the deposit destination
+                                 * @example USDC
+                                 * @enum {string}
+                                 */
+                                asset: "USDC";
+                                /**
+                                 * @description Shortened destination wallet address for user-facing copy
+                                 * @example 9xQeWv…wM9R
+                                 */
+                                destinationAddressDisplay: string;
+                                principalAmountUsd: string;
+                                totalDebitAmountUsd: string;
+                                confirmedReleasedAmountUsd: string;
+                                /**
+                                 * @description ACH debit lifecycle state for the deposit
+                                 * @example authorized
+                                 * @enum {string}
+                                 */
+                                debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                                /**
+                                 * @description Crypto release lifecycle state for the deposit
+                                 * @example not_started
+                                 * @enum {string}
+                                 */
+                                releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                                /**
+                                 * @description Policy mode used to decide when crypto is released
+                                 * @example after_settlement
+                                 * @enum {string}
+                                 */
+                                releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                                instantPortionUsd: string;
+                                settlementPortionUsd: string;
+                                userFeeUsd: string;
+                            };
+                            fundingSource: {
+                                /**
+                                 * @description Opaque public funding source identifier
+                                 * @example fs_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                institutionName: string | null;
+                                accountMask: string | null;
+                            };
+                            /** @enum {string} */
+                            event: "achDebit.returned";
+                            /** @enum {string} */
+                            milestone: "returned";
+                            achReturn: {
+                                /**
+                                 * @description Opaque public ACH debit return identifier
+                                 * @example dr_01K3NQ4QGM7Y5ZP0DRW1M4V8NC
+                                 */
+                                id: string;
+                                amountUsd: string;
+                                /**
+                                 * @description NACHA return code, such as `R01`
+                                 * @example R01
+                                 */
+                                returnCode: string | null;
+                                /**
+                                 * @description Crypto release state when the ACH return was recorded
+                                 * @example not_released
+                                 * @enum {string}
+                                 */
+                                cryptoStateAtReturn: "not_released" | "in_flight" | "partially_confirmed" | "fully_confirmed";
+                                /**
+                                 * @description Action applied to the funding source. `balance_verified`: an insufficient-funds return; the source stays usable, with stricter balance checks before each debit
+                                 * @example disabled
+                                 * @enum {string}
+                                 */
+                                sourceAction: "disabled" | "balance_verified";
+                                /**
+                                 * @description Action applied to the user after return policy evaluation
+                                 * @example review_required
+                                 * @enum {string}
+                                 */
+                                userAction: "none" | "review_required" | "restricted" | "disabled";
+                            };
+                        }) | ({
+                            /**
+                             * @description Version of the immutable off-ramp milestone payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-off-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this off-ramp. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            integratorId: string | null;
+                            /** @description The off-ramp identifier; identical to `offRamp.id` */
+                            id: string;
+                            offRamp: {
+                                /** @description The off-ramp identifier */
+                                id: string;
+                                /** @description The quote (crypto leg) this off-ramp fulfills. Null for auto-ramp-address deposits, which have no quote. */
+                                quoteId: string | null;
+                                /**
+                                 * @description Current status of the off-ramp payment.
+                                 *
+                                 *     - `awaiting_funding`: Payment initialized, awaiting user funding
+                                 *     - `queued`: Payment scheduled for disbursement
+                                 *     - `in_flight`: Payment sent, pending settlement
+                                 *     - `completed`: Payment delivered to the recipient
+                                 *     - `canceled`: Payment canceled
+                                 *     - `failed`: Payment failed
+                                 *     - `reversed`: Payment reversed
+                                 *     - `refunded`: Payment refunded
+                                 * @example in_flight
+                                 * @enum {string}
+                                 */
+                                status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
+                                input: {
+                                    /** @description Crypto amount sent, decimal string */
+                                    amount: string;
+                                    token: string;
+                                    chain: string;
+                                } | null;
+                                output: {
+                                    /** @description Fiat amount, decimal string */
+                                    amount: string;
+                                    currency: string;
+                                    rail: string | null;
+                                    accountId: string;
+                                    accountName: string | null;
+                                };
+                                fees: {
+                                    amount: string;
+                                    currency: string;
+                                } | null;
+                                transaction: {
+                                    hash: string | null;
+                                    explorerUrl: string | null;
+                                } | null;
+                                /** @description Public-safe failure summary when the milestone is `failed`; never internal or provider detail. */
+                                failureMessage: string | null;
+                            };
+                            /** @enum {string} */
+                            event: "offramp.confirmed";
+                            /** @enum {string} */
+                            milestone: "confirmed";
+                        } | {
+                            /**
+                             * @description Version of the immutable off-ramp milestone payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-off-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this off-ramp. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            integratorId: string | null;
+                            /** @description The off-ramp identifier; identical to `offRamp.id` */
+                            id: string;
+                            offRamp: {
+                                /** @description The off-ramp identifier */
+                                id: string;
+                                /** @description The quote (crypto leg) this off-ramp fulfills. Null for auto-ramp-address deposits, which have no quote. */
+                                quoteId: string | null;
+                                /**
+                                 * @description Current status of the off-ramp payment.
+                                 *
+                                 *     - `awaiting_funding`: Payment initialized, awaiting user funding
+                                 *     - `queued`: Payment scheduled for disbursement
+                                 *     - `in_flight`: Payment sent, pending settlement
+                                 *     - `completed`: Payment delivered to the recipient
+                                 *     - `canceled`: Payment canceled
+                                 *     - `failed`: Payment failed
+                                 *     - `reversed`: Payment reversed
+                                 *     - `refunded`: Payment refunded
+                                 * @example in_flight
+                                 * @enum {string}
+                                 */
+                                status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
+                                input: {
+                                    /** @description Crypto amount sent, decimal string */
+                                    amount: string;
+                                    token: string;
+                                    chain: string;
+                                } | null;
+                                output: {
+                                    /** @description Fiat amount, decimal string */
+                                    amount: string;
+                                    currency: string;
+                                    rail: string | null;
+                                    accountId: string;
+                                    accountName: string | null;
+                                };
+                                fees: {
+                                    amount: string;
+                                    currency: string;
+                                } | null;
+                                transaction: {
+                                    hash: string | null;
+                                    explorerUrl: string | null;
+                                } | null;
+                                /** @description Public-safe failure summary when the milestone is `failed`; never internal or provider detail. */
+                                failureMessage: string | null;
+                            };
+                            /** @enum {string} */
+                            event: "offramp.inFlight";
+                            /** @enum {string} */
+                            milestone: "in_flight";
+                        } | {
+                            /**
+                             * @description Version of the immutable off-ramp milestone payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-off-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this off-ramp. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            integratorId: string | null;
+                            /** @description The off-ramp identifier; identical to `offRamp.id` */
+                            id: string;
+                            offRamp: {
+                                /** @description The off-ramp identifier */
+                                id: string;
+                                /** @description The quote (crypto leg) this off-ramp fulfills. Null for auto-ramp-address deposits, which have no quote. */
+                                quoteId: string | null;
+                                /**
+                                 * @description Current status of the off-ramp payment.
+                                 *
+                                 *     - `awaiting_funding`: Payment initialized, awaiting user funding
+                                 *     - `queued`: Payment scheduled for disbursement
+                                 *     - `in_flight`: Payment sent, pending settlement
+                                 *     - `completed`: Payment delivered to the recipient
+                                 *     - `canceled`: Payment canceled
+                                 *     - `failed`: Payment failed
+                                 *     - `reversed`: Payment reversed
+                                 *     - `refunded`: Payment refunded
+                                 * @example in_flight
+                                 * @enum {string}
+                                 */
+                                status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
+                                input: {
+                                    /** @description Crypto amount sent, decimal string */
+                                    amount: string;
+                                    token: string;
+                                    chain: string;
+                                } | null;
+                                output: {
+                                    /** @description Fiat amount, decimal string */
+                                    amount: string;
+                                    currency: string;
+                                    rail: string | null;
+                                    accountId: string;
+                                    accountName: string | null;
+                                };
+                                fees: {
+                                    amount: string;
+                                    currency: string;
+                                } | null;
+                                transaction: {
+                                    hash: string | null;
+                                    explorerUrl: string | null;
+                                } | null;
+                                /** @description Public-safe failure summary when the milestone is `failed`; never internal or provider detail. */
+                                failureMessage: string | null;
+                            };
+                            /** @enum {string} */
+                            event: "offramp.completed";
+                            /** @enum {string} */
+                            milestone: "completed";
+                        } | {
+                            /**
+                             * @description Version of the immutable off-ramp milestone payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-off-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this off-ramp. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            integratorId: string | null;
+                            /** @description The off-ramp identifier; identical to `offRamp.id` */
+                            id: string;
+                            offRamp: {
+                                /** @description The off-ramp identifier */
+                                id: string;
+                                /** @description The quote (crypto leg) this off-ramp fulfills. Null for auto-ramp-address deposits, which have no quote. */
+                                quoteId: string | null;
+                                /**
+                                 * @description Current status of the off-ramp payment.
+                                 *
+                                 *     - `awaiting_funding`: Payment initialized, awaiting user funding
+                                 *     - `queued`: Payment scheduled for disbursement
+                                 *     - `in_flight`: Payment sent, pending settlement
+                                 *     - `completed`: Payment delivered to the recipient
+                                 *     - `canceled`: Payment canceled
+                                 *     - `failed`: Payment failed
+                                 *     - `reversed`: Payment reversed
+                                 *     - `refunded`: Payment refunded
+                                 * @example in_flight
+                                 * @enum {string}
+                                 */
+                                status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
+                                input: {
+                                    /** @description Crypto amount sent, decimal string */
+                                    amount: string;
+                                    token: string;
+                                    chain: string;
+                                } | null;
+                                output: {
+                                    /** @description Fiat amount, decimal string */
+                                    amount: string;
+                                    currency: string;
+                                    rail: string | null;
+                                    accountId: string;
+                                    accountName: string | null;
+                                };
+                                fees: {
+                                    amount: string;
+                                    currency: string;
+                                } | null;
+                                transaction: {
+                                    hash: string | null;
+                                    explorerUrl: string | null;
+                                } | null;
+                                /** @description Public-safe failure summary when the milestone is `failed`; never internal or provider detail. */
+                                failureMessage: string | null;
+                            };
+                            /** @enum {string} */
+                            event: "offramp.failed";
+                            /** @enum {string} */
+                            milestone: "failed";
+                        } | {
+                            /**
+                             * @description Version of the immutable off-ramp milestone payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-off-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this off-ramp. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            integratorId: string | null;
+                            /** @description The off-ramp identifier; identical to `offRamp.id` */
+                            id: string;
+                            offRamp: {
+                                /** @description The off-ramp identifier */
+                                id: string;
+                                /** @description The quote (crypto leg) this off-ramp fulfills. Null for auto-ramp-address deposits, which have no quote. */
+                                quoteId: string | null;
+                                /**
+                                 * @description Current status of the off-ramp payment.
+                                 *
+                                 *     - `awaiting_funding`: Payment initialized, awaiting user funding
+                                 *     - `queued`: Payment scheduled for disbursement
+                                 *     - `in_flight`: Payment sent, pending settlement
+                                 *     - `completed`: Payment delivered to the recipient
+                                 *     - `canceled`: Payment canceled
+                                 *     - `failed`: Payment failed
+                                 *     - `reversed`: Payment reversed
+                                 *     - `refunded`: Payment refunded
+                                 * @example in_flight
+                                 * @enum {string}
+                                 */
+                                status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
+                                input: {
+                                    /** @description Crypto amount sent, decimal string */
+                                    amount: string;
+                                    token: string;
+                                    chain: string;
+                                } | null;
+                                output: {
+                                    /** @description Fiat amount, decimal string */
+                                    amount: string;
+                                    currency: string;
+                                    rail: string | null;
+                                    accountId: string;
+                                    accountName: string | null;
+                                };
+                                fees: {
+                                    amount: string;
+                                    currency: string;
+                                } | null;
+                                transaction: {
+                                    hash: string | null;
+                                    explorerUrl: string | null;
+                                } | null;
+                                /** @description Public-safe failure summary when the milestone is `failed`; never internal or provider detail. */
+                                failureMessage: string | null;
+                            };
+                            /** @enum {string} */
+                            event: "offramp.refunded";
+                            /** @enum {string} */
+                            milestone: "refunded";
+                        } | {
+                            /**
+                             * @description Version of the immutable off-ramp milestone payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-off-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this off-ramp. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            integratorId: string | null;
+                            /** @description The off-ramp identifier; identical to `offRamp.id` */
+                            id: string;
+                            offRamp: {
+                                /** @description The off-ramp identifier */
+                                id: string;
+                                /** @description The quote (crypto leg) this off-ramp fulfills. Null for auto-ramp-address deposits, which have no quote. */
+                                quoteId: string | null;
+                                /**
+                                 * @description Current status of the off-ramp payment.
+                                 *
+                                 *     - `awaiting_funding`: Payment initialized, awaiting user funding
+                                 *     - `queued`: Payment scheduled for disbursement
+                                 *     - `in_flight`: Payment sent, pending settlement
+                                 *     - `completed`: Payment delivered to the recipient
+                                 *     - `canceled`: Payment canceled
+                                 *     - `failed`: Payment failed
+                                 *     - `reversed`: Payment reversed
+                                 *     - `refunded`: Payment refunded
+                                 * @example in_flight
+                                 * @enum {string}
+                                 */
+                                status: "awaiting_funding" | "queued" | "in_flight" | "completed" | "canceled" | "failed" | "reversed" | "refunded";
+                                input: {
+                                    /** @description Crypto amount sent, decimal string */
+                                    amount: string;
+                                    token: string;
+                                    chain: string;
+                                } | null;
+                                output: {
+                                    /** @description Fiat amount, decimal string */
+                                    amount: string;
+                                    currency: string;
+                                    rail: string | null;
+                                    accountId: string;
+                                    accountName: string | null;
+                                };
+                                fees: {
+                                    amount: string;
+                                    currency: string;
+                                } | null;
+                                transaction: {
+                                    hash: string | null;
+                                    explorerUrl: string | null;
+                                } | null;
+                                /** @description Public-safe failure summary when the milestone is `failed`; never internal or provider detail. */
+                                failureMessage: string | null;
+                            };
+                            /** @enum {string} */
+                            event: "offramp.reversed";
+                            /** @enum {string} */
+                            milestone: "reversed";
+                        }) | ({
+                            /**
+                             * @description Version of the immutable credit on-ramp milestone payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-on-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this on-ramp. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            integratorId: string | null;
+                            /** @description The on-ramp identifier; identical to `onRamp.id` */
+                            id: string;
+                            onRamp: {
+                                /** @description The on-ramp identifier */
+                                id: string;
+                                /** @description Public on-ramp status at the milestone */
+                                status: string;
+                                input: {
+                                    /** @description Fiat amount received, decimal string */
+                                    amount: string;
+                                    currency: string;
+                                    rail: string | null;
+                                };
+                                output: {
+                                    /** @description Crypto amount delivered or expected */
+                                    amount: string;
+                                    token: string;
+                                    network: string;
+                                    /** @description Destination wallet address (the user's own) */
+                                    address: string;
+                                };
+                                fees: {
+                                    amount: string;
+                                    currency: string;
+                                } | null;
+                                transaction: {
+                                    hash: string | null;
+                                    explorerUrl: string | null;
+                                } | null;
+                            };
+                            /** @enum {string} */
+                            event: "onrampCredit.depositDetected";
+                            /** @enum {string} */
+                            milestone: "deposit_detected";
+                        } | {
+                            /**
+                             * @description Version of the immutable credit on-ramp milestone payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-on-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this on-ramp. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            integratorId: string | null;
+                            /** @description The on-ramp identifier; identical to `onRamp.id` */
+                            id: string;
+                            onRamp: {
+                                /** @description The on-ramp identifier */
+                                id: string;
+                                /** @description Public on-ramp status at the milestone */
+                                status: string;
+                                input: {
+                                    /** @description Fiat amount received, decimal string */
+                                    amount: string;
+                                    currency: string;
+                                    rail: string | null;
+                                };
+                                output: {
+                                    /** @description Crypto amount delivered or expected */
+                                    amount: string;
+                                    token: string;
+                                    network: string;
+                                    /** @description Destination wallet address (the user's own) */
+                                    address: string;
+                                };
+                                fees: {
+                                    amount: string;
+                                    currency: string;
+                                } | null;
+                                transaction: {
+                                    hash: string | null;
+                                    explorerUrl: string | null;
+                                } | null;
+                            };
+                            /** @enum {string} */
+                            event: "onrampCredit.completed";
+                            /** @enum {string} */
+                            milestone: "completed";
+                        } | {
+                            /**
+                             * @description Version of the immutable credit on-ramp milestone payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-on-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this on-ramp. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            integratorId: string | null;
+                            /** @description The on-ramp identifier; identical to `onRamp.id` */
+                            id: string;
+                            onRamp: {
+                                /** @description The on-ramp identifier */
+                                id: string;
+                                /** @description Public on-ramp status at the milestone */
+                                status: string;
+                                input: {
+                                    /** @description Fiat amount received, decimal string */
+                                    amount: string;
+                                    currency: string;
+                                    rail: string | null;
+                                };
+                                output: {
+                                    /** @description Crypto amount delivered or expected */
+                                    amount: string;
+                                    token: string;
+                                    network: string;
+                                    /** @description Destination wallet address (the user's own) */
+                                    address: string;
+                                };
+                                fees: {
+                                    amount: string;
+                                    currency: string;
+                                } | null;
+                                transaction: {
+                                    hash: string | null;
+                                    explorerUrl: string | null;
+                                } | null;
+                            };
+                            /** @enum {string} */
+                            event: "onrampCredit.failed";
+                            /** @enum {string} */
+                            milestone: "failed";
+                        } | {
+                            /**
+                             * @description Version of the immutable credit on-ramp milestone payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-on-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this on-ramp. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            integratorId: string | null;
+                            /** @description The on-ramp identifier; identical to `onRamp.id` */
+                            id: string;
+                            onRamp: {
+                                /** @description The on-ramp identifier */
+                                id: string;
+                                /** @description Public on-ramp status at the milestone */
+                                status: string;
+                                input: {
+                                    /** @description Fiat amount received, decimal string */
+                                    amount: string;
+                                    currency: string;
+                                    rail: string | null;
+                                };
+                                output: {
+                                    /** @description Crypto amount delivered or expected */
+                                    amount: string;
+                                    token: string;
+                                    network: string;
+                                    /** @description Destination wallet address (the user's own) */
+                                    address: string;
+                                };
+                                fees: {
+                                    amount: string;
+                                    currency: string;
+                                } | null;
+                                transaction: {
+                                    hash: string | null;
+                                    explorerUrl: string | null;
+                                } | null;
+                            };
+                            /** @enum {string} */
+                            event: "onrampCredit.reversed";
+                            /** @enum {string} */
+                            milestone: "reversed";
+                        } | {
+                            /**
+                             * @description Version of the immutable credit on-ramp milestone payload
+                             * @enum {string}
+                             */
+                            schemaVersion: "1";
+                            /** @description Stable notification-occurrence identifier. Unchanged across delivery retries and replays. */
+                            eventId: string;
+                            /** @description Per-on-ramp milestone sequence. Reject an event whose sequence is not above the highest accepted sequence for this on-ramp. */
+                            sequence: number;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            userId: string;
+                            integratorId: string | null;
+                            /** @description The on-ramp identifier; identical to `onRamp.id` */
+                            id: string;
+                            onRamp: {
+                                /** @description The on-ramp identifier */
+                                id: string;
+                                /** @description Public on-ramp status at the milestone */
+                                status: string;
+                                input: {
+                                    /** @description Fiat amount received, decimal string */
+                                    amount: string;
+                                    currency: string;
+                                    rail: string | null;
+                                };
+                                output: {
+                                    /** @description Crypto amount delivered or expected */
+                                    amount: string;
+                                    token: string;
+                                    network: string;
+                                    /** @description Destination wallet address (the user's own) */
+                                    address: string;
+                                };
+                                fees: {
+                                    amount: string;
+                                    currency: string;
+                                } | null;
+                                transaction: {
+                                    hash: string | null;
+                                    explorerUrl: string | null;
+                                } | null;
+                            };
+                            /** @enum {string} */
+                            event: "onrampCredit.refunded";
+                            /** @enum {string} */
+                            milestone: "refunded";
+                        }) | {
+                            [key: string]: unknown;
+                        };
+                        /**
+                         * @description Whether Spritz received a successful response. `false` alongside an `error` does not mean your endpoint rejected the event — it may have processed it and only the response was lost. `false` with neither `error` nor `responseStatus` means the outcome was never recorded, not that it failed. Read those two fields before concluding anything about delivery.
+                         * @example true
+                         */
+                        success: boolean;
+                        /**
+                         * @description HTTP status your endpoint returned — but only when `error` is absent. When `error` is set no response was received at all, and this is Spritz's classification of the failure (504 for a timeout, 500 otherwise) rather than anything your endpoint said.
+                         * @example 200
+                         */
+                        responseStatus?: number;
+                        /**
+                         * @description Set when no usable response was received — a timeout, a refused connection, a DNS or certificate problem. This does **not** prove the request never arrived: a refused connection means it did not, but a timeout or a dropped connection may mean your endpoint received and fully processed it and we never heard back. Treat delivery as unknown and rely on idempotent handling. When `error` is absent the request landed and `responseStatus` is your endpoint's own answer.
+                         * @example getaddrinfo ENOTFOUND webhooks.example.com
+                         */
+                        error?: string;
+                        /**
+                         * Format: date-time
+                         * @description When the delivery was attempted. Absent on a handful of very early records that predate the field — omitted rather than guessed.
+                         */
+                        timestamp?: string;
+                    };
+                };
+            };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -24074,11 +25536,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -24121,7 +25585,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6ac7b3760f2ad32d458d1b2b
+                         * @example 6aec5e57c5d2ece6012831cb
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -24280,11 +25744,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -24337,6 +25803,12 @@ export interface operations {
                          * @enum {boolean}
                          */
                         secretConfigured: true;
+                        /**
+                         * Format: date-time
+                         * @description When the replaced secret stops signing deliveries. Until then each delivery's `Spritz-Signature` header carries a `v1=` signature for the new secret and one for the previous secret. `null` when no different secret was replaced.
+                         * @example 2026-10-09T12:00:00.000Z
+                         */
+                        previousSecretValidUntil: string | null;
                     };
                 };
             };
@@ -24416,6 +25888,77 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
             /** @description Response for status 500 */
             500: {
                 headers: {
@@ -24475,11 +26018,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -24538,7 +26083,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-10-08T15:20:02.830Z
+                         * @example 2026-11-05T10:50:43.556Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -24679,11 +26224,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -24709,7 +26256,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6ac7b3760f2ad32d458d1b27
+                         * @example 6aec5e57c5d2ece6012831c7
                          */
                         id: string;
                         /**
@@ -24726,7 +26273,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-10-08T15:15:02.821Z
+                         * @example 2026-11-05T10:45:43.549Z
                          */
                         signedUpAt: string;
                         /**
@@ -24979,11 +26526,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25106,7 +26655,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6ac7b3760f2ad32d458d1b27
+                         * @example 6aec5e57c5d2ece6012831c7
                          */
                         id: string;
                         /**
@@ -25123,7 +26672,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-10-08T15:15:02.821Z
+                         * @example 2026-11-05T10:45:43.549Z
                          */
                         signedUpAt: string;
                         /**
@@ -25375,11 +26924,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25444,6 +26995,77 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
             /** @description Response for status 401 */
             401: {
                 headers: {
@@ -25484,6 +27106,219 @@ export interface operations {
                          * @example read:users
                          */
                         scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 429 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -25546,11 +27381,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25603,7 +27440,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6ac7b3760f2ad32d458d1b27
+                         * @example 6aec5e57c5d2ece6012831c7
                          */
                         id: string;
                         /**
@@ -25620,7 +27457,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-10-08T15:15:02.821Z
+                         * @example 2026-11-05T10:45:43.549Z
                          */
                         signedUpAt: string;
                         /**
@@ -25737,6 +27574,77 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
             /** @description Response for status 401 */
             401: {
                 headers: {
@@ -25777,6 +27685,252 @@ export interface operations {
                          * @example read:users
                          */
                         scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 429 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -25839,11 +27993,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25992,11 +28148,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26061,11 +28219,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26130,11 +28290,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26320,11 +28482,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26650,11 +28814,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26781,6 +28947,77 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
             /** @description Response for status 500 */
             500: {
                 headers: {
@@ -26840,11 +29077,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26984,11 +29223,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27006,7 +29247,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:write" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
                     /**
                      * Format: date-time
                      * @description ISO 8601 expiration timestamp
@@ -27015,7 +29256,7 @@ export interface operations {
                     name?: string;
                 };
                 "application/x-www-form-urlencoded": {
-                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:write" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
                     /**
                      * Format: date-time
                      * @description ISO 8601 expiration timestamp
@@ -27024,7 +29265,7 @@ export interface operations {
                     name?: string;
                 };
                 "multipart/form-data": {
-                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:write" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
                     /**
                      * Format: date-time
                      * @description ISO 8601 expiration timestamp
@@ -27158,11 +29399,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27327,11 +29570,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27545,11 +29790,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27568,7 +29815,7 @@ export interface operations {
             content: {
                 "application/json": {
                     userCode: string;
-                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:write" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
                     /**
                      * Format: date-time
                      * @description ISO 8601 expiration timestamp
@@ -27578,7 +29825,7 @@ export interface operations {
                 };
                 "application/x-www-form-urlencoded": {
                     userCode: string;
-                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:write" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
                     /**
                      * Format: date-time
                      * @description ISO 8601 expiration timestamp
@@ -27588,7 +29835,7 @@ export interface operations {
                 };
                 "multipart/form-data": {
                     userCode: string;
-                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
+                    permissions: ("bank-accounts:read" | "bank-accounts:write" | "bank-accounts:delete" | "bills:read" | "bills:write" | "bills:delete" | "off-ramp-quotes:read" | "off-ramp-quotes:write" | "off-ramps:refund")[];
                     /**
                      * Format: date-time
                      * @description ISO 8601 expiration timestamp
@@ -27715,11 +29962,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27878,11 +30127,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27946,6 +30197,77 @@ export interface operations {
                              */
                             createdAt: string;
                         };
+                    };
+                };
+            };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -28051,11 +30373,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28120,11 +30444,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28284,11 +30610,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28484,11 +30812,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28739,11 +31069,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28921,11 +31253,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -29452,11 +31786,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -29521,11 +31857,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -29590,11 +31928,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -29659,11 +31999,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -29728,11 +32070,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -29899,11 +32243,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -29968,11 +32314,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30037,11 +32385,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30106,11 +32456,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30175,11 +32527,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30342,11 +32696,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30411,11 +32767,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30480,11 +32838,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30549,11 +32909,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30618,11 +32980,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30715,6 +33079,77 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
             /** @description Response for status 500 */
             500: {
                 headers: {
@@ -30774,11 +33209,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30886,6 +33323,77 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
             /** @description Response for status 409 */
             409: {
                 headers: {
@@ -30945,11 +33453,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31014,11 +33524,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31223,6 +33735,77 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
             /** @description Response for status 409 */
             409: {
                 headers: {
@@ -31282,11 +33865,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31351,11 +33936,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31420,11 +34007,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31533,6 +34122,77 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
             /** @description Response for status 429 */
             429: {
                 headers: {
@@ -31592,11 +34252,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31661,11 +34323,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31766,6 +34430,77 @@ export interface operations {
                     };
                 };
             };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
             /** @description Response for status 409 */
             409: {
                 headers: {
@@ -31825,11 +34560,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31894,11 +34631,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32043,11 +34782,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32112,11 +34853,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32181,11 +34924,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32335,11 +35080,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32404,11 +35151,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32473,11 +35222,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32643,11 +35394,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32755,11 +35508,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32824,11 +35579,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32987,11 +35744,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33099,11 +35858,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33168,11 +35929,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33237,11 +36000,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33350,11 +36115,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33462,11 +36229,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33531,11 +36300,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33600,11 +36371,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33731,11 +36504,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33843,11 +36618,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33912,11 +36689,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34037,11 +36816,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34149,11 +36930,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34218,11 +37001,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34287,11 +37072,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34401,11 +37188,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34513,11 +37302,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34582,11 +37373,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34651,11 +37444,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34761,11 +37556,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34873,11 +37670,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34942,11 +37741,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35011,11 +37812,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35138,11 +37941,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35250,11 +38055,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35319,11 +38126,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35471,11 +38280,16 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /**
+                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @enum {string}
+                         */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -35590,11 +38404,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35659,11 +38475,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35728,11 +38546,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35797,11 +38617,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35856,7 +38678,7 @@ export interface operations {
                     };
                     clientNetwork?: {
                         /**
-                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken. The later direct client submission is not currently matched against these addresses; it must come from a public network other than the preparing backend's.
                          * @example [
                          *       "1.1.1.1",
                          *       "2606:4700:4700::1111"
@@ -35912,7 +38734,7 @@ export interface operations {
                     };
                     clientNetwork?: {
                         /**
-                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken. The later direct client submission is not currently matched against these addresses; it must come from a public network other than the preparing backend's.
                          * @example [
                          *       "1.1.1.1",
                          *       "2606:4700:4700::1111"
@@ -35968,7 +38790,7 @@ export interface operations {
                     };
                     clientNetwork?: {
                         /**
-                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken. The later direct client submission is not currently matched against these addresses; it must come from a public network other than the preparing backend's.
                          * @example [
                          *       "1.1.1.1",
                          *       "2606:4700:4700::1111"
@@ -36123,11 +38945,16 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /**
+                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @enum {string}
+                         */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -36242,11 +39069,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36344,11 +39173,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36413,11 +39244,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36482,11 +39315,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36618,7 +39453,7 @@ export interface operations {
                          */
                         onRampId: string | null;
                         /** @enum {string} */
-                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed";
+                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed" | "cancelled";
                         /** @enum {string} */
                         quoteType: "exact_input" | "exact_output";
                         /** @enum {string} */
@@ -36679,6 +39514,13 @@ export interface operations {
                         releaseFailureCode: string | null;
                         releaseFailureReason: string | null;
                         payoutTxHash: string | null;
+                        /** @description Whether the user can cancel this deposit now via POST /v1/deposits/{depositId}/cancel. True only before the bank debit is transmitted and before any crypto is released. Advisory: the cancel call re-checks and may still refuse. */
+                        cancellable: boolean;
+                        /**
+                         * Format: date-time
+                         * @description When the user's cancellation was confirmed
+                         */
+                        cancelledAt: string | null;
                     };
                 };
             };
@@ -36744,11 +39586,16 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /**
+                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @enum {string}
+                         */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -36863,11 +39710,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36965,11 +39814,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37034,11 +39885,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37103,11 +39956,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37241,11 +40096,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37310,11 +40167,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37379,11 +40238,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37448,11 +40309,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37561,11 +40424,16 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /**
+                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @enum {string}
+                         */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -37680,11 +40548,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37749,11 +40619,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37818,11 +40690,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37887,11 +40761,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38429,11 +41305,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38498,11 +41376,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38567,11 +41447,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38636,11 +41518,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38858,11 +41742,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38927,11 +41813,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39095,11 +41983,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39164,11 +42054,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39343,11 +42235,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39412,11 +42306,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39557,11 +42453,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39659,11 +42557,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39892,11 +42792,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40004,11 +42906,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40106,11 +43010,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40175,11 +43081,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40312,11 +43220,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40381,11 +43291,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };

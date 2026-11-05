@@ -8,6 +8,7 @@ export type CreateDepositRequest = PathRequestBody<'/v1/deposits/direct', 'post'
 export type Deposit = PathResponse<'/v1/deposits/{depositId}', 'get'>
 export type DepositListResponse = PathResponse<'/v1/deposits/', 'get'>
 export type DepositListQuery = PathQuery<'/v1/deposits/', 'get'>
+export type CancelDepositResponse = PathResponse<'/v1/deposits/{depositId}/cancel', 'post'>
 
 /**
  * `idempotencyKey` is required by `POST /v1/deposits/direct`: persist one
@@ -126,6 +127,30 @@ export class DepositService {
     public async get(depositId: string) {
         return this.client.restApi(
             restRoute('/v1/deposits/{depositId}', 'get', {
+                params: { depositId },
+            })
+        )
+    }
+
+    /**
+     * Cancels a deposit the user no longer wants. Offer it only while the
+     * deposit's (or its on-ramp's) `cancellable` is true: before the bank debit
+     * is transmitted and before any crypto is released.
+     *
+     * Resolves with the deposit. `status: 'cancelled'` means the cancel is
+     * final. Any other status means the bank has not confirmed it yet (HTTP
+     * 202): the payout is held meanwhile, so poll `get` until it reads
+     * `cancelled`. Repeating the call is safe.
+     *
+     * Throws a `ConflictError` with `problem.code === 'deposit_not_cancellable'`
+     * when it is too late; `problem.reason` says why (`crypto_released`,
+     * `debit_in_progress` or `deposit_closed`). Cancelling the last three
+     * deposits within 24 hours makes `prepare` and `create` refuse new deposits
+     * with `ach_debit_cancel_cooldown` until `problem.availableAt`.
+     */
+    public async cancel(depositId: string) {
+        return this.client.restApi(
+            restRoute('/v1/deposits/{depositId}/cancel', 'post', {
                 params: { depositId },
             })
         )
