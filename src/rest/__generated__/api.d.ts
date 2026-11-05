@@ -2862,11 +2862,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3101,11 +3103,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3213,11 +3217,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3315,11 +3321,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3384,11 +3392,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3655,11 +3665,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3849,11 +3861,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3994,11 +4008,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4063,11 +4079,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4132,11 +4150,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4189,7 +4209,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description Creation timestamp
-                         * @example 2026-11-05T09:22:44.466Z
+                         * @example 2026-11-05T10:45:43.272Z
                          */
                         createdAt?: string;
                     }[];
@@ -4330,11 +4350,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4354,7 +4376,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6aec4ae43ff86d10e9ee2837
+                     * @example 6aec5e57c5d2ece6012831bf
                      */
                     accountId: string;
                     /**
@@ -4382,7 +4404,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6aec4ae43ff86d10e9ee2837
+                     * @example 6aec5e57c5d2ece6012831bf
                      */
                     accountId: string;
                     /**
@@ -4410,7 +4432,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6aec4ae43ff86d10e9ee2837
+                     * @example 6aec5e57c5d2ece6012831bf
                      */
                     accountId: string;
                     /**
@@ -4457,7 +4479,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-05T09:22:44.448Z
+                         * @example 2026-11-05T10:45:43.252Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4496,7 +4518,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6aec4ae43ff86d10e9ee2838
+                             * @example 6aec5e57c5d2ece6012831c0
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -4711,11 +4733,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4753,7 +4777,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-05T09:22:44.448Z
+                         * @example 2026-11-05T10:45:43.252Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4792,7 +4816,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6aec4ae43ff86d10e9ee2838
+                             * @example 6aec5e57c5d2ece6012831c0
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5007,11 +5031,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -5322,11 +5348,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -5391,11 +5419,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -5460,11 +5490,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -5529,11 +5561,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -5595,7 +5629,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-05T09:22:44.448Z
+                         * @example 2026-11-05T10:45:43.252Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -5634,7 +5668,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6aec4ae43ff86d10e9ee2838
+                             * @example 6aec5e57c5d2ece6012831c0
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5849,11 +5883,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -5937,7 +5973,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6aec4ae43ff86d10e9ee2839
+                                 * @example 6aec5e57c5d2ece6012831c1
                                  */
                                 accountId: string;
                                 /**
@@ -6146,11 +6182,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -6228,7 +6266,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6aec4ae43ff86d10e9ee2839
+                             * @example 6aec5e57c5d2ece6012831c1
                              */
                             accountId: string;
                             /**
@@ -6426,11 +6464,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -6469,7 +6509,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6aec4ae43ff86d10e9ee283a
+                     * @example 6aec5e57c5d2ece6012831c2
                      */
                     accountId?: string;
                 };
@@ -6487,7 +6527,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6aec4ae43ff86d10e9ee283a
+                     * @example 6aec5e57c5d2ece6012831c2
                      */
                     accountId?: string;
                 };
@@ -6505,7 +6545,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6aec4ae43ff86d10e9ee283a
+                     * @example 6aec5e57c5d2ece6012831c2
                      */
                     accountId?: string;
                 };
@@ -6571,7 +6611,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6aec4ae43ff86d10e9ee2839
+                             * @example 6aec5e57c5d2ece6012831c1
                              */
                             accountId: string;
                             /**
@@ -6769,11 +6809,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7094,11 +7136,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7278,11 +7322,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7376,11 +7422,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7521,11 +7569,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7590,11 +7640,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7659,11 +7711,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7967,11 +8021,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -8465,11 +8521,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -9705,11 +9763,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -10205,11 +10265,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -10383,11 +10445,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -10557,11 +10621,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -10790,11 +10856,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11039,11 +11107,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11274,11 +11344,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11452,11 +11524,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11635,11 +11709,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11747,11 +11823,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11849,11 +11927,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12068,11 +12148,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12170,11 +12252,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12483,11 +12567,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12585,11 +12671,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12654,11 +12742,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12953,11 +13043,16 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /**
+                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @enum {string}
+                         */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -13072,11 +13167,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13174,11 +13271,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13243,11 +13342,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13312,11 +13413,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13530,11 +13633,16 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /**
+                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @enum {string}
+                         */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -13649,11 +13757,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13751,11 +13861,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13820,11 +13932,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13889,11 +14003,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13958,11 +14074,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14077,11 +14195,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14189,11 +14309,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14352,11 +14474,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14847,11 +14971,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14916,11 +15042,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14985,11 +15113,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15254,11 +15384,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15523,11 +15655,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15794,11 +15928,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15863,11 +15999,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16041,11 +16179,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16248,11 +16388,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16416,11 +16558,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16595,11 +16739,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16752,11 +16898,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16905,11 +17053,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -17062,11 +17212,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -17234,11 +17386,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -17432,11 +17586,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -17603,11 +17759,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -17803,11 +17961,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18013,11 +18173,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18202,11 +18364,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18407,11 +18571,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18622,11 +18788,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18858,11 +19026,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18889,7 +19059,7 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique identifier for the debit card
-                             * @example 6aec4ae43ff86d10e9ee283e
+                             * @example 6aec5e57c5d2ece6012831c6
                              */
                             id: string;
                             /** @enum {string} */
@@ -19076,11 +19246,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -19337,7 +19509,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6aec4ae43ff86d10e9ee283e
+                         * @example 6aec5e57c5d2ece6012831c6
                          */
                         id: string;
                         /** @enum {string} */
@@ -19522,11 +19694,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -19554,7 +19728,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6aec4ae43ff86d10e9ee283e
+                         * @example 6aec5e57c5d2ece6012831c6
                          */
                         id: string;
                         /** @enum {string} */
@@ -19739,11 +19913,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -19908,11 +20084,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -20075,7 +20253,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6aec4ae43ff86d10e9ee283e
+                         * @example 6aec5e57c5d2ece6012831c6
                          */
                         id: string;
                         /** @enum {string} */
@@ -20260,11 +20438,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -20337,7 +20517,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6aec4ae43ff86d10e9ee2842
+                         * @example 6aec5e57c5d2ece6012831ca
                          */
                         userId: string;
                         /**
@@ -20353,7 +20533,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-11-05T10:22:44.750Z
+                         * @example 2026-11-05T11:45:43.555Z
                          */
                         expiresAt: string;
                     };
@@ -20494,11 +20674,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -20552,7 +20734,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-11-05T09:22:44.750Z
+                         * @example 2026-11-05T10:45:43.555Z
                          */
                         createdAt: string;
                     };
@@ -20693,11 +20875,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -20765,7 +20949,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description ID of the account this request resolved to: the account it created or, where account reuse is enabled, the existing account this email resolves to for you (your own, or one you are currently authorized for through an existing authorization). With reuse enabled, a repeat for the same email returns the same ID.
-                         * @example 6aec4ae43ff86d10e9ee2844
+                         * @example 6aec5e57c5d2ece6012831cc
                          */
                         userId: string;
                         /**
@@ -20841,11 +21025,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -20986,11 +21172,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21055,11 +21243,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21124,11 +21314,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21178,7 +21370,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6aec4ae43ff86d10e9ee2841
+                             * @example 6aec5e57c5d2ece6012831c9
                              */
                             userId: string;
                             /**
@@ -21348,11 +21540,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21390,7 +21584,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6aec4ae43ff86d10e9ee2841
+                         * @example 6aec5e57c5d2ece6012831c9
                          */
                         userId: string;
                         /**
@@ -21553,11 +21747,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21583,7 +21779,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6aec4ae43ff86d10e9ee2843
+                         * @example 6aec5e57c5d2ece6012831cb
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -21742,11 +21938,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21814,7 +22012,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6aec4ae43ff86d10e9ee2843
+                         * @example 6aec5e57c5d2ece6012831cb
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -21973,11 +22171,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -23280,11 +23480,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -23425,11 +23627,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -23494,11 +23698,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -23563,11 +23769,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -23632,11 +23840,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -24928,11 +25138,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25073,11 +25285,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25142,11 +25356,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25320,11 +25536,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25367,7 +25585,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6aec4ae43ff86d10e9ee2843
+                         * @example 6aec5e57c5d2ece6012831cb
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -25526,11 +25744,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25727,11 +25947,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25796,11 +26018,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25859,7 +26083,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-11-05T09:27:44.751Z
+                         * @example 2026-11-05T10:50:43.556Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -26000,11 +26224,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26030,7 +26256,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6aec4ae43ff86d10e9ee283f
+                         * @example 6aec5e57c5d2ece6012831c7
                          */
                         id: string;
                         /**
@@ -26047,7 +26273,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-05T09:22:44.742Z
+                         * @example 2026-11-05T10:45:43.549Z
                          */
                         signedUpAt: string;
                         /**
@@ -26300,11 +26526,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26427,7 +26655,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6aec4ae43ff86d10e9ee283f
+                         * @example 6aec5e57c5d2ece6012831c7
                          */
                         id: string;
                         /**
@@ -26444,7 +26672,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-05T09:22:44.742Z
+                         * @example 2026-11-05T10:45:43.549Z
                          */
                         signedUpAt: string;
                         /**
@@ -26696,11 +26924,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26824,11 +27054,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26936,11 +27168,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27005,11 +27239,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27074,11 +27310,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27143,11 +27381,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27200,7 +27440,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6aec4ae43ff86d10e9ee283f
+                         * @example 6aec5e57c5d2ece6012831c7
                          */
                         id: string;
                         /**
@@ -27217,7 +27457,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-05T09:22:44.742Z
+                         * @example 2026-11-05T10:45:43.549Z
                          */
                         signedUpAt: string;
                         /**
@@ -27393,11 +27633,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27505,11 +27747,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27607,11 +27851,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27676,11 +27922,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27745,11 +27993,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27898,11 +28148,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -27967,11 +28219,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28036,11 +28290,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28226,11 +28482,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28556,11 +28814,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28746,11 +29006,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28815,11 +29077,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28959,11 +29223,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -29133,11 +29399,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -29302,11 +29570,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -29520,11 +29790,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -29690,11 +29962,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -29853,11 +30127,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -29983,11 +30259,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30095,11 +30373,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30164,11 +30444,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30328,11 +30610,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30528,11 +30812,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30783,11 +31069,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30965,11 +31253,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31496,11 +31786,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31565,11 +31857,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31634,11 +31928,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31703,11 +31999,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31772,11 +32070,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31943,11 +32243,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32012,11 +32314,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32081,11 +32385,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32150,11 +32456,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32219,11 +32527,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32386,11 +32696,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32455,11 +32767,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32524,11 +32838,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32593,11 +32909,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32662,11 +32980,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32818,11 +33138,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32887,11 +33209,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33058,11 +33382,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33127,11 +33453,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33196,11 +33524,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33464,11 +33794,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33533,11 +33865,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33602,11 +33936,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33671,11 +34007,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33843,11 +34181,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33912,11 +34252,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33981,11 +34323,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34145,11 +34489,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34214,11 +34560,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34283,11 +34631,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34432,11 +34782,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34501,11 +34853,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34570,11 +34924,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34724,11 +35080,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34793,11 +35151,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34862,11 +35222,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35032,11 +35394,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35144,11 +35508,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35213,11 +35579,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35376,11 +35744,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35488,11 +35858,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35557,11 +35929,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35626,11 +36000,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35739,11 +36115,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35851,11 +36229,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35920,11 +36300,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35989,11 +36371,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36120,11 +36504,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36232,11 +36618,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36301,11 +36689,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36426,11 +36816,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36538,11 +36930,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36607,11 +37001,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36676,11 +37072,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36790,11 +37188,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36902,11 +37302,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36971,11 +37373,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37040,11 +37444,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37150,11 +37556,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37262,11 +37670,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37331,11 +37741,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37400,11 +37812,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37527,11 +37941,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37639,11 +38055,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37708,11 +38126,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37860,11 +38280,16 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /**
+                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @enum {string}
+                         */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -37979,11 +38404,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38048,11 +38475,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38117,11 +38546,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38186,11 +38617,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38512,11 +38945,16 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /**
+                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @enum {string}
+                         */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -38631,11 +39069,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38733,11 +39173,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38802,11 +39244,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38871,11 +39315,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39140,11 +39586,16 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /**
+                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @enum {string}
+                         */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -39259,11 +39710,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39361,11 +39814,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39430,11 +39885,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39499,11 +39956,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39637,11 +40096,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39706,11 +40167,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39775,11 +40238,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39844,11 +40309,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39957,11 +40424,16 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /**
+                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @enum {string}
+                         */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -40076,11 +40548,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40145,11 +40619,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40214,11 +40690,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40283,11 +40761,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40825,11 +41305,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40894,11 +41376,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40963,11 +41447,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41032,11 +41518,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41254,11 +41742,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41323,11 +41813,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41491,11 +41983,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41560,11 +42054,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41739,11 +42235,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41808,11 +42306,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41953,11 +42453,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42055,11 +42557,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42288,11 +42792,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42400,11 +42906,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42502,11 +43010,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42571,11 +43081,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42708,11 +43220,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42777,11 +43291,13 @@ export interface operations {
                         clearsAt?: string | null;
                         /**
                          * Format: date-time
-                         * @description When a temporarily ineligible funding source may become available again.
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
                          */
                         availableAt?: string | null;
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
                     } & {
                         [key: string]: unknown;
                     };
