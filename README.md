@@ -1330,6 +1330,7 @@ ACH onramp lets users convert USD from their bank account into USDC delivered to
 6. **Client:** show the quote and ACH authorization message to the user
 7. **Server:** create the deposit with `client.deposit.create(input, { idempotencyKey })`; Spritz runs risk checks before initiating the ACH pull. Persist one unique key per deposit intent and reuse it verbatim on retries so a timed-out request replays the original response instead of authorizing a second debit
 8. **Server:** track the deposit with `client.deposit.get(depositId)`, or reconcile a backlog by paging `client.deposit.list({ limit, cursor })`
+9. **Server (optional):** while `deposit.cancellable` is true, let the user call it off with `client.deposit.cancel(depositId)` (see [Cancelling a Deposit](docs/ach-onramp-guide.md#cancelling-a-deposit))
 
 ```typescript
 // Page the authenticated user's deposits, newest first

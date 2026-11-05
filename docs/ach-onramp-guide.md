@@ -487,6 +487,8 @@ preparation, expires shortly after issue, and grants nothing else.
 | `returnCode`          | `string \| null` | NACHA return code, populated when `returned`       |
 | `returnReason`        | `string \| null` | Human-readable return reason                       |
 | `payoutTxHash`        | `string \| null` | Solana tx hash of the USDC release                 |
+| `cancellable`         | `boolean`        | Whether the user can cancel it now                 |
+| `cancelledAt`         | `string \| null` | ISO 8601 — when the user's cancel was confirmed    |
 
 ---
 
@@ -542,9 +544,42 @@ const onRamp = await client.onrampPayment.get('onramp_xyz789')
 | `deliveries`                        | `object[]?`         | Per-tranche delivery records with `status`, `amount`, `txHash`, timestamps                                                       |
 | `completedAt`                       | `string?`           | ISO 8601 when fully delivered                                                                                                    |
 
+An ACH-debit on-ramp also carries `source.depositId` and `cancellable`, so an on-ramp screen can offer cancel without reading the deposit first.
+
 The on-ramp ID is also surfaced on ACH return records (`achDebitReturn.onRampId`), so you can pivot from a return to the originating on-ramp/deposit.
 
 > **In production, prefer webhooks over polling** — register for on-ramp status events so you only fetch when state actually changes. See [Webhooks](#webhooks) below.
+
+### Cancelling a deposit
+
+A user can call off a deposit they no longer want while `cancellable` is true on the
+deposit or its on-ramp: before the bank debit is transmitted and before any crypto is
+released. Instant deposits release crypto early, so they are rarely cancellable. The flag is
+read live on every request, but it is advisory; the cancel call checks again.
+
+```typescript
+import { ConflictError, hasProblemCode } from '@spritz-finance/api-client'
+
+try {
+    // From an on-ramp, use onRamp.source.depositId
+    const deposit = await client.deposit.cancel(depositId)
+    if (deposit.status !== 'cancelled') {
+        // The bank has not confirmed yet (HTTP 202). The payout is held; poll
+        // client.deposit.get(depositId) until status is 'cancelled'.
+    }
+} catch (error) {
+    if (hasProblemCode(error, 'deposit_not_cancellable')) {
+        // Too late. error.error.reason: 'crypto_released' | 'debit_in_progress' | 'deposit_closed'
+    }
+}
+```
+
+Repeating the call is safe. A cancelled deposit reads `status: 'cancelled'` with
+`cancelledAt`, and its on-ramp becomes `cancelled`.
+
+When a user cancels their last three deposits within 24 hours, `prepare` and `create` throw a
+`ConflictError` with `problem.code === 'ach_debit_cancel_cooldown'` for 24 hours after the
+latest cancel. `problem.availableAt` says when deposits open again.
 
 ---
 
@@ -559,16 +594,18 @@ authorized → processing → completed
                         → partially_released
                         → returned
                         → failed
+                        → cancelled
 ```
 
-| Status               | Description                                   |
-| -------------------- | --------------------------------------------- |
-| `authorized`         | User authorized, ACH debit not yet submitted  |
-| `processing`         | ACH debit in flight, crypto release may begin |
-| `completed`          | USDC fully released to wallet                 |
-| `partially_released` | Partial USDC released, remainder pending      |
-| `returned`           | ACH debit returned by bank                    |
-| `failed`             | Deposit failed                                |
+| Status               | Description                                     |
+| -------------------- | ----------------------------------------------- |
+| `authorized`         | User authorized, ACH debit not yet submitted    |
+| `processing`         | ACH debit in flight, crypto release may begin   |
+| `completed`          | USDC fully released to wallet                   |
+| `partially_released` | Partial USDC released, remainder pending        |
+| `returned`           | ACH debit returned by bank                      |
+| `failed`             | Deposit failed                                  |
+| `cancelled`          | The user cancelled it before the debit was sent |
 
 ### Debit status
 
