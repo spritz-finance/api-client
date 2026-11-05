@@ -74,6 +74,7 @@ export type {
     Deposit,
     DepositListQuery,
     DepositListResponse,
+    CancelDepositResponse,
     PrepareDepositRequest,
     PrepareDepositResponse,
     CreateDepositRequest,
