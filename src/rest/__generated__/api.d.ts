@@ -641,6 +641,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/deposits/{depositId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel a deposit
+         * @description Cancels an ACH debit deposit owned by the authenticated user. Allowed only while the deposit's `cancellable` is true: before the bank debit is transmitted and before any crypto is released. 200 returns the deposit with status `cancelled`. 202 means the cancellation was requested but the bank has not confirmed it yet; the deposit's payout is held until it resolves, so poll the deposit for status `cancelled`. 409 with code `deposit_not_cancellable` means it is too late to cancel; `reason` is `crypto_released`, `debit_in_progress` or `deposit_closed`. Repeating the call on a cancelled deposit returns it unchanged. When the user cancels their three latest deposits within 24 hours, new deposits are refused for 24 hours after the latest cancel with 409 code `ach_debit_cancel_cooldown` and `availableAt` set to when they open again.
+         */
+        post: operations["postV1DepositsByDepositIdCancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/deposits/direct/prepare": {
         parameters: {
             query?: never;
@@ -6719,6 +6739,8 @@ export interface operations {
                                  */
                                 fundingSourceId: string;
                             } | null;
+                            /** @description Whether this on-ramp can be cancelled now. Only ACH-debit on-ramps qualify, and only before the bank debit is transmitted and before any crypto is released; cancel with POST /v1/deposits/{source.depositId}/cancel. Advisory: the cancel call re-checks and may still refuse. */
+                            cancellable: boolean;
                             deliverySummary?: {
                                 /**
                                  * @description Crypto amount delivered or submitted so far
@@ -7601,6 +7623,8 @@ export interface operations {
                              */
                             fundingSourceId: string;
                         } | null;
+                        /** @description Whether this on-ramp can be cancelled now. Only ACH-debit on-ramps qualify, and only before the bank debit is transmitted and before any crypto is released; cancel with POST /v1/deposits/{source.depositId}/cancel. Advisory: the cancel call re-checks and may still refuse. */
+                        cancellable: boolean;
                         deliverySummary?: {
                             /**
                              * @description Crypto amount delivered or submitted so far
@@ -10632,6 +10656,11 @@ export interface operations {
                                  */
                                 minAmountUsd: string;
                                 /**
+                                 * @description Smallest `amountUsd` to accept on an `exact_input` quote: the fee comes out of the entered amount, so this is the amount whose principal after fees reaches `minAmountUsd`. Calculated without a fee subsidy; a subsidised request may be accepted from a lower amount. For `exact_output`, validate against `minAmountUsd`.
+                                 * @example 12.00
+                                 */
+                                minRequestedAmountUsd: string;
+                                /**
                                  * @description The largest single deposit amount accepted right now — all limits folded in, with headroom for the maximum fee already deducted. Build amount inputs against this value.
                                  * @example 742.57
                                  */
@@ -11285,7 +11314,7 @@ export interface operations {
                              */
                             onRampId: string | null;
                             /** @enum {string} */
-                            status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed";
+                            status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed" | "cancelled";
                             /** @enum {string} */
                             quoteType: "exact_input" | "exact_output";
                             /** @enum {string} */
@@ -11346,6 +11375,13 @@ export interface operations {
                             releaseFailureCode: string | null;
                             releaseFailureReason: string | null;
                             payoutTxHash: string | null;
+                            /** @description Whether the user can cancel this deposit now via POST /v1/deposits/{depositId}/cancel. True only before the bank debit is transmitted and before any crypto is released. Advisory: the cancel call re-checks and may still refuse. */
+                            cancellable: boolean;
+                            /**
+                             * Format: date-time
+                             * @description When the user's cancellation was confirmed
+                             */
+                            cancelledAt: string | null;
                         }[];
                         /** @description Whether another page of deposits is available */
                         hasMore: boolean;
@@ -11673,7 +11709,7 @@ export interface operations {
                          */
                         onRampId: string | null;
                         /** @enum {string} */
-                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed";
+                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed" | "cancelled";
                         /** @enum {string} */
                         quoteType: "exact_input" | "exact_output";
                         /** @enum {string} */
@@ -11734,6 +11770,13 @@ export interface operations {
                         releaseFailureCode: string | null;
                         releaseFailureReason: string | null;
                         payoutTxHash: string | null;
+                        /** @description Whether the user can cancel this deposit now via POST /v1/deposits/{depositId}/cancel. True only before the bank debit is transmitted and before any crypto is released. Advisory: the cancel call re-checks and may still refuse. */
+                        cancellable: boolean;
+                        /**
+                         * Format: date-time
+                         * @description When the user's cancellation was confirmed
+                         */
+                        cancelledAt: string | null;
                     };
                 };
             };
@@ -11953,6 +11996,490 @@ export interface operations {
             };
         };
     };
+    postV1DepositsByDepositIdCancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                depositId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description An ACH debit deposit authorized by the user and processed asynchronously through debit and crypto release lifecycles. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Opaque public deposit identifier
+                         * @example dep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        id: string;
+                        /**
+                         * @description Opaque public funding source identifier
+                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        sourceId: string;
+                        /**
+                         * @description Identifier of the on-ramp created for this deposit, or null until the on-ramp record exists.
+                         * @example onramp_xyz789
+                         */
+                        onRampId: string | null;
+                        /** @enum {string} */
+                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed" | "cancelled";
+                        /** @enum {string} */
+                        quoteType: "exact_input" | "exact_output";
+                        /** @enum {string} */
+                        requestedPriority: "normal" | "high";
+                        /** @enum {string} */
+                        priority: "normal" | "high";
+                        feeRateBps: number;
+                        principalAmountUsd: string;
+                        instantPortionUsd: string;
+                        settlementPortionUsd: string;
+                        expectedAssetAmount: string;
+                        grossFeeUsd: string;
+                        publishedFeeUsd: string;
+                        regularPublishedFeeUsd: string;
+                        instantPublishedFeeUsd: string;
+                        feeSubsidyUsd: string;
+                        userFeeUsd: string;
+                        totalDebitAmountUsd: string;
+                        feeSubsidy: {
+                            percentage: number;
+                            percentageBps: number;
+                            maxAmountUsd: string | null;
+                            appliedAmountUsd: string;
+                        } | null;
+                        /** @enum {string} */
+                        network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
+                        /**
+                         * @description Asset sent to the deposit destination
+                         * @example USDC
+                         * @enum {string}
+                         */
+                        asset: "USDC";
+                        assetAddress: string;
+                        /** @description Destination wallet address for the crypto release */
+                        address: string;
+                        /** @enum {string} */
+                        debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                        /** @enum {string} */
+                        releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                        /** @enum {string} */
+                        releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                        releasedAmountUsd: string;
+                        confirmedReleasedAmountUsd: string;
+                        /** Format: date-time */
+                        authorizedAt: string;
+                        /** Format: date-time */
+                        createdAt: string;
+                        /** Format: date-time */
+                        settledAt: string | null;
+                        /** Format: date-time */
+                        returnedAt: string | null;
+                        /** Format: date-time */
+                        completedAt: string | null;
+                        returnCode: string | null;
+                        returnReason: string | null;
+                        debitFailureCode: string | null;
+                        debitFailureReason: string | null;
+                        releaseFailureCode: string | null;
+                        releaseFailureReason: string | null;
+                        payoutTxHash: string | null;
+                        /** @description Whether the user can cancel this deposit now via POST /v1/deposits/{depositId}/cancel. True only before the bank debit is transmitted and before any crypto is released. Advisory: the cancel call re-checks and may still refuse. */
+                        cancellable: boolean;
+                        /**
+                         * Format: date-time
+                         * @description When the user's cancellation was confirmed
+                         */
+                        cancelledAt: string | null;
+                    };
+                };
+            };
+            /** @description An ACH debit deposit authorized by the user and processed asynchronously through debit and crypto release lifecycles. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Opaque public deposit identifier
+                         * @example dep_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        id: string;
+                        /**
+                         * @description Opaque public funding source identifier
+                         * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                         */
+                        sourceId: string;
+                        /**
+                         * @description Identifier of the on-ramp created for this deposit, or null until the on-ramp record exists.
+                         * @example onramp_xyz789
+                         */
+                        onRampId: string | null;
+                        /** @enum {string} */
+                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed" | "cancelled";
+                        /** @enum {string} */
+                        quoteType: "exact_input" | "exact_output";
+                        /** @enum {string} */
+                        requestedPriority: "normal" | "high";
+                        /** @enum {string} */
+                        priority: "normal" | "high";
+                        feeRateBps: number;
+                        principalAmountUsd: string;
+                        instantPortionUsd: string;
+                        settlementPortionUsd: string;
+                        expectedAssetAmount: string;
+                        grossFeeUsd: string;
+                        publishedFeeUsd: string;
+                        regularPublishedFeeUsd: string;
+                        instantPublishedFeeUsd: string;
+                        feeSubsidyUsd: string;
+                        userFeeUsd: string;
+                        totalDebitAmountUsd: string;
+                        feeSubsidy: {
+                            percentage: number;
+                            percentageBps: number;
+                            maxAmountUsd: string | null;
+                            appliedAmountUsd: string;
+                        } | null;
+                        /** @enum {string} */
+                        network: "solana" | "ethereum" | "polygon" | "base" | "avalanche" | "arbitrum";
+                        /**
+                         * @description Asset sent to the deposit destination
+                         * @example USDC
+                         * @enum {string}
+                         */
+                        asset: "USDC";
+                        assetAddress: string;
+                        /** @description Destination wallet address for the crypto release */
+                        address: string;
+                        /** @enum {string} */
+                        debitStatus: "authorized" | "submitting" | "submitted" | "settled" | "returned" | "failed";
+                        /** @enum {string} */
+                        releaseStatus: "not_started" | "queued" | "partial" | "completed" | "failed";
+                        /** @enum {string} */
+                        releaseDecisionMode: "after_settlement" | "early_full" | "early_partial";
+                        releasedAmountUsd: string;
+                        confirmedReleasedAmountUsd: string;
+                        /** Format: date-time */
+                        authorizedAt: string;
+                        /** Format: date-time */
+                        createdAt: string;
+                        /** Format: date-time */
+                        settledAt: string | null;
+                        /** Format: date-time */
+                        returnedAt: string | null;
+                        /** Format: date-time */
+                        completedAt: string | null;
+                        returnCode: string | null;
+                        returnReason: string | null;
+                        debitFailureCode: string | null;
+                        debitFailureReason: string | null;
+                        releaseFailureCode: string | null;
+                        releaseFailureReason: string | null;
+                        payoutTxHash: string | null;
+                        /** @description Whether the user can cancel this deposit now via POST /v1/deposits/{depositId}/cancel. True only before the bank debit is transmitted and before any crypto is released. Advisory: the cancel call re-checks and may still refuse. */
+                        cancellable: boolean;
+                        /**
+                         * Format: date-time
+                         * @description When the user's cancellation was confirmed
+                         */
+                        cancelledAt: string | null;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporarily ineligible funding source may become available again.
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
     postV1DepositsDirectPrepare: {
         parameters: {
             query?: never;
@@ -12000,7 +12527,7 @@ export interface operations {
                     };
                     clientNetwork?: {
                         /**
-                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken. The later direct client submission is not currently matched against these addresses; it must come from a public network other than the preparing backend's.
                          * @example [
                          *       "1.1.1.1",
                          *       "2606:4700:4700::1111"
@@ -12047,7 +12574,7 @@ export interface operations {
                     };
                     clientNetwork?: {
                         /**
-                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken. The later direct client submission is not currently matched against these addresses; it must come from a public network other than the preparing backend's.
                          * @example [
                          *       "1.1.1.1",
                          *       "2606:4700:4700::1111"
@@ -12094,7 +12621,7 @@ export interface operations {
                     };
                     clientNetwork?: {
                         /**
-                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken. The later direct client submission is not currently matched against these addresses; it must come from a public network other than the preparing backend's.
                          * @example [
                          *       "1.1.1.1",
                          *       "2606:4700:4700::1111"
@@ -12684,7 +13211,7 @@ export interface operations {
                          */
                         onRampId: string | null;
                         /** @enum {string} */
-                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed";
+                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed" | "cancelled";
                         /** @enum {string} */
                         quoteType: "exact_input" | "exact_output";
                         /** @enum {string} */
@@ -12745,6 +13272,13 @@ export interface operations {
                         releaseFailureCode: string | null;
                         releaseFailureReason: string | null;
                         payoutTxHash: string | null;
+                        /** @description Whether the user can cancel this deposit now via POST /v1/deposits/{depositId}/cancel. True only before the bank debit is transmitted and before any crypto is released. Advisory: the cancel call re-checks and may still refuse. */
+                        cancellable: boolean;
+                        /**
+                         * Format: date-time
+                         * @description When the user's cancellation was confirmed
+                         */
+                        cancelledAt: string | null;
                     };
                 };
             };
@@ -35856,7 +36390,7 @@ export interface operations {
                     };
                     clientNetwork?: {
                         /**
-                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken. The later direct client submission is not currently matched against these addresses; it must come from a public network other than the preparing backend's.
                          * @example [
                          *       "1.1.1.1",
                          *       "2606:4700:4700::1111"
@@ -35912,7 +36446,7 @@ export interface operations {
                     };
                     clientNetwork?: {
                         /**
-                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken. The later direct client submission is not currently matched against these addresses; it must come from a public network other than the preparing backend's.
                          * @example [
                          *       "1.1.1.1",
                          *       "2606:4700:4700::1111"
@@ -35968,7 +36502,7 @@ export interface operations {
                     };
                     clientNetwork?: {
                         /**
-                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken and the addresses are matched against the later direct client submission.
+                         * @description Public IP addresses observed by the integrator edge for the authorizing client. Include at most one IPv4 and one IPv6 address. When provided by an integrator, the response includes a submissionToken. The later direct client submission is not currently matched against these addresses; it must come from a public network other than the preparing backend's.
                          * @example [
                          *       "1.1.1.1",
                          *       "2606:4700:4700::1111"
@@ -36618,7 +37152,7 @@ export interface operations {
                          */
                         onRampId: string | null;
                         /** @enum {string} */
-                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed";
+                        status: "authorized" | "processing" | "partially_released" | "completed" | "returned" | "refunded" | "failed" | "cancelled";
                         /** @enum {string} */
                         quoteType: "exact_input" | "exact_output";
                         /** @enum {string} */
@@ -36679,6 +37213,13 @@ export interface operations {
                         releaseFailureCode: string | null;
                         releaseFailureReason: string | null;
                         payoutTxHash: string | null;
+                        /** @description Whether the user can cancel this deposit now via POST /v1/deposits/{depositId}/cancel. True only before the bank debit is transmitted and before any crypto is released. Advisory: the cancel call re-checks and may still refuse. */
+                        cancellable: boolean;
+                        /**
+                         * Format: date-time
+                         * @description When the user's cancellation was confirmed
+                         */
+                        cancelledAt: string | null;
                     };
                 };
             };
