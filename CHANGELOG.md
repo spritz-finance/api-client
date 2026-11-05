@@ -1,5 +1,12 @@
 # @spritz-finance/api-client
 
+## 0.24.0
+
+### Minor Changes
+
+- 0b44834: Add `client.deposit.cancel(depositId)` for ACH debit deposits, with the `cancellable` and `cancelledAt` fields on deposits, `cancellable` on on-ramps, and the `cancelled` deposit status. Add `problem.reason` (`DepositCancelRefusalReason`) for why a cancel was refused. Document the `ach_debit_cancel_cooldown` error and its `availableAt`.
+- 0b44834: **Breaking:** remove `client.connect` and its `ConnectSession`, `ConnectTokenExchange` and `CreateConnectSessionParams` types. Spritz Connect has been removed from the API, so its routes no longer exist. For `USER_ALREADY_EXISTS` and `USER_SELECTION_REQUIRED`, use the API key you stored for the account or contact Spritz support. REST types are regenerated from the live spec.
+
 ## 0.23.0
 
 ### Minor Changes
