@@ -368,22 +368,26 @@ feeSubsidy: {
 
 **Preparation response:**
 
-| Field                         | Type     | Description                                   |
-| ----------------------------- | -------- | --------------------------------------------- |
-| `preparationId`               | `string` | Needed for deposit creation                   |
-| `message`                     | `string` | Display-ready ACH authorization message       |
-| `expiresAt`                   | `string` | Submission deadline                           |
-| `summary.requestedAmountUsd`  | `string` | What the user asked for                       |
-| `summary.principalAmountUsd`  | `string` | USD used to buy USDC (total debit minus fees) |
-| `summary.userFeeUsd`          | `string` | Fee charged to the user                       |
-| `summary.totalDebitAmountUsd` | `string` | Total USD debited from bank                   |
-| `summary.expectedAssetAmount` | `string` | USDC to be released                           |
-| `summary.feeRateBps`          | `number` | Fee rate in basis points                      |
-| `summary.destinationAddress`  | `string` | Wallet receiving USDC                         |
+| Field                         | Type     | Description                                         |
+| ----------------------------- | -------- | --------------------------------------------------- |
+| `preparationId`               | `string` | Needed for deposit creation                         |
+| `message`                     | `string` | Display-ready ACH authorization message             |
+| `messageVersion`              | `string` | Authorization template (`v1`, `fomo_v1`, `fomo_v2`) |
+| `authorizationStatement`      | `string` | The authorization paragraph alone, from `message`   |
+| `expiresAt`                   | `string` | Submission deadline                                 |
+| `summary.requestedAmountUsd`  | `string` | What the user asked for                             |
+| `summary.principalAmountUsd`  | `string` | USD used to buy USDC (total debit minus fees)       |
+| `summary.userFeeUsd`          | `string` | Fee charged to the user                             |
+| `summary.totalDebitAmountUsd` | `string` | Total USD debited from bank                         |
+| `summary.expectedAssetAmount` | `string` | USDC to be released                                 |
+| `summary.feeRateBps`          | `number` | Fee rate in basis points                            |
+| `summary.destinationAddress`  | `string` | Wallet receiving USDC                               |
 
 Display `summary` and `message` to the user for review before proceeding. The user-facing confirm button should call your server, and your server should then call `client.deposit.create(...)`.
 
 > **Compliance — display the authorization message verbatim.** `preparation.message` is the NACHA consent text that authorizes the ACH debit. It must be shown to the user as-is, unmodified, before they confirm. Paraphrasing, truncating, or styling away parts of the message is a NACHA compliance violation and will invalidate the authorization. Wrap it in a `<pre>` or equivalent so whitespace and line breaks are preserved.
+
+> **Showing only `authorizationStatement`.** Only `fomo_v2`'s paragraph is self-contained. It names who debits, the amount, the account, the timing, the statement names and how to cancel. When `messageVersion` is `fomo_v2`, a UI that lays out the amounts from `summary` itself may show `authorizationStatement` word for word in place of `message`. For every other version, the paragraph refers to details shown beside it, so show `message` in full. Spritz stores the full `message` as the authorization record either way.
 
 ---
 

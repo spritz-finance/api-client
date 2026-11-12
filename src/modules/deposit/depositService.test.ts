@@ -33,7 +33,8 @@ describe('DepositService', () => {
             kind: 'deposit_authorization',
             expiresAt: '2026-01-01T00:00:00Z',
             messageVersion: 'v1',
-            message: 'Authorization text',
+            message: 'Review bank deposit\n\nAuthorization paragraph\n\nDeposit: $99.00',
+            authorizationStatement: 'Authorization paragraph',
             summary: {
                 quoteType: 'exact_input',
                 requestedAmountUsd: '100.00',

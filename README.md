@@ -1350,7 +1350,7 @@ ACH onramp lets users convert USD from their bank account into USDC delivered to
 3. **Server:** complete linking with `client.bankAccount.completeLinking(...)`
 4. **Server:** find an active funding source and fetch limits with `client.fundingSource.getDepositLimits(id)`
 5. **Server:** prepare a quote with `client.deposit.prepare(...)`
-6. **Client:** show the quote and ACH authorization message to the user
+6. **Client:** show the quote and ACH authorization `message` to the user. If your UI lays out the amounts from `summary` itself, show `authorizationStatement` word for word instead. That's only allowed when `messageVersion` is `fomo_v2`; for any other version, show `message` in full
 7. **Server:** create the deposit with `client.deposit.create(input, { idempotencyKey })`; Spritz runs risk checks before initiating the ACH pull. Persist one unique key per deposit intent and reuse it verbatim on retries so a timed-out request replays the original response instead of authorizing a second debit
 8. **Server:** track the deposit with `client.deposit.get(depositId)`, or reconcile a backlog by paging `client.deposit.list({ limit, cursor })`
 9. **Server (optional):** while `deposit.cancellable` is true, let the user call it off with `client.deposit.cancel(depositId)` (see [Cancelling a Deposit](docs/ach-onramp-guide.md#cancelling-a-deposit))
@@ -1396,7 +1396,9 @@ A standalone sandbox demo is available at `scripts/sandbox/ach-onramp.html`. Run
 Before you show a bank deposit option to someone who is not yet a Spritz user, ask whether it is available for their email address:
 
 ```typescript
-const { eligible } = await client.achDebit.checkEligibility({ email: 'user@example.com' })
+const { eligible } = await client.achDebit.checkEligibility({
+    email: 'user@example.com',
+})
 
 if (eligible) {
     // Offer the bank deposit option
@@ -1517,7 +1519,10 @@ const { onRampId, depositId, status } = await client.sandbox.simulateAutoRampDep
 })
 
 // Advance the same on-ramp
-await client.sandbox.simulateAutoRampDeposit(accountId, { amount: '2525.00', depositId })
+await client.sandbox.simulateAutoRampDeposit(accountId, {
+    amount: '2525.00',
+    depositId,
+})
 
 const onRamp = await client.onrampPayment.get(onRampId)
 ```
