@@ -132,6 +132,15 @@ export type { UserProfile } from './modules/user/userService'
 export type { VerificationSession } from './modules/verification/verificationService'
 export type { AcceptTermsRequest, AcceptTermsResponse } from './modules/terms/termsService'
 export type {
+    AgreementType,
+    AgreementsAcceptanceRequest,
+    AgreementsPresentation,
+    AgreementsReceipt,
+    AgreementsState,
+    CreateAgreementsPresentationRequest,
+    CreateAgreementsPresentationResponse,
+} from './modules/agreements/agreementsService'
+export type {
     ComplianceRequirements,
     ComplianceRequirementField,
     SubmitComplianceRequest,
