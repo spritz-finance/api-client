@@ -2063,7 +2063,7 @@ export interface paths {
         put?: never;
         /**
          * Prepare Solana transaction
-         * @description Prepares an unsigned Solana v0 message for the authenticated user's embedded wallet to sign. Supports `transfer`, `payment`, `yield.deposit`, and `yield.withdraw` intents. Kamino is the only yield protocol supported today. The response `messageBytes` are base64-encoded Solana message bytes, not a serialized transaction; the wallet must sign the decoded bytes exactly and submit only the detached signature.
+         * @description Prepares an unsigned Solana v0 message for the authenticated user's embedded wallet to sign. Supports `transfer`, `payment`, `yield.deposit`, and `yield.withdraw` intents. Kamino is the only yield protocol supported today. `intent.from` must be one of the caller's embedded wallet Solana addresses, or the request is refused with 403 `SOURCE_WALLET_NOT_OWNED`. The response `messageBytes` are base64-encoded Solana message bytes, not a serialized transaction; the wallet must sign the decoded bytes exactly and submit only the detached signature.
          */
         post: operations["postV1Wallet-kitSolanaTransactionsPrepare"];
         delete?: never;
@@ -4566,7 +4566,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description Creation timestamp
-                         * @example 2026-11-12T11:47:43.743Z
+                         * @example 2026-11-12T14:22:22.182Z
                          */
                         createdAt?: string;
                     }[];
@@ -4804,7 +4804,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6af5a75fc6fd3bb395e9d0d0
+                     * @example 6af5cb9e79eb018a8628fb10
                      */
                     accountId: string;
                     /**
@@ -4832,7 +4832,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6af5a75fc6fd3bb395e9d0d0
+                     * @example 6af5cb9e79eb018a8628fb10
                      */
                     accountId: string;
                     /**
@@ -4860,7 +4860,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6af5a75fc6fd3bb395e9d0d0
+                     * @example 6af5cb9e79eb018a8628fb10
                      */
                     accountId: string;
                     /**
@@ -4907,7 +4907,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-12T11:47:43.671Z
+                         * @example 2026-11-12T14:22:22.164Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4946,7 +4946,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6af5a75fc6fd3bb395e9d0d1
+                             * @example 6af5cb9e79eb018a8628fb11
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5276,7 +5276,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-12T11:47:43.671Z
+                         * @example 2026-11-12T14:22:22.164Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -5315,7 +5315,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6af5a75fc6fd3bb395e9d0d1
+                             * @example 6af5cb9e79eb018a8628fb11
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -6270,7 +6270,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-12T11:47:43.671Z
+                         * @example 2026-11-12T14:22:22.164Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -6309,7 +6309,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6af5a75fc6fd3bb395e9d0d1
+                             * @example 6af5cb9e79eb018a8628fb11
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -6685,7 +6685,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6af5a75fc6fd3bb395e9d0d2
+                                 * @example 6af5cb9e79eb018a8628fb12
                                  */
                                 accountId: string;
                                 /**
@@ -7049,7 +7049,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6af5a75fc6fd3bb395e9d0d2
+                             * @example 6af5cb9e79eb018a8628fb12
                              */
                             accountId: string;
                             /**
@@ -7363,7 +7363,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6af5a75fc6fd3bb395e9d0d3
+                     * @example 6af5cb9e79eb018a8628fb13
                      */
                     accountId?: string;
                 };
@@ -7381,7 +7381,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6af5a75fc6fd3bb395e9d0d3
+                     * @example 6af5cb9e79eb018a8628fb13
                      */
                     accountId?: string;
                 };
@@ -7399,7 +7399,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6af5a75fc6fd3bb395e9d0d3
+                     * @example 6af5cb9e79eb018a8628fb13
                      */
                     accountId?: string;
                 };
@@ -7465,7 +7465,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6af5a75fc6fd3bb395e9d0d2
+                             * @example 6af5cb9e79eb018a8628fb12
                              */
                             accountId: string;
                             /**
@@ -14992,9 +14992,11 @@ export interface operations {
                          * @example v1
                          * @enum {string}
                          */
-                        messageVersion: "v1" | "fomo_v1";
+                        messageVersion: "v1" | "fomo_v1" | "fomo_v2";
                         /** @description Display-ready ACH authorization message */
                         message: string;
+                        /** @description The authorization paragraph alone, a verbatim part of `message`. When `messageVersion` is `fomo_v2` the paragraph is self-contained: clients that lay out amounts and fees in their own UI must still display it word for word on the confirmation screen. For every other version, display `message` in full. */
+                        authorizationStatement: string;
                         /**
                          * @description Short-lived, preparation-bound bearer capability returned for integrator preparations. Send it only to the authorizing client, which uses it to submit this preparation directly to Spritz.
                          * @example ach_submit_eyJhbGciOiJIUzI1NiJ9...
@@ -22824,7 +22826,7 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique identifier for the debit card
-                             * @example 6af5a75fc6fd3bb395e9d0d7
+                             * @example 6af5cb9e79eb018a8628fb17
                              */
                             id: string;
                             /** @enum {string} */
@@ -23345,7 +23347,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6af5a75fc6fd3bb395e9d0d7
+                         * @example 6af5cb9e79eb018a8628fb17
                          */
                         id: string;
                         /** @enum {string} */
@@ -23635,7 +23637,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6af5a75fc6fd3bb395e9d0d7
+                         * @example 6af5cb9e79eb018a8628fb17
                          */
                         id: string;
                         /** @enum {string} */
@@ -24302,7 +24304,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6af5a75fc6fd3bb395e9d0d7
+                         * @example 6af5cb9e79eb018a8628fb17
                          */
                         id: string;
                         /** @enum {string} */
@@ -24637,7 +24639,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6af5a760c6fd3bb395e9d0db
+                         * @example 6af5cb9e79eb018a8628fb1b
                          */
                         userId: string;
                         /**
@@ -24653,7 +24655,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-11-12T12:47:44.042Z
+                         * @example 2026-11-12T15:22:22.542Z
                          */
                         expiresAt: string;
                     };
@@ -24925,7 +24927,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-11-12T11:47:44.042Z
+                         * @example 2026-11-12T14:22:22.541Z
                          */
                         createdAt: string;
                     };
@@ -25211,7 +25213,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description ID of the account this request resolved to: the account it created or, where account reuse is enabled, the existing account this email resolves to for you (your own, or one you are currently authorized for through an existing authorization). With reuse enabled, a repeat for the same email returns the same ID.
-                         * @example 6af5a760c6fd3bb395e9d0dd
+                         * @example 6af5cb9e79eb018a8628fb1d
                          */
                         userId: string;
                         /**
@@ -25703,7 +25705,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6af5a760c6fd3bb395e9d0da
+                             * @example 6af5cb9e79eb018a8628fb1a
                              */
                             userId: string;
                             /**
@@ -25988,7 +25990,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6af5a760c6fd3bb395e9d0da
+                         * @example 6af5cb9e79eb018a8628fb1a
                          */
                         userId: string;
                         /**
@@ -26254,7 +26256,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6af5a760c6fd3bb395e9d0dc
+                         * @example 6af5cb9e79eb018a8628fb1c
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -26558,7 +26560,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6af5a760c6fd3bb395e9d0dc
+                         * @example 6af5cb9e79eb018a8628fb1c
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -30415,7 +30417,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6af5a760c6fd3bb395e9d0dc
+                         * @example 6af5cb9e79eb018a8628fb1c
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -31055,7 +31057,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-11-12T11:52:44.043Z
+                         * @example 2026-11-12T14:27:22.542Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -31299,7 +31301,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6af5a760c6fd3bb395e9d0d8
+                         * @example 6af5cb9e79eb018a8628fb18
                          */
                         id: string;
                         /**
@@ -31316,7 +31318,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-12T11:47:44.036Z
+                         * @example 2026-11-12T14:22:22.466Z
                          */
                         signedUpAt: string;
                         /**
@@ -31795,7 +31797,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6af5a760c6fd3bb395e9d0d8
+                         * @example 6af5cb9e79eb018a8628fb18
                          */
                         id: string;
                         /**
@@ -31812,7 +31814,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-12T11:47:44.036Z
+                         * @example 2026-11-12T14:22:22.466Z
                          */
                         signedUpAt: string;
                         /**
@@ -32655,7 +32657,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6af5a760c6fd3bb395e9d0d8
+                         * @example 6af5cb9e79eb018a8628fb18
                          */
                         id: string;
                         /**
@@ -32672,7 +32674,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-12T11:47:44.036Z
+                         * @example 2026-11-12T14:22:22.466Z
                          */
                         signedUpAt: string;
                         /**
@@ -38951,6 +38953,77 @@ export interface operations {
                          * @example read:users
                          */
                         scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 403 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -47267,9 +47340,11 @@ export interface operations {
                          * @example v1
                          * @enum {string}
                          */
-                        messageVersion: "v1" | "fomo_v1";
+                        messageVersion: "v1" | "fomo_v1" | "fomo_v2";
                         /** @description Display-ready ACH authorization message */
                         message: string;
+                        /** @description The authorization paragraph alone, a verbatim part of `message`. When `messageVersion` is `fomo_v2` the paragraph is self-contained: clients that lay out amounts and fees in their own UI must still display it word for word on the confirmation screen. For every other version, display `message` in full. */
+                        authorizationStatement: string;
                         /**
                          * @description Short-lived, preparation-bound bearer capability returned for integrator preparations. Send it only to the authorizing client, which uses it to submit this preparation directly to Spritz.
                          * @example ach_submit_eyJhbGciOiJIUzI1NiJ9...
