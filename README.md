@@ -68,6 +68,7 @@ const transactionData = await client.paymentRequest.getWeb3PaymentParams({
     - [Identity Verification](#identity-verification)
     - [Regional Compliance](#regional-compliance)
     - [Accepting Terms](#accepting-terms)
+    - [Spritz Agreements](#spritz-agreements)
 - [Accounts](#accounts)
     - [Bank Accounts](#bank-accounts)
     - [Debit Cards](#debit-cards)
@@ -348,6 +349,66 @@ const { termsAccepted } = await client.terms.accept({
 `agreementId` is opaque: the platform resolves which provider it belongs to. This is the REST replacement for the legacy GraphQL `onramp.acceptTermsOfService()`.
 
 > **Retries:** this endpoint does not accept an idempotency key. If a request times out, call `user.getMe()` and check whether the `terms_acceptance` requirement is still outstanding before submitting again.
+
+### Spritz Agreements
+
+Spritz agreements are the user's consent to Spritz's own Terms of Service, Privacy Policy and E-Sign Consent. They are separate from the provider terms above and from each deposit's authorization, and can be collected before KYC. `user.getMe()` returns their state as `agreements`:
+
+- `status: 'action_required'`: show the agreements screen.
+- `status: 'accepted'`: nothing to do.
+- `status: 'unavailable'`: proceed without the screen. With `retryable: false`, no agreements are active yet; do not poll.
+
+Your backend creates a presentation, and the user's own client submits the acceptance:
+
+```typescript
+// Backend
+const presentation = await client.agreements.present()
+if ('nothingToPresent' in presentation) return
+
+// Send these to the user's client:
+const { presentationId, copySha256, submissionToken, statementKey, copy, items } = presentation
+```
+
+On the client, render `copy[statementKey]` verbatim directly above a button labelled `copy.buttonLabel`, with each `copy.links` entry as a visible link. Do not translate or rephrase it. Link URLs are relative to the Spritz API origin (`https://platform.spritz.finance`, or `https://sandbox.spritz.finance` in sandbox). When the user taps the button, the client sends the acceptance itself:
+
+```typescript
+// User's client, not your backend
+const response = await fetch(`${SPRITZ_API_ORIGIN}/v1/agreements/acceptances`, {
+    method: 'POST',
+    headers: {
+        authorization: `Bearer ${submissionToken}`,
+        'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+        presentationId,
+        accept: items.map((item) => item.type), // every presented type
+        copySha256,
+    }),
+})
+if (!response.ok) {
+    const problem = await response.json() // application/problem+json; branch on problem.code (table below)
+    throw new Error(problem.code ?? `agreements acceptance failed: ${response.status}`)
+}
+const receipt = await response.json() // same shape as getReceipt()
+```
+
+`copy.consentPattern` is `'clickwrap'` by default, as above. If it is `'esign_checkbox'`, also show an unchecked checkbox labelled `copy.esignCheckboxLabel` and send `esignCheckboxChecked` with the user's choice. When it is unchecked, leave `esign_consent` out of `accept`; E-Sign then stays outstanding and needs a new presentation later.
+
+The `submissionToken` lasts 15 minutes and works only for its presentation. Spritz refuses an acceptance sent from your backend or from the network that created the presentation (`403 client_submission_required`), which is why this SDK does not send it. Repeating the same acceptance returns the original receipt. If the client loses the response, recover it from your backend with `client.agreements.getReceipt(presentationId)`.
+
+| HTTP | `code`                                | What to do                                           |
+| ---- | ------------------------------------- | ---------------------------------------------------- |
+| 400  | `invalid_agreement_selection`         | Accept every presented type.                         |
+| 403  | `client_submission_required`          | Submit from the user's client, not your backend.     |
+| 409  | `presentation_consumed`               | Recover the receipt with `getReceipt`.               |
+| 409  | `presentation_expired`                | Create a new presentation.                           |
+| 409  | `agreement_version_outdated`          | New documents are active: present again.             |
+| 409  | `agreement_state_changed`             | Refresh `getMe()` and present again.                 |
+| 409  | `copy_mismatch`                       | Render the returned copy and present again.          |
+| 429  | `agreement_presentation_rate_limited` | Back off; at most ten presentations per user/minute. |
+| 503  | `agreements_unavailable`              | Retry later.                                         |
+
+Every acceptance `409` includes the current `agreements` state.
 
 ## Accounts
 

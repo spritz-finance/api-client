@@ -1,6 +1,7 @@
 import { Environment } from './env'
 import { SpritzClient } from './lib/client'
 import { isRunningInBrowser } from './lib/util'
+import { AgreementsService } from './modules/agreements/agreementsService'
 import { AchDebitService } from './modules/achDebit/achDebitService'
 import { AchDebitReturnService } from './modules/achDebitReturn/achDebitReturnService'
 import { BankAccountService } from './modules/bankAccount/bankAccountService'
@@ -71,6 +72,7 @@ export class SpritzApiClient {
     public verification: VerificationService
     public compliance: ComplianceService
     public terms: TermsService
+    public agreements: AgreementsService
     public bankAccount: BankAccountService
     public debitCard: DebitCardService
     public deposit: DepositService
@@ -149,6 +151,7 @@ export class SpritzApiClient {
         this.verification = new VerificationService(this.client)
         this.compliance = new ComplianceService(this.client)
         this.terms = new TermsService(this.client)
+        this.agreements = new AgreementsService(this.client)
         this.bankAccount = new BankAccountService(this.client)
         this.debitCard = new DebitCardService(this.client)
         this.deposit = new DepositService(this.client)
