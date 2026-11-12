@@ -1,5 +1,11 @@
 # @spritz-finance/api-client
 
+## 0.25.0
+
+### Minor Changes
+
+- d6ab70b: Add `client.agreements` for Spritz Terms of Service, Privacy Policy and E-Sign Consent: `present()` creates a presentation of outstanding agreements (with a `submissionToken` for the user's client) and `getReceipt(presentationId)` recovers an acceptance receipt. `user.getMe()` now returns `agreements`. REST types are regenerated from the live spec.
+
 ## 0.24.0
 
 ### Minor Changes
