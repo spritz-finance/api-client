@@ -373,7 +373,7 @@ On the client, render `copy[statementKey]` verbatim directly above a button labe
 
 ```typescript
 // User's client, not your backend
-await fetch(`${SPRITZ_API_ORIGIN}/v1/agreements/acceptances`, {
+const response = await fetch(`${SPRITZ_API_ORIGIN}/v1/agreements/acceptances`, {
     method: 'POST',
     headers: {
         authorization: `Bearer ${submissionToken}`,
@@ -385,7 +385,14 @@ await fetch(`${SPRITZ_API_ORIGIN}/v1/agreements/acceptances`, {
         copySha256,
     }),
 })
+if (!response.ok) {
+    const problem = await response.json() // application/problem+json; branch on problem.code (table below)
+    throw new Error(problem.code ?? `agreements acceptance failed: ${response.status}`)
+}
+const receipt = await response.json() // same shape as getReceipt()
 ```
+
+`copy.consentPattern` is `'clickwrap'` by default, as above. If it is `'esign_checkbox'`, also show an unchecked checkbox labelled `copy.esignCheckboxLabel` and send `esignCheckboxChecked` with the user's choice. When it is unchecked, leave `esign_consent` out of `accept`; E-Sign then stays outstanding and needs a new presentation later.
 
 The `submissionToken` lasts 15 minutes and works only for its presentation. Spritz refuses an acceptance sent from your backend or from the network that created the presentation (`403 client_submission_required`), which is why this SDK does not send it. Repeating the same acceptance returns the original receipt. If the client loses the response, recover it from your backend with `client.agreements.getReceipt(presentationId)`.
 
