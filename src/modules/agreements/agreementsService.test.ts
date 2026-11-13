@@ -7,41 +7,42 @@ import { server } from '../../test/setup'
 import type {
     AgreementsPresentation,
     AgreementsReceipt,
+    AgreementsScreen,
     CreateAgreementsPresentationResponse,
 } from './agreementsService'
 
 const BASE = 'https://sandbox.spritz.finance'
 
+const ESIGN_URL = 'https://sandbox.spritz.finance/v1/agreements/documents/esign'
+
 const PRESENTATION = {
     presentationId: '7f1c2a9e-1b2c-4d5e-8f90-0a1b2c3d4e5f',
-    statementKey: 'continueStatement',
     expiresAt: '2026-11-12T12:15:00.000Z',
-    baseRevision: '0:1',
-    copySha256: 'a'.repeat(64),
+    baseRevision: '1:1',
     submissionToken: 'agreements_submission_token',
-    copy: {
-        copyVersion: 'staging-test-1',
-        language: 'en',
-        continueStatement: 'By continuing, you agree to the Spritz Terms of Service.',
-        updatedStatement: 'We updated our terms.',
-        privacyOnlyStatement: 'We updated our privacy policy.',
+    copyVersion: 'staging-test-2',
+    screenSha256: 'a'.repeat(64),
+    language: 'en',
+    screen: {
+        kind: 'esign_only',
+        placement: 'standalone',
+        title: 'Consent to electronic disclosures',
+        statement: null,
+        checkbox: {
+            label: [
+                { text: 'I consent to receive disclosures electronically (' },
+                { text: 'E-SIGN Consent', link: { type: 'esign_consent', url: ESIGN_URL } },
+                { text: ').' },
+            ],
+        },
         buttonLabel: 'Continue',
-        supportEmail: 'support@spritz.finance',
-        consentPattern: 'clickwrap',
-        links: [
-            {
-                type: 'terms_of_service',
-                label: 'Terms of Service',
-                url: '/v1/agreements/documents/terms',
-            },
-        ],
     },
     items: [
         {
-            type: 'terms_of_service',
-            version: 'staging-test-1',
+            type: 'esign_consent',
+            version: 'fomo-2026-11-13',
             action: 'accept',
-            archivedUrl: '/v1/agreements/documents/terms',
+            archivedUrl: ESIGN_URL,
             documentSha256: 'b'.repeat(64),
         },
     ],
@@ -87,9 +88,12 @@ describe('AgreementsService', () => {
         expect(seen.auth).toBe('Bearer ak_test_key')
         expect(result).toEqual(PRESENTATION)
         expectTypeOf(result).toEqualTypeOf<CreateAgreementsPresentationResponse>()
+        if (!('nothingToPresent' in result)) {
+            expectTypeOf(result.screen).toEqualTypeOf<AgreementsScreen>()
+        }
     })
 
-    it('passes a type filter and narrows on nothingToPresent', async () => {
+    it('passes the placement and narrows on nothingToPresent', async () => {
         const seen: { body?: unknown } = {}
         server.use(
             http.post(`${BASE}/v1/users/me/agreements/presentations`, async ({ request }) => {
@@ -98,9 +102,9 @@ describe('AgreementsService', () => {
             })
         )
 
-        const result = await client.agreements.present({ types: ['terms_of_service'] })
+        const result = await client.agreements.present({ placement: 'kyc' })
 
-        expect(seen.body).toEqual({ types: ['terms_of_service'] })
+        expect(seen.body).toEqual({ placement: 'kyc' })
         expect('nothingToPresent' in result && result.nothingToPresent).toBe(true)
         if (!('nothingToPresent' in result)) {
             expectTypeOf(result).toEqualTypeOf<AgreementsPresentation>()

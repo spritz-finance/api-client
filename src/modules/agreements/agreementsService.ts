@@ -21,6 +21,10 @@ export type AgreementsReceipt = PathResponse<
 export type AgreementsAcceptanceRequest = PathRequestBody<'/v1/agreements/acceptances', 'post'>
 export type AgreementsState = AgreementsReceipt['agreements']
 export type AgreementType = AgreementsPresentation['items'][number]['type']
+export type AgreementsScreen = AgreementsPresentation['screen']
+export type AgreementsScreenKind = AgreementsScreen['kind']
+export type AgreementsPlacement = AgreementsScreen['placement']
+export type AgreementsTextSegment = NonNullable<AgreementsScreen['statement']>[number]
 
 /**
  * Spritz agreements (Terms of Service, Privacy Policy, E-Sign Consent) are the
@@ -43,20 +47,23 @@ export class AgreementsService {
      * (`POST /v1/users/me/agreements/presentations`).
      *
      * Resolves with `{ nothingToPresent: true }` when the user has nothing to
-     * accept. Otherwise render `copy[statementKey]` verbatim directly above a
-     * button labelled `copy.buttonLabel`, linking each document from
-     * `copy.links`. Do not translate or rephrase it. Document URLs are relative
-     * to the Spritz API origin.
+     * accept. Otherwise `screen` is the one consent screen to show: render its
+     * `title`, `statement` segments, `checkbox` (unchecked; the button stays
+     * disabled until it is checked) and `buttonLabel` exactly as given. Pass
+     * `placement: 'kyc'` when the screen sits inside the step that starts
+     * identity verification. Document URLs are absolute.
      *
-     * Forward `presentationId`, `copySha256`, the presented `items[].type` and
-     * the short-lived `submissionToken` (15 minutes, this presentation only) to
-     * the user's client. That client sends `POST /v1/agreements/acceptances`
-     * itself, with `Authorization: Bearer <submissionToken>` and body
-     * `{ presentationId, accept, copySha256 }`. Spritz refuses an acceptance sent
+     * Forward `presentationId`, `screenSha256`, the presented `items[].type`
+     * and the short-lived `submissionToken` (15 minutes, this presentation
+     * only) to the user's client. That client sends
+     * `POST /v1/agreements/acceptances` itself, with
+     * `Authorization: Bearer <submissionToken>` and body
+     * `{ presentationId, accept, screenSha256 }`, plus
+     * `esignCheckboxChecked: true` exactly when `screen.checkbox` is present.
+     * `accept` lists every presented type. Spritz refuses an acceptance sent
      * from your backend, including one sent from the network that created the
      * presentation (`403 client_submission_required`), so this SDK does not
-     * make that request. Under the default `clickwrap` pattern, `accept` must
-     * list every presented type.
+     * make that request.
      *
      * Throws a `RateLimitError` with `problem.code ===
      * 'agreement_presentation_rate_limited'` after ten presentations for one user
