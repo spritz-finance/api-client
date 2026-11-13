@@ -4566,7 +4566,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description Creation timestamp
-                         * @example 2026-11-13T11:05:54.832Z
+                         * @example 2026-11-13T11:49:12.976Z
                          */
                         createdAt?: string;
                     }[];
@@ -4804,7 +4804,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6af6ef1238dbc8d10d06c724
+                     * @example 6af6f9380974dd7f7609c738
                      */
                     accountId: string;
                     /**
@@ -4832,7 +4832,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6af6ef1238dbc8d10d06c724
+                     * @example 6af6f9380974dd7f7609c738
                      */
                     accountId: string;
                     /**
@@ -4860,7 +4860,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6af6ef1238dbc8d10d06c724
+                     * @example 6af6f9380974dd7f7609c738
                      */
                     accountId: string;
                     /**
@@ -4907,7 +4907,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-13T11:05:54.824Z
+                         * @example 2026-11-13T11:49:12.955Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4946,7 +4946,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6af6ef1238dbc8d10d06c725
+                             * @example 6af6f9380974dd7f7609c739
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5276,7 +5276,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-13T11:05:54.824Z
+                         * @example 2026-11-13T11:49:12.955Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -5315,7 +5315,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6af6ef1238dbc8d10d06c725
+                             * @example 6af6f9380974dd7f7609c739
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -6270,7 +6270,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-13T11:05:54.824Z
+                         * @example 2026-11-13T11:49:12.955Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -6309,7 +6309,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6af6ef1238dbc8d10d06c725
+                             * @example 6af6f9380974dd7f7609c739
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -6685,7 +6685,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6af6ef1238dbc8d10d06c726
+                                 * @example 6af6f9380974dd7f7609c73a
                                  */
                                 accountId: string;
                                 /**
@@ -7049,7 +7049,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6af6ef1238dbc8d10d06c726
+                             * @example 6af6f9380974dd7f7609c73a
                              */
                             accountId: string;
                             /**
@@ -7363,7 +7363,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6af6ef1238dbc8d10d06c727
+                     * @example 6af6f9380974dd7f7609c73b
                      */
                     accountId?: string;
                 };
@@ -7381,7 +7381,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6af6ef1238dbc8d10d06c727
+                     * @example 6af6f9380974dd7f7609c73b
                      */
                     accountId?: string;
                 };
@@ -7399,7 +7399,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6af6ef1238dbc8d10d06c727
+                     * @example 6af6f9380974dd7f7609c73b
                      */
                     accountId?: string;
                 };
@@ -7465,7 +7465,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6af6ef1238dbc8d10d06c726
+                             * @example 6af6f9380974dd7f7609c73a
                              */
                             accountId: string;
                             /**
@@ -22826,7 +22826,7 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique identifier for the debit card
-                             * @example 6af6ef1238dbc8d10d06c72b
+                             * @example 6af6f9380974dd7f7609c73f
                              */
                             id: string;
                             /** @enum {string} */
@@ -23347,7 +23347,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6af6ef1238dbc8d10d06c72b
+                         * @example 6af6f9380974dd7f7609c73f
                          */
                         id: string;
                         /** @enum {string} */
@@ -23637,7 +23637,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6af6ef1238dbc8d10d06c72b
+                         * @example 6af6f9380974dd7f7609c73f
                          */
                         id: string;
                         /** @enum {string} */
@@ -24304,7 +24304,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6af6ef1238dbc8d10d06c72b
+                         * @example 6af6f9380974dd7f7609c73f
                          */
                         id: string;
                         /** @enum {string} */
@@ -24639,7 +24639,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6af6ef1238dbc8d10d06c72f
+                         * @example 6af6f9390974dd7f7609c743
                          */
                         userId: string;
                         /**
@@ -24655,7 +24655,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-11-13T12:05:54.879Z
+                         * @example 2026-11-13T12:49:13.268Z
                          */
                         expiresAt: string;
                     };
@@ -24927,7 +24927,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-11-13T11:05:54.879Z
+                         * @example 2026-11-13T11:49:13.267Z
                          */
                         createdAt: string;
                     };
@@ -25213,7 +25213,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description ID of the account this request resolved to: the account it created or, where account reuse is enabled, the existing account this email resolves to for you (your own, or one you are currently authorized for through an existing authorization). With reuse enabled, a repeat for the same email returns the same ID.
-                         * @example 6af6ef1238dbc8d10d06c731
+                         * @example 6af6f9390974dd7f7609c745
                          */
                         userId: string;
                         /**
@@ -25705,7 +25705,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6af6ef1238dbc8d10d06c72e
+                             * @example 6af6f9390974dd7f7609c742
                              */
                             userId: string;
                             /**
@@ -25990,7 +25990,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6af6ef1238dbc8d10d06c72e
+                         * @example 6af6f9390974dd7f7609c742
                          */
                         userId: string;
                         /**
@@ -26256,7 +26256,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6af6ef1238dbc8d10d06c730
+                         * @example 6af6f9390974dd7f7609c744
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -26560,7 +26560,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6af6ef1238dbc8d10d06c730
+                         * @example 6af6f9390974dd7f7609c744
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -30417,7 +30417,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6af6ef1238dbc8d10d06c730
+                         * @example 6af6f9390974dd7f7609c744
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -31057,7 +31057,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-11-13T11:10:54.879Z
+                         * @example 2026-11-13T11:54:13.268Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -31301,7 +31301,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6af6ef1238dbc8d10d06c72c
+                         * @example 6af6f9390974dd7f7609c740
                          */
                         id: string;
                         /**
@@ -31318,7 +31318,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-13T11:05:54.877Z
+                         * @example 2026-11-13T11:49:13.255Z
                          */
                         signedUpAt: string;
                         /**
@@ -31797,7 +31797,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6af6ef1238dbc8d10d06c72c
+                         * @example 6af6f9390974dd7f7609c740
                          */
                         id: string;
                         /**
@@ -31814,7 +31814,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-13T11:05:54.877Z
+                         * @example 2026-11-13T11:49:13.255Z
                          */
                         signedUpAt: string;
                         /**
@@ -32657,7 +32657,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6af6ef1238dbc8d10d06c72c
+                         * @example 6af6f9390974dd7f7609c740
                          */
                         id: string;
                         /**
@@ -32674,7 +32674,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-13T11:05:54.877Z
+                         * @example 2026-11-13T11:49:13.255Z
                          */
                         signedUpAt: string;
                         /**
