@@ -134,9 +134,13 @@ export type { AcceptTermsRequest, AcceptTermsResponse } from './modules/terms/te
 export type {
     AgreementType,
     AgreementsAcceptanceRequest,
+    AgreementsPlacement,
     AgreementsPresentation,
     AgreementsReceipt,
+    AgreementsScreen,
+    AgreementsScreenKind,
     AgreementsState,
+    AgreementsTextSegment,
     CreateAgreementsPresentationRequest,
     CreateAgreementsPresentationResponse,
 } from './modules/agreements/agreementsService'
