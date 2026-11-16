@@ -4566,7 +4566,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description Creation timestamp
-                         * @example 2026-11-13T11:49:12.976Z
+                         * @example 2026-11-16T12:30:13.044Z
                          */
                         createdAt?: string;
                     }[];
@@ -4804,7 +4804,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6af6f9380974dd7f7609c738
+                     * @example 6afaf7552f86d55e4d709d24
                      */
                     accountId: string;
                     /**
@@ -4832,7 +4832,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6af6f9380974dd7f7609c738
+                     * @example 6afaf7552f86d55e4d709d24
                      */
                     accountId: string;
                     /**
@@ -4860,7 +4860,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6af6f9380974dd7f7609c738
+                     * @example 6afaf7552f86d55e4d709d24
                      */
                     accountId: string;
                     /**
@@ -4907,7 +4907,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-13T11:49:12.955Z
+                         * @example 2026-11-16T12:30:13.024Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4946,7 +4946,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6af6f9380974dd7f7609c739
+                             * @example 6afaf7552f86d55e4d709d25
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5276,7 +5276,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-13T11:49:12.955Z
+                         * @example 2026-11-16T12:30:13.024Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -5315,7 +5315,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6af6f9380974dd7f7609c739
+                             * @example 6afaf7552f86d55e4d709d25
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -6270,7 +6270,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-13T11:49:12.955Z
+                         * @example 2026-11-16T12:30:13.024Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -6309,7 +6309,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6af6f9380974dd7f7609c739
+                             * @example 6afaf7552f86d55e4d709d25
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -6685,7 +6685,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6af6f9380974dd7f7609c73a
+                                 * @example 6afaf7552f86d55e4d709d26
                                  */
                                 accountId: string;
                                 /**
@@ -7049,7 +7049,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6af6f9380974dd7f7609c73a
+                             * @example 6afaf7552f86d55e4d709d26
                              */
                             accountId: string;
                             /**
@@ -7363,7 +7363,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6af6f9380974dd7f7609c73b
+                     * @example 6afaf7552f86d55e4d709d27
                      */
                     accountId?: string;
                 };
@@ -7381,7 +7381,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6af6f9380974dd7f7609c73b
+                     * @example 6afaf7552f86d55e4d709d27
                      */
                     accountId?: string;
                 };
@@ -7399,7 +7399,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6af6f9380974dd7f7609c73b
+                     * @example 6afaf7552f86d55e4d709d27
                      */
                     accountId?: string;
                 };
@@ -7465,7 +7465,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6af6f9380974dd7f7609c73a
+                             * @example 6afaf7552f86d55e4d709d26
                              */
                             accountId: string;
                             /**
@@ -13487,6 +13487,11 @@ export interface operations {
                             cancellable: boolean;
                             /**
                              * Format: date-time
+                             * @description Protected cancellation deadline. A cancellation durably recorded before this time prevents bank submission. The window starts after server acceptance: one hour in production, one minute in staging. Null for deposits without a protected window. Cancellation may remain possible afterward; consult cancellable.
+                             */
+                            cancellableUntil: string | null;
+                            /**
+                             * Format: date-time
                              * @description When the user's cancellation was confirmed
                              */
                             cancelledAt: string | null;
@@ -13959,6 +13964,11 @@ export interface operations {
                         cancellable: boolean;
                         /**
                          * Format: date-time
+                         * @description Protected cancellation deadline. A cancellation durably recorded before this time prevents bank submission. The window starts after server acceptance: one hour in production, one minute in staging. Null for deposits without a protected window. Cancellation may remain possible afterward; consult cancellable.
+                         */
+                        cancellableUntil: string | null;
+                        /**
+                         * Format: date-time
                          * @description When the user's cancellation was confirmed
                          */
                         cancelledAt: string | null;
@@ -14355,6 +14365,11 @@ export interface operations {
                         cancellable: boolean;
                         /**
                          * Format: date-time
+                         * @description Protected cancellation deadline. A cancellation durably recorded before this time prevents bank submission. The window starts after server acceptance: one hour in production, one minute in staging. Null for deposits without a protected window. Cancellation may remain possible afterward; consult cancellable.
+                         */
+                        cancellableUntil: string | null;
+                        /**
+                         * Format: date-time
                          * @description When the user's cancellation was confirmed
                          */
                         cancelledAt: string | null;
@@ -14447,6 +14462,11 @@ export interface operations {
                         payoutTxHash: string | null;
                         /** @description Whether the user can cancel this deposit now via POST /v1/deposits/{depositId}/cancel. True only before the bank debit is transmitted and before any crypto is released. Advisory: the cancel call re-checks and may still refuse. */
                         cancellable: boolean;
+                        /**
+                         * Format: date-time
+                         * @description Protected cancellation deadline. A cancellation durably recorded before this time prevents bank submission. The window starts after server acceptance: one hour in production, one minute in staging. Null for deposits without a protected window. Cancellation may remain possible afterward; consult cancellable.
+                         */
+                        cancellableUntil: string | null;
                         /**
                          * Format: date-time
                          * @description When the user's cancellation was confirmed
@@ -14992,10 +15012,10 @@ export interface operations {
                          * @example v1
                          * @enum {string}
                          */
-                        messageVersion: "v1" | "fomo_v1" | "fomo_v2";
+                        messageVersion: "v1" | "fomo_v1" | "fomo_v2" | "v2" | "fomo_v3" | "fomo_v4";
                         /** @description Display-ready ACH authorization message */
                         message: string;
-                        /** @description The authorization paragraph alone, a verbatim part of `message`. When `messageVersion` is `fomo_v2` the paragraph is self-contained: clients that lay out amounts and fees in their own UI must still display it word for word on the confirmation screen. For every other version, display `message` in full. */
+                        /** @description The authorization paragraph alone, a verbatim part of `message`. When `messageVersion` is `fomo_v2` or `fomo_v4` the paragraph is self-contained: clients that lay out amounts and fees in their own UI must still display it word for word on the confirmation screen. For every other version, display `message` in full. */
                         authorizationStatement: string;
                         /**
                          * @description Short-lived, preparation-bound bearer capability returned for integrator preparations. Send it only to the authorizing client, which uses it to submit this preparation directly to Spritz.
@@ -15583,6 +15603,12 @@ export interface operations {
                      * @example 1.1.1.1
                      */
                     clientIp?: string;
+                    /**
+                     * @description What to do when the preparation quoted an instant portion and none of it can be granted at create. `standard` (also the behaviour when omitted) proceeds with settlement-only timing. `confirm` creates nothing and returns 409 `instant_unavailable`; after the user agrees to standard timing, submit the same preparationId again with `standard` and a new Idempotency-Key. A partly reduced instant portion always proceeds.
+                     * @default standard
+                     * @enum {string}
+                     */
+                    instantFallback?: "standard" | "confirm";
                 };
                 "application/x-www-form-urlencoded": {
                     /**
@@ -15595,6 +15621,12 @@ export interface operations {
                      * @example 1.1.1.1
                      */
                     clientIp?: string;
+                    /**
+                     * @description What to do when the preparation quoted an instant portion and none of it can be granted at create. `standard` (also the behaviour when omitted) proceeds with settlement-only timing. `confirm` creates nothing and returns 409 `instant_unavailable`; after the user agrees to standard timing, submit the same preparationId again with `standard` and a new Idempotency-Key. A partly reduced instant portion always proceeds.
+                     * @default standard
+                     * @enum {string}
+                     */
+                    instantFallback?: "standard" | "confirm";
                 };
                 "multipart/form-data": {
                     /**
@@ -15607,6 +15639,12 @@ export interface operations {
                      * @example 1.1.1.1
                      */
                     clientIp?: string;
+                    /**
+                     * @description What to do when the preparation quoted an instant portion and none of it can be granted at create. `standard` (also the behaviour when omitted) proceeds with settlement-only timing. `confirm` creates nothing and returns 409 `instant_unavailable`; after the user agrees to standard timing, submit the same preparationId again with `standard` and a new Idempotency-Key. A partly reduced instant portion always proceeds.
+                     * @default standard
+                     * @enum {string}
+                     */
+                    instantFallback?: "standard" | "confirm";
                 };
             };
         };
@@ -15697,6 +15735,11 @@ export interface operations {
                         payoutTxHash: string | null;
                         /** @description Whether the user can cancel this deposit now via POST /v1/deposits/{depositId}/cancel. True only before the bank debit is transmitted and before any crypto is released. Advisory: the cancel call re-checks and may still refuse. */
                         cancellable: boolean;
+                        /**
+                         * Format: date-time
+                         * @description Protected cancellation deadline. A cancellation durably recorded before this time prevents bank submission. The window starts after server acceptance: one hour in production, one minute in staging. Null for deposits without a protected window. Cancellation may remain possible afterward; consult cancellable.
+                         */
+                        cancellableUntil: string | null;
                         /**
                          * Format: date-time
                          * @description When the user's cancellation was confirmed
@@ -22826,7 +22869,7 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique identifier for the debit card
-                             * @example 6af6f9380974dd7f7609c73f
+                             * @example 6afaf7552f86d55e4d709d2b
                              */
                             id: string;
                             /** @enum {string} */
@@ -23347,7 +23390,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6af6f9380974dd7f7609c73f
+                         * @example 6afaf7552f86d55e4d709d2b
                          */
                         id: string;
                         /** @enum {string} */
@@ -23637,7 +23680,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6af6f9380974dd7f7609c73f
+                         * @example 6afaf7552f86d55e4d709d2b
                          */
                         id: string;
                         /** @enum {string} */
@@ -24304,7 +24347,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6af6f9380974dd7f7609c73f
+                         * @example 6afaf7552f86d55e4d709d2b
                          */
                         id: string;
                         /** @enum {string} */
@@ -24639,7 +24682,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6af6f9390974dd7f7609c743
+                         * @example 6afaf7552f86d55e4d709d2f
                          */
                         userId: string;
                         /**
@@ -24655,7 +24698,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-11-13T12:49:13.268Z
+                         * @example 2026-11-16T13:30:13.407Z
                          */
                         expiresAt: string;
                     };
@@ -24927,7 +24970,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-11-13T11:49:13.267Z
+                         * @example 2026-11-16T12:30:13.406Z
                          */
                         createdAt: string;
                     };
@@ -25213,7 +25256,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description ID of the account this request resolved to: the account it created or, where account reuse is enabled, the existing account this email resolves to for you (your own, or one you are currently authorized for through an existing authorization). With reuse enabled, a repeat for the same email returns the same ID.
-                         * @example 6af6f9390974dd7f7609c745
+                         * @example 6afaf7552f86d55e4d709d31
                          */
                         userId: string;
                         /**
@@ -25705,7 +25748,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6af6f9390974dd7f7609c742
+                             * @example 6afaf7552f86d55e4d709d2e
                              */
                             userId: string;
                             /**
@@ -25990,7 +26033,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6af6f9390974dd7f7609c742
+                         * @example 6afaf7552f86d55e4d709d2e
                          */
                         userId: string;
                         /**
@@ -26256,7 +26299,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6af6f9390974dd7f7609c744
+                         * @example 6afaf7552f86d55e4d709d30
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -26560,7 +26603,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6af6f9390974dd7f7609c744
+                         * @example 6afaf7552f86d55e4d709d30
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -30417,7 +30460,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6af6f9390974dd7f7609c744
+                         * @example 6afaf7552f86d55e4d709d30
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -31057,7 +31100,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-11-13T11:54:13.268Z
+                         * @example 2026-11-16T12:35:13.407Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -31301,7 +31344,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6af6f9390974dd7f7609c740
+                         * @example 6afaf7552f86d55e4d709d2c
                          */
                         id: string;
                         /**
@@ -31318,7 +31361,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-13T11:49:13.255Z
+                         * @example 2026-11-16T12:30:13.330Z
                          */
                         signedUpAt: string;
                         /**
@@ -31797,7 +31840,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6af6f9390974dd7f7609c740
+                         * @example 6afaf7552f86d55e4d709d2c
                          */
                         id: string;
                         /**
@@ -31814,7 +31857,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-13T11:49:13.255Z
+                         * @example 2026-11-16T12:30:13.330Z
                          */
                         signedUpAt: string;
                         /**
@@ -32657,7 +32700,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6af6f9390974dd7f7609c740
+                         * @example 6afaf7552f86d55e4d709d2c
                          */
                         id: string;
                         /**
@@ -32674,7 +32717,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-13T11:49:13.255Z
+                         * @example 2026-11-16T12:30:13.330Z
                          */
                         signedUpAt: string;
                         /**
@@ -47365,10 +47408,10 @@ export interface operations {
                          * @example v1
                          * @enum {string}
                          */
-                        messageVersion: "v1" | "fomo_v1" | "fomo_v2";
+                        messageVersion: "v1" | "fomo_v1" | "fomo_v2" | "v2" | "fomo_v3" | "fomo_v4";
                         /** @description Display-ready ACH authorization message */
                         message: string;
-                        /** @description The authorization paragraph alone, a verbatim part of `message`. When `messageVersion` is `fomo_v2` the paragraph is self-contained: clients that lay out amounts and fees in their own UI must still display it word for word on the confirmation screen. For every other version, display `message` in full. */
+                        /** @description The authorization paragraph alone, a verbatim part of `message`. When `messageVersion` is `fomo_v2` or `fomo_v4` the paragraph is self-contained: clients that lay out amounts and fees in their own UI must still display it word for word on the confirmation screen. For every other version, display `message` in full. */
                         authorizationStatement: string;
                         /**
                          * @description Short-lived, preparation-bound bearer capability returned for integrator preparations. Send it only to the authorizing client, which uses it to submit this preparation directly to Spritz.
@@ -47973,6 +48016,12 @@ export interface operations {
                          */
                         profile: "refunded" | "release_failed" | "release_stalled" | "full_delivery" | "partial_then_full_delivery";
                     };
+                    /**
+                     * @description What to do when the preparation quoted an instant portion and none of it can be granted at create. `standard` (also the behaviour when omitted) proceeds with settlement-only timing. `confirm` creates nothing and returns 409 `instant_unavailable`; after the user agrees to standard timing, submit the same preparationId again with `standard` and a new Idempotency-Key. A partly reduced instant portion always proceeds.
+                     * @default standard
+                     * @enum {string}
+                     */
+                    instantFallback?: "standard" | "confirm";
                 };
                 "application/x-www-form-urlencoded": {
                     /**
@@ -48002,6 +48051,12 @@ export interface operations {
                          */
                         profile: "refunded" | "release_failed" | "release_stalled" | "full_delivery" | "partial_then_full_delivery";
                     };
+                    /**
+                     * @description What to do when the preparation quoted an instant portion and none of it can be granted at create. `standard` (also the behaviour when omitted) proceeds with settlement-only timing. `confirm` creates nothing and returns 409 `instant_unavailable`; after the user agrees to standard timing, submit the same preparationId again with `standard` and a new Idempotency-Key. A partly reduced instant portion always proceeds.
+                     * @default standard
+                     * @enum {string}
+                     */
+                    instantFallback?: "standard" | "confirm";
                 };
                 "multipart/form-data": {
                     /**
@@ -48031,6 +48086,12 @@ export interface operations {
                          */
                         profile: "refunded" | "release_failed" | "release_stalled" | "full_delivery" | "partial_then_full_delivery";
                     };
+                    /**
+                     * @description What to do when the preparation quoted an instant portion and none of it can be granted at create. `standard` (also the behaviour when omitted) proceeds with settlement-only timing. `confirm` creates nothing and returns 409 `instant_unavailable`; after the user agrees to standard timing, submit the same preparationId again with `standard` and a new Idempotency-Key. A partly reduced instant portion always proceeds.
+                     * @default standard
+                     * @enum {string}
+                     */
+                    instantFallback?: "standard" | "confirm";
                 };
             };
         };
@@ -48121,6 +48182,11 @@ export interface operations {
                         payoutTxHash: string | null;
                         /** @description Whether the user can cancel this deposit now via POST /v1/deposits/{depositId}/cancel. True only before the bank debit is transmitted and before any crypto is released. Advisory: the cancel call re-checks and may still refuse. */
                         cancellable: boolean;
+                        /**
+                         * Format: date-time
+                         * @description Protected cancellation deadline. A cancellation durably recorded before this time prevents bank submission. The window starts after server acceptance: one hour in production, one minute in staging. Null for deposits without a protected window. Cancellation may remain possible afterward; consult cancellable.
+                         */
+                        cancellableUntil: string | null;
                         /**
                          * Format: date-time
                          * @description When the user's cancellation was confirmed

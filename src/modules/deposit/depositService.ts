@@ -101,6 +101,13 @@ export class DepositService {
      *
      * Integrator JWT is not accepted on this route because it cannot bind the
      * claimed `clientIp`; it remains valid on `prepare` and the read methods.
+     *
+     * With `instantFallback: 'confirm'`, a high-priority preparation that can
+     * get no instant portion throws a `ConflictError` with
+     * `problem.code === 'instant_unavailable'` instead of proceeding at
+     * standard timing. Nothing is created and the preparation stays usable:
+     * once the user accepts standard timing, call `create` again with the same
+     * `preparationId`, `instantFallback: 'standard'` and a new idempotency key.
      */
     public async create(input: CreateDepositRequest, options: CreateDepositOptions) {
         assertClientIpForIntegratorCreate(this.client, input)

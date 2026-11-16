@@ -1361,7 +1361,7 @@ ACH onramp lets users convert USD from their bank account into USDC delivered to
 3. **Server:** complete linking with `client.bankAccount.completeLinking(...)`
 4. **Server:** find an active funding source and fetch limits with `client.fundingSource.getDepositLimits(id)`
 5. **Server:** prepare a quote with `client.deposit.prepare(...)`
-6. **Client:** show the quote and ACH authorization `message` to the user. If your UI lays out the amounts from `summary` itself, show `authorizationStatement` word for word instead. That's only allowed when `messageVersion` is `fomo_v2`; for any other version, show `message` in full
+6. **Client:** show the quote and ACH authorization `message` to the user. If your UI lays out the amounts from `summary` itself, show `authorizationStatement` word for word instead. That's only allowed when `messageVersion` is `fomo_v2` or `fomo_v4`; for any other version, show `message` in full
 7. **Server:** create the deposit with `client.deposit.create(input, { idempotencyKey })`; Spritz runs risk checks before initiating the ACH pull. Persist one unique key per deposit intent and reuse it verbatim on retries so a timed-out request replays the original response instead of authorizing a second debit
 8. **Server:** track the deposit with `client.deposit.get(depositId)`, or reconcile a backlog by paging `client.deposit.list({ limit, cursor })`
 9. **Server (optional):** while `deposit.cancellable` is true, let the user call it off with `client.deposit.cancel(depositId)` (see [Cancelling a Deposit](docs/ach-onramp-guide.md#cancelling-a-deposit))
@@ -1397,6 +1397,8 @@ To move submission onto the customer's device, pass `clientNetwork: { ipAddresse
 `prepare` also accepts an optional `customerContext` object (at most 8192 encoded UTF-8 bytes) carrying partner-side context for later fraud analysis. Its field mapping is agreed privately per integration; missing, unknown or invalid fields never block preparation. Never send credentials or bank data in it.
 
 If risk checks block the create step, the API returns 409 before any ACH debit is pulled. Prepare a new quote before retrying; blocked create attempts consume the original `preparationId`.
+
+When a `priority: 'high'` preparation can get no instant portion at create, the deposit goes ahead at standard timing by default. Send `instantFallback: 'confirm'` to ask the user first: `create` then throws a `ConflictError` with `problem.code === 'instant_unavailable'` and leaves the preparation usable. Once the user accepts standard timing, call `create` again with the same `preparationId`, `instantFallback: 'standard'` and a new idempotency key. See [Confirming a fallback from instant](docs/ach-onramp-guide.md#confirming-a-fallback-from-instant).
 
 For a complete walkthrough with code examples, request/response schemas, and deposit lifecycle documentation, see the **[ACH Onramp Integration Guide](docs/ach-onramp-guide.md)**.
 
