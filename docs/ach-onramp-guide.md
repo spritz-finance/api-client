@@ -459,10 +459,14 @@ try {
     // Ask: "Instant isn't available for this deposit. It will arrive in
     // 1–3 business days. Continue?"
     if (!(await userAcceptsStandardTiming())) return null
-    return client.deposit.create(
-        { preparationId, clientIp: req.ip, instantFallback: 'standard' },
-        { idempotencyKey: crypto.randomUUID() }
-    )
+    // A new request: persist its key and body before sending, exactly as
+    // for the first attempt, so a timeout replays it instead of failing.
+    const retry = {
+        input: { preparationId, clientIp: req.ip, instantFallback: 'standard' as const },
+        idempotencyKey: crypto.randomUUID(),
+    }
+    await saveDepositAttempt(retry)
+    return client.deposit.create(retry.input, { idempotencyKey: retry.idempotencyKey })
 }
 ```
 
