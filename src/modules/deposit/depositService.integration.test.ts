@@ -311,6 +311,40 @@ describe('DepositService REST integration', () => {
         expect(error.error).toEqual(problem)
     })
 
+    it('sends instantFallback confirm and surfaces instant_unavailable for the retry', async () => {
+        const seen: { body?: unknown; key?: string | null } = {}
+        server.use(
+            http.post(`${BASE}/v1/deposits/direct`, async ({ request }) => {
+                seen.body = await request.json()
+                seen.key = request.headers.get('idempotency-key')
+                return HttpResponse.json(
+                    {
+                        type: 'about:blank',
+                        title: 'Conflict',
+                        status: 409,
+                        detail: 'Instant availability could not be granted; resubmit the same preparation with instantFallback standard to proceed at standard timing',
+                        code: 'instant_unavailable',
+                    },
+                    { status: 409, headers: { 'content-type': 'application/problem+json' } }
+                )
+            })
+        )
+
+        const error = await client.deposit
+            .create(
+                { preparationId: 'prep_123', clientIp: '1.1.1.1', instantFallback: 'confirm' },
+                { idempotencyKey: 'intent_confirm' }
+            )
+            .catch((err: unknown) => err)
+
+        expect(seen).toEqual({
+            body: { preparationId: 'prep_123', clientIp: '1.1.1.1', instantFallback: 'confirm' },
+            key: 'intent_confirm',
+        })
+        expect(error).toBeInstanceOf(ConflictError)
+        expect(hasProblemCode(error, 'instant_unavailable')).toBe(true)
+    })
+
     describe('cancel', () => {
         function respondToCancel(body: Record<string, unknown>, status: number) {
             const seen: { url?: string; headers?: Record<string, string> } = {}
