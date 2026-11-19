@@ -758,7 +758,7 @@ export interface paths {
         put?: never;
         /**
          * Complete bank account linking
-         * @description Completes the Plaid Link flow by exchanging the public token, retrieving account details, and storing the linked bank accounts.
+         * @description Completes the Plaid Link flow by exchanging the public token, retrieving account details, and storing the linked bank accounts. Public tokens expire 30 minutes after Link returns them and can be exchanged once: 409 `PLAID_PUBLIC_TOKEN_INVALID` means start a new Link session. 409 `PLAID_NO_ACCOUNTS` means the bank connection has no checking or savings account to link.
          */
         post: operations["postV1Bank-accountsLink-complete"];
         delete?: never;
@@ -4586,7 +4586,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description Creation timestamp
-                         * @example 2026-11-19T09:53:21.833Z
+                         * @example 2026-11-19T10:23:54.670Z
                          */
                         createdAt?: string;
                     }[];
@@ -4824,7 +4824,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6afec7118d861094a3a86e9b
+                     * @example 6afece3a96cb9f0f518d5709
                      */
                     accountId: string;
                     /**
@@ -4852,7 +4852,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6afec7118d861094a3a86e9b
+                     * @example 6afece3a96cb9f0f518d5709
                      */
                     accountId: string;
                     /**
@@ -4880,7 +4880,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6afec7118d861094a3a86e9b
+                     * @example 6afece3a96cb9f0f518d5709
                      */
                     accountId: string;
                     /**
@@ -4927,7 +4927,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-19T09:53:21.813Z
+                         * @example 2026-11-19T10:23:54.595Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4966,7 +4966,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6afec7118d861094a3a86e9c
+                             * @example 6afece3a96cb9f0f518d570a
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5296,7 +5296,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-19T09:53:21.813Z
+                         * @example 2026-11-19T10:23:54.595Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -5335,7 +5335,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6afec7118d861094a3a86e9c
+                             * @example 6afece3a96cb9f0f518d570a
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -6290,7 +6290,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-19T09:53:21.813Z
+                         * @example 2026-11-19T10:23:54.595Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -6329,7 +6329,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6afec7118d861094a3a86e9c
+                             * @example 6afece3a96cb9f0f518d570a
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -6705,7 +6705,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6afec7118d861094a3a86e9d
+                                 * @example 6afece3a96cb9f0f518d570b
                                  */
                                 accountId: string;
                                 /**
@@ -7069,7 +7069,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6afec7118d861094a3a86e9d
+                             * @example 6afece3a96cb9f0f518d570b
                              */
                             accountId: string;
                             /**
@@ -7383,7 +7383,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6afec7118d861094a3a86e9e
+                     * @example 6afece3a96cb9f0f518d570c
                      */
                     accountId?: string;
                 };
@@ -7401,7 +7401,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6afec7118d861094a3a86e9e
+                     * @example 6afece3a96cb9f0f518d570c
                      */
                     accountId?: string;
                 };
@@ -7419,7 +7419,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6afec7118d861094a3a86e9e
+                     * @example 6afece3a96cb9f0f518d570c
                      */
                     accountId?: string;
                 };
@@ -7485,7 +7485,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6afec7118d861094a3a86e9d
+                             * @example 6afece3a96cb9f0f518d570b
                              */
                             accountId: string;
                             /**
@@ -13529,7 +13529,7 @@ export interface operations {
                             principalAmountUsd: string;
                             instantPortionUsd: string;
                             /**
-                             * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Remove the bank and link it again to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
+                             * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Reconnect the bank (`POST /v1/bank-accounts/link-token` with its `bankAccountId`; it keeps its IDs) to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
                              * @example null
                              * @enum {string|null}
                              */
@@ -14012,7 +14012,7 @@ export interface operations {
                         principalAmountUsd: string;
                         instantPortionUsd: string;
                         /**
-                         * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Remove the bank and link it again to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
+                         * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Reconnect the bank (`POST /v1/bank-accounts/link-token` with its `bankAccountId`; it keeps its IDs) to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
                          * @example null
                          * @enum {string|null}
                          */
@@ -14419,7 +14419,7 @@ export interface operations {
                         principalAmountUsd: string;
                         instantPortionUsd: string;
                         /**
-                         * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Remove the bank and link it again to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
+                         * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Reconnect the bank (`POST /v1/bank-accounts/link-token` with its `bankAccountId`; it keeps its IDs) to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
                          * @example null
                          * @enum {string|null}
                          */
@@ -14524,7 +14524,7 @@ export interface operations {
                         principalAmountUsd: string;
                         instantPortionUsd: string;
                         /**
-                         * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Remove the bank and link it again to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
+                         * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Reconnect the bank (`POST /v1/bank-accounts/link-token` with its `bankAccountId`; it keeps its IDs) to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
                          * @example null
                          * @enum {string|null}
                          */
@@ -15252,7 +15252,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /**
-                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs relinking; remove the bank and link it again, then retry). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
+                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs reconnecting; reconnect it with `POST /v1/bank-accounts/link-token` and its `bankAccountId`, then prepare again). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
                          * @enum {string}
                          */
                         reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
@@ -15803,7 +15803,7 @@ export interface operations {
                         principalAmountUsd: string;
                         instantPortionUsd: string;
                         /**
-                         * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Remove the bank and link it again to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
+                         * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Reconnect the bank (`POST /v1/bank-accounts/link-token` with its `bankAccountId`; it keeps its IDs) to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
                          * @example null
                          * @enum {string|null}
                          */
@@ -15942,7 +15942,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /**
-                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs relinking; remove the bank and link it again, then retry). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
+                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs reconnecting; reconnect it with `POST /v1/bank-accounts/link-token` and its `bankAccountId`, then prepare again). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
                          * @enum {string}
                          */
                         reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
@@ -16915,7 +16915,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /**
-                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs relinking; remove the bank and link it again, then retry). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
+                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs reconnecting; reconnect it with `POST /v1/bank-accounts/link-token` and its `bankAccountId`, then prepare again). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
                          * @enum {string}
                          */
                         reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
@@ -23290,7 +23290,7 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique identifier for the debit card
-                             * @example 6afec7118d861094a3a86ea2
+                             * @example 6afece3a96cb9f0f518d5710
                              */
                             id: string;
                             /** @enum {string} */
@@ -23811,7 +23811,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6afec7118d861094a3a86ea2
+                         * @example 6afece3a96cb9f0f518d5710
                          */
                         id: string;
                         /** @enum {string} */
@@ -24101,7 +24101,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6afec7118d861094a3a86ea2
+                         * @example 6afece3a96cb9f0f518d5710
                          */
                         id: string;
                         /** @enum {string} */
@@ -25015,7 +25015,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6afec7118d861094a3a86ea2
+                         * @example 6afece3a96cb9f0f518d5710
                          */
                         id: string;
                         /** @enum {string} */
@@ -25350,7 +25350,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6afec7128d861094a3a86ea6
+                         * @example 6afece3a96cb9f0f518d5714
                          */
                         userId: string;
                         /**
@@ -25366,7 +25366,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-11-19T10:53:22.221Z
+                         * @example 2026-11-19T11:23:54.969Z
                          */
                         expiresAt: string;
                     };
@@ -25638,7 +25638,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-11-19T09:53:22.220Z
+                         * @example 2026-11-19T10:23:54.968Z
                          */
                         createdAt: string;
                     };
@@ -25924,7 +25924,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description ID of the account this request resolved to: the account it created or, where account reuse is enabled, the existing account this email resolves to for you (your own, or one you are currently authorized for through an existing authorization). With reuse enabled, a repeat for the same email returns the same ID.
-                         * @example 6afec7128d861094a3a86ea8
+                         * @example 6afece3a96cb9f0f518d5716
                          */
                         userId: string;
                         /**
@@ -26416,7 +26416,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6afec7128d861094a3a86ea5
+                             * @example 6afece3a96cb9f0f518d5713
                              */
                             userId: string;
                             /**
@@ -26701,7 +26701,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6afec7128d861094a3a86ea5
+                         * @example 6afece3a96cb9f0f518d5713
                          */
                         userId: string;
                         /**
@@ -26967,7 +26967,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6afec7128d861094a3a86ea7
+                         * @example 6afece3a96cb9f0f518d5715
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -27271,7 +27271,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6afec7128d861094a3a86ea7
+                         * @example 6afece3a96cb9f0f518d5715
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -31128,7 +31128,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6afec7128d861094a3a86ea7
+                         * @example 6afece3a96cb9f0f518d5715
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -31768,7 +31768,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-11-19T09:58:22.222Z
+                         * @example 2026-11-19T10:28:54.969Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -32012,7 +32012,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6afec7128d861094a3a86ea3
+                         * @example 6afece3a96cb9f0f518d5711
                          */
                         id: string;
                         /**
@@ -32029,7 +32029,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-19T09:53:22.126Z
+                         * @example 2026-11-19T10:23:54.890Z
                          */
                         signedUpAt: string;
                         /**
@@ -32508,7 +32508,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6afec7128d861094a3a86ea3
+                         * @example 6afece3a96cb9f0f518d5711
                          */
                         id: string;
                         /**
@@ -32525,7 +32525,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-19T09:53:22.126Z
+                         * @example 2026-11-19T10:23:54.890Z
                          */
                         signedUpAt: string;
                         /**
@@ -33368,7 +33368,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6afec7128d861094a3a86ea3
+                         * @example 6afece3a96cb9f0f518d5711
                          */
                         id: string;
                         /**
@@ -33385,7 +33385,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-19T09:53:22.126Z
+                         * @example 2026-11-19T10:23:54.890Z
                          */
                         signedUpAt: string;
                         /**
@@ -47458,7 +47458,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /**
-                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs relinking; remove the bank and link it again, then retry). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
+                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs reconnecting; reconnect it with `POST /v1/bank-accounts/link-token` and its `bankAccountId`, then prepare again). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
                          * @enum {string}
                          */
                         reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
@@ -48196,7 +48196,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /**
-                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs relinking; remove the bank and link it again, then retry). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
+                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs reconnecting; reconnect it with `POST /v1/bank-accounts/link-token` and its `bankAccountId`, then prepare again). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
                          * @enum {string}
                          */
                         reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
@@ -48798,7 +48798,7 @@ export interface operations {
                         principalAmountUsd: string;
                         instantPortionUsd: string;
                         /**
-                         * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Remove the bank and link it again to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
+                         * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Reconnect the bank (`POST /v1/bank-accounts/link-token` with its `bankAccountId`; it keeps its IDs) to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
                          * @example null
                          * @enum {string|null}
                          */
@@ -48937,7 +48937,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /**
-                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs relinking; remove the bank and link it again, then retry). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
+                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs reconnecting; reconnect it with `POST /v1/bank-accounts/link-token` and its `bankAccountId`, then prepare again). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
                          * @enum {string}
                          */
                         reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
@@ -49917,7 +49917,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /**
-                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs relinking; remove the bank and link it again, then retry). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
+                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs reconnecting; reconnect it with `POST /v1/bank-accounts/link-token` and its `bankAccountId`, then prepare again). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
                          * @enum {string}
                          */
                         reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
