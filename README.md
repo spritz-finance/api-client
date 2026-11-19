@@ -622,6 +622,39 @@ Some institutions send the user out to their bank's OAuth page and redirect back
 
 Pass the same value as `redirectUri` when creating the link token. The client-side work to resume the flow differs per platform (web requires re-initializing Link with `receivedRedirectUri`; native iOS/Android forward the redirect into the in-memory SDK). See [Handle OAuth redirects](docs/ach-onramp-guide.md#1c-handle-oauth-redirects) in the ACH Onramp guide for the full per-platform breakdown.
 
+##### Reconnect a bank account
+
+Banks cut Plaid connections (password changes, expired consent). At Chase, PNC and U.S. Bank the account number Plaid returns belongs to the connection, so it can stop working when the connection breaks. Every bank account and funding source carries `connectionStatus`:
+
+| `connectionStatus`   | Meaning                                                                                        |
+| -------------------- | ---------------------------------------------------------------------------------------------- |
+| `connected`          | Nothing to do                                                                                  |
+| `expiring`           | The bank will cut the connection soon; offer a reconnect                                       |
+| `reconnect_required` | The connection is cut or the number stopped working; reconnect before paying to or debiting it |
+| `not_applicable`     | Entered by hand, not linked through Plaid; nothing to reconnect                                |
+
+To reconnect, create a link token for the bank account and run Plaid Link as usual. The bank account and its funding source keep their IDs:
+
+```typescript
+const { linkToken, hostedLinkUrl } = await client.bankAccount.createLinkToken({
+    bankAccountId: bankAccount.id,
+})
+```
+
+With the Link SDK, pass the same `bankAccountId` when completing:
+
+```typescript
+await client.bankAccount.completeLinking({
+    publicToken,
+    accountIds,
+    institutionId,
+    institutionName,
+    bankAccountId: bankAccount.id,
+})
+```
+
+If the user picks a different account at the bank, `completeLinking` throws a `ConflictError` with `problem.code === 'PLAID_ITEM_NOT_REPAIRABLE'` and nothing is linked; ask them to choose the same account. With Hosted Link, Spritz completes the reconnect when the session finishes. `bankAccountId` works whether or not the bank account has a funding source, so use it for payout destinations too; `fundingSourceId` is accepted in its place for funding sources.
+
 ##### Fall back to manual entry
 
 Plaid Link can be unavailable — it may not be enabled on your integration yet, `createLinkToken()` can fail, or the user may abandon or hit an error in the Link UI. Treat manual account/routing entry as a fallback so users can always add a bank account:
@@ -1361,7 +1394,7 @@ ACH onramp lets users convert USD from their bank account into USDC delivered to
 3. **Server:** complete linking with `client.bankAccount.completeLinking(...)`
 4. **Server:** find an active funding source and fetch limits with `client.fundingSource.getDepositLimits(id)`
 5. **Server:** prepare a quote with `client.deposit.prepare(...)`
-6. **Client:** show the quote and ACH authorization `message` to the user. If your UI lays out the amounts from `summary` itself, show `authorizationStatement` word for word instead. That's only allowed when `messageVersion` is `fomo_v2` or `fomo_v4`; for any other version, show `message` in full
+6. **Client:** show the quote and ACH authorization `message` to the user. If your UI lays out the amounts from `summary` itself, show `authorizationStatement` word for word instead. That's only allowed when `messageVersion` is `fomo_v2`; for any other version, show `message` in full
 7. **Server:** create the deposit with `client.deposit.create(input, { idempotencyKey })`; Spritz runs risk checks before initiating the ACH pull. Persist one unique key per deposit intent and reuse it verbatim on retries so a timed-out request replays the original response instead of authorizing a second debit
 8. **Server:** track the deposit with `client.deposit.get(depositId)`, or reconcile a backlog by paging `client.deposit.list({ limit, cursor })`
 9. **Server (optional):** while `deposit.cancellable` is true, let the user call it off with `client.deposit.cancel(depositId)` (see [Cancelling a Deposit](docs/ach-onramp-guide.md#cancelling-a-deposit))
