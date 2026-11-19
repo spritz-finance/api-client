@@ -137,6 +137,45 @@ describe('BankAccountService', () => {
         expect(result).toEqual(response)
     })
 
+    it('creates a link token that reconnects a bank account', async () => {
+        const response = {
+            linkToken: 'link-sandbox-123',
+            hostedLinkUrl: null,
+            expiration: '2026-01-01T00:00:00Z',
+            requestId: 'req_123',
+        }
+
+        vi.mocked(mockClient.restApi).mockResolvedValue(response)
+
+        await bankAccountService.createLinkToken({ bankAccountId: 'ba_123' })
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'post',
+            path: '/v1/bank-accounts/link-token',
+            body: { bankAccountId: 'ba_123' },
+        })
+    })
+
+    it('completes a reconnect for the bank account it targets', async () => {
+        const input = {
+            publicToken: 'public-sandbox-123',
+            accountIds: ['plaid-account-123'],
+            institutionId: 'ins_123',
+            institutionName: 'Plaid Test Bank',
+            bankAccountId: 'ba_123',
+        }
+
+        vi.mocked(mockClient.restApi).mockResolvedValue({ bankAccounts: [] })
+
+        await bankAccountService.completeLinking(input)
+
+        expect(mockClient.restApi).toHaveBeenCalledWith({
+            method: 'post',
+            path: '/v1/bank-accounts/link-complete',
+            body: input,
+        })
+    })
+
     it('completes Plaid linking with selected account metadata', async () => {
         const input = {
             publicToken: 'public-sandbox-123',

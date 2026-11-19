@@ -599,7 +599,7 @@ export interface paths {
         post?: never;
         /**
          * Remove a funding source
-         * @description Removes a funding source and releases the bank connection behind it, so the same bank account can be linked again. The underlying bank account is not deleted. An account disabled after a returned payment cannot be linked again once removed.
+         * @description Removes a funding source and releases the bank connection behind it, so the same bank account can be linked again. The underlying bank account is not deleted. An account disabled after a returned payment or by a risk block cannot be linked again once removed: linking it returns 409 `PLAID_ACCOUNT_BLOCKED`.
          */
         delete: operations["deleteV1Funding-sourcesByFundingSourceId"];
         options?: never;
@@ -738,7 +738,7 @@ export interface paths {
         put?: never;
         /**
          * Create a bank account link token
-         * @description Creates a Plaid Link token and hosted URL for linking a bank account. Use the linkToken with Plaid Link SDK, or open hostedLinkUrl in a browser/webview.
+         * @description Creates a Plaid Link token and hosted URL for linking a bank account. Use the linkToken with Plaid Link SDK, or open hostedLinkUrl in a browser/webview. To reconnect an existing bank connection (Plaid update mode), pass `bankAccountId` when a bank account's `connectionStatus` is `reconnect_required` or `expiring` (or `fundingSourceId` after a deposit returns `bank_relink_required`). 404 `PLAID_BANK_ACCOUNT_NOT_FOUND` / `PLAID_FUNDING_SOURCE_NOT_FOUND` means no such Plaid-linked account; 409 `PLAID_ITEM_NOT_REPAIRABLE` (from link-complete) means the bank returned a different account than the one being reconnected.
          */
         post: operations["postV1Bank-accountsLink-token"];
         delete?: never;
@@ -758,7 +758,7 @@ export interface paths {
         put?: never;
         /**
          * Complete bank account linking
-         * @description Completes the Plaid Link flow by exchanging the public token, retrieving account details, and storing the linked bank accounts.
+         * @description Completes the Plaid Link flow by exchanging the public token, retrieving account details, and storing the linked bank accounts. Public tokens expire 30 minutes after Link returns them and can be exchanged once: 409 `PLAID_PUBLIC_TOKEN_INVALID` means start a new Link session. 409 `PLAID_NO_ACCOUNTS` means the bank connection has no checking or savings account to link.
          */
         post: operations["postV1Bank-accountsLink-complete"];
         delete?: never;
@@ -1234,6 +1234,26 @@ export interface paths {
          * @description Removes a debit card. The underlying payable account is soft-deleted.
          */
         delete: operations["deleteV1Debit-cardsByCardId"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/debit-cards/{cardId}/payment-limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get debit card payment limits
+         * @description Returns payment limits for a specific debit card, including per-transaction and daily volume limits.
+         */
+        get: operations["getV1Debit-cardsByCardIdPayment-limits"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2462,7 +2482,7 @@ export interface paths {
          *     - `review_required` → `risk_review_required`; the source remains active;
          *     - `rejected` → `risk_rejected`; the source remains active;
          *     - `source_temporarily_unavailable` → `risk_rerouted`; the source becomes temporarily ineligible with `statusReason: rerouted` and an `availableAt` time;
-         *     - `decision_unavailable` → `risk_evaluation_unavailable`; the source remains active.
+         *     - `decision_unavailable` → `risk_evaluation_unavailable` with `reason: temporarily_unavailable` and `retryable: true`; the source remains active.
          *
          *     High-priority simulations create a deposit successfully:
          *
@@ -2941,7 +2961,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3012,7 +3032,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3253,7 +3273,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3367,7 +3387,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3471,7 +3491,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3542,7 +3562,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3613,7 +3633,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3886,7 +3906,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -3957,7 +3977,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4153,7 +4173,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4300,7 +4320,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4371,7 +4391,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4442,7 +4462,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4513,7 +4533,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4566,7 +4586,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description Creation timestamp
-                         * @example 2026-11-16T12:30:13.044Z
+                         * @example 2026-11-19T10:23:54.670Z
                          */
                         createdAt?: string;
                     }[];
@@ -4713,7 +4733,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4784,7 +4804,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -4804,7 +4824,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6afaf7552f86d55e4d709d24
+                     * @example 6afece3a96cb9f0f518d5709
                      */
                     accountId: string;
                     /**
@@ -4832,7 +4852,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6afaf7552f86d55e4d709d24
+                     * @example 6afece3a96cb9f0f518d5709
                      */
                     accountId: string;
                     /**
@@ -4860,7 +4880,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6afaf7552f86d55e4d709d24
+                     * @example 6afece3a96cb9f0f518d5709
                      */
                     accountId: string;
                     /**
@@ -4907,7 +4927,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-16T12:30:13.024Z
+                         * @example 2026-11-19T10:23:54.595Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4946,7 +4966,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6afaf7552f86d55e4d709d25
+                             * @example 6afece3a96cb9f0f518d570a
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5167,7 +5187,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -5238,7 +5258,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -5276,7 +5296,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-16T12:30:13.024Z
+                         * @example 2026-11-19T10:23:54.595Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -5315,7 +5335,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6afaf7552f86d55e4d709d25
+                             * @example 6afece3a96cb9f0f518d570a
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5536,7 +5556,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -5607,7 +5627,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -5924,7 +5944,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -5995,7 +6015,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -6066,7 +6086,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -6137,7 +6157,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -6208,7 +6228,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -6270,7 +6290,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-16T12:30:13.024Z
+                         * @example 2026-11-19T10:23:54.595Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -6309,7 +6329,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6afaf7552f86d55e4d709d25
+                             * @example 6afece3a96cb9f0f518d570a
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -6530,7 +6550,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -6601,7 +6621,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -6685,7 +6705,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6afaf7552f86d55e4d709d26
+                                 * @example 6afece3a96cb9f0f518d570b
                                  */
                                 accountId: string;
                                 /**
@@ -6900,7 +6920,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -6971,7 +6991,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7049,7 +7069,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6afaf7552f86d55e4d709d26
+                             * @example 6afece3a96cb9f0f518d570b
                              */
                             accountId: string;
                             /**
@@ -7253,7 +7273,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7324,7 +7344,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7363,7 +7383,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6afaf7552f86d55e4d709d27
+                     * @example 6afece3a96cb9f0f518d570c
                      */
                     accountId?: string;
                 };
@@ -7381,7 +7401,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6afaf7552f86d55e4d709d27
+                     * @example 6afece3a96cb9f0f518d570c
                      */
                     accountId?: string;
                 };
@@ -7399,7 +7419,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6afaf7552f86d55e4d709d27
+                     * @example 6afece3a96cb9f0f518d570c
                      */
                     accountId?: string;
                 };
@@ -7465,7 +7485,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6afaf7552f86d55e4d709d26
+                             * @example 6afece3a96cb9f0f518d570b
                              */
                             accountId: string;
                             /**
@@ -7669,7 +7689,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -7740,7 +7760,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -8067,7 +8087,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -8138,7 +8158,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -8324,7 +8344,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -8395,7 +8415,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -8495,7 +8515,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -8642,7 +8662,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -8713,7 +8733,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -8784,7 +8804,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -8855,7 +8875,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -9165,7 +9185,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -9236,7 +9256,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -9321,8 +9341,14 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
-                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                         fundingSourceId: string | null;
+                        /**
+                         * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                         * @example connected
+                         * @enum {string}
+                         */
+                        connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                         /** @enum {string} */
                         type: "us";
                         /** @enum {string} */
@@ -9405,8 +9431,14 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
-                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                         fundingSourceId: string | null;
+                        /**
+                         * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                         * @example connected
+                         * @enum {string}
+                         */
+                        connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                         /** @enum {string} */
                         type: "ca";
                         /** @enum {string} */
@@ -9494,8 +9526,14 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
-                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                         fundingSourceId: string | null;
+                        /**
+                         * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                         * @example connected
+                         * @enum {string}
+                         */
+                        connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                         /** @enum {string} */
                         type: "uk";
                         /** @enum {string} */
@@ -9572,8 +9610,14 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
-                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                         fundingSourceId: string | null;
+                        /**
+                         * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                         * @example connected
+                         * @enum {string}
+                         */
+                        connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                         /** @enum {string} */
                         type: "iban";
                         /**
@@ -9736,7 +9780,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -9807,7 +9851,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -10634,8 +10678,14 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
-                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                         fundingSourceId: string | null;
+                        /**
+                         * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                         * @example connected
+                         * @enum {string}
+                         */
+                        connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                         /** @enum {string} */
                         type: "us";
                         /** @enum {string} */
@@ -10718,8 +10768,14 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
-                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                         fundingSourceId: string | null;
+                        /**
+                         * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                         * @example connected
+                         * @enum {string}
+                         */
+                        connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                         /** @enum {string} */
                         type: "ca";
                         /** @enum {string} */
@@ -10807,8 +10863,14 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
-                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                         fundingSourceId: string | null;
+                        /**
+                         * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                         * @example connected
+                         * @enum {string}
+                         */
+                        connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                         /** @enum {string} */
                         type: "uk";
                         /** @enum {string} */
@@ -10885,8 +10947,14 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
-                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                         fundingSourceId: string | null;
+                        /**
+                         * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                         * @example connected
+                         * @enum {string}
+                         */
+                        connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                         /** @enum {string} */
                         type: "iban";
                         /**
@@ -11049,7 +11117,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11120,7 +11188,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11207,8 +11275,14 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
-                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                         fundingSourceId: string | null;
+                        /**
+                         * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                         * @example connected
+                         * @enum {string}
+                         */
+                        connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                         /** @enum {string} */
                         type: "us";
                         /** @enum {string} */
@@ -11291,8 +11365,14 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
-                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                         fundingSourceId: string | null;
+                        /**
+                         * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                         * @example connected
+                         * @enum {string}
+                         */
+                        connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                         /** @enum {string} */
                         type: "ca";
                         /** @enum {string} */
@@ -11380,8 +11460,14 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
-                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                         fundingSourceId: string | null;
+                        /**
+                         * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                         * @example connected
+                         * @enum {string}
+                         */
+                        connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                         /** @enum {string} */
                         type: "uk";
                         /** @enum {string} */
@@ -11458,8 +11544,14 @@ export interface operations {
                          * @description When the account was created
                          */
                         createdAt: string;
-                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                        /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                         fundingSourceId: string | null;
+                        /**
+                         * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                         * @example connected
+                         * @enum {string}
+                         */
+                        connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                         /** @enum {string} */
                         type: "iban";
                         /**
@@ -11622,7 +11714,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11693,7 +11785,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11873,7 +11965,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11944,7 +12036,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -11963,7 +12055,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Payment limits for a bank account */
+            /** @description Payment limits for a payout account */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12120,7 +12212,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12191,7 +12283,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12282,6 +12374,8 @@ export interface operations {
                          * @description When the funding source was created
                          */
                         createdAt: string;
+                        /** @enum {string} */
+                        connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                     }[];
                 };
             };
@@ -12426,7 +12520,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12497,7 +12591,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12748,7 +12842,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12819,7 +12913,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -12912,6 +13006,8 @@ export interface operations {
                          * @description When the funding source was created
                          */
                         createdAt: string;
+                        /** @enum {string} */
+                        connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                     };
                 };
             };
@@ -13056,7 +13152,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13127,7 +13223,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13307,7 +13403,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13378,7 +13474,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13432,6 +13528,12 @@ export interface operations {
                             feeRateBps: number;
                             principalAmountUsd: string;
                             instantPortionUsd: string;
+                            /**
+                             * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Reconnect the bank (`POST /v1/bank-accounts/link-token` with its `bankAccountId`; it keeps its IDs) to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
+                             * @example null
+                             * @enum {string|null}
+                             */
+                            instantUnavailableReason: "bank_relink_required" | null;
                             settlementPortionUsd: string;
                             expectedAssetAmount: string;
                             grossFeeUsd: string;
@@ -13568,7 +13670,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13682,7 +13784,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13786,7 +13888,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13857,7 +13959,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -13909,6 +14011,12 @@ export interface operations {
                         feeRateBps: number;
                         principalAmountUsd: string;
                         instantPortionUsd: string;
+                        /**
+                         * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Reconnect the bank (`POST /v1/bank-accounts/link-token` with its `bankAccountId`; it keeps its IDs) to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
+                         * @example null
+                         * @enum {string|null}
+                         */
+                        instantUnavailableReason: "bank_relink_required" | null;
                         settlementPortionUsd: string;
                         expectedAssetAmount: string;
                         grossFeeUsd: string;
@@ -14083,7 +14191,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14187,7 +14295,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14258,7 +14366,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14310,6 +14418,12 @@ export interface operations {
                         feeRateBps: number;
                         principalAmountUsd: string;
                         instantPortionUsd: string;
+                        /**
+                         * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Reconnect the bank (`POST /v1/bank-accounts/link-token` with its `bankAccountId`; it keeps its IDs) to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
+                         * @example null
+                         * @enum {string|null}
+                         */
+                        instantUnavailableReason: "bank_relink_required" | null;
                         settlementPortionUsd: string;
                         expectedAssetAmount: string;
                         grossFeeUsd: string;
@@ -14409,6 +14523,12 @@ export interface operations {
                         feeRateBps: number;
                         principalAmountUsd: string;
                         instantPortionUsd: string;
+                        /**
+                         * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Reconnect the bank (`POST /v1/bank-accounts/link-token` with its `bankAccountId`; it keeps its IDs) to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
+                         * @example null
+                         * @enum {string|null}
+                         */
+                        instantUnavailableReason: "bank_relink_required" | null;
                         settlementPortionUsd: string;
                         expectedAssetAmount: string;
                         grossFeeUsd: string;
@@ -14583,7 +14703,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14687,7 +14807,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14758,7 +14878,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -14829,7 +14949,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15012,10 +15132,10 @@ export interface operations {
                          * @example v1
                          * @enum {string}
                          */
-                        messageVersion: "v1" | "fomo_v1" | "fomo_v2" | "v2" | "fomo_v3" | "fomo_v4";
+                        messageVersion: "v1" | "fomo_v1" | "fomo_v2" | "v2";
                         /** @description Display-ready ACH authorization message */
                         message: string;
-                        /** @description The authorization paragraph alone, a verbatim part of `message`. When `messageVersion` is `fomo_v2` or `fomo_v4` the paragraph is self-contained: clients that lay out amounts and fees in their own UI must still display it word for word on the confirmation screen. For every other version, display `message` in full. */
+                        /** @description The authorization paragraph alone, a verbatim part of `message`. When `messageVersion` is `fomo_v2` the paragraph is self-contained: clients that lay out amounts and fees in their own UI must still display it word for word on the confirmation screen. For every other version, display `message` in full. */
                         authorizationStatement: string;
                         /**
                          * @description Short-lived, preparation-bound bearer capability returned for integrator preparations. Send it only to the authorizing client, which uses it to submit this preparation directly to Spritz.
@@ -15132,10 +15252,10 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /**
-                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs reconnecting; reconnect it with `POST /v1/bank-accounts/link-token` and its `bankAccountId`, then prepare again). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
                          * @enum {string}
                          */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -15256,7 +15376,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15360,7 +15480,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15431,7 +15551,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15502,7 +15622,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15573,7 +15693,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -15682,6 +15802,12 @@ export interface operations {
                         feeRateBps: number;
                         principalAmountUsd: string;
                         instantPortionUsd: string;
+                        /**
+                         * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Reconnect the bank (`POST /v1/bank-accounts/link-token` with its `bankAccountId`; it keeps its IDs) to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
+                         * @example null
+                         * @enum {string|null}
+                         */
+                        instantUnavailableReason: "bank_relink_required" | null;
                         settlementPortionUsd: string;
                         expectedAssetAmount: string;
                         grossFeeUsd: string;
@@ -15816,10 +15942,10 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /**
-                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs reconnecting; reconnect it with `POST /v1/bank-accounts/link-token` and its `bankAccountId`, then prepare again). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
                          * @enum {string}
                          */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -15940,7 +16066,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16044,7 +16170,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16115,7 +16241,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16186,7 +16312,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16257,7 +16383,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16328,7 +16454,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16449,7 +16575,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16563,7 +16689,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16634,7 +16760,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16657,6 +16783,16 @@ export interface operations {
                      * @example https://app.example.com/plaid/oauth-return
                      */
                     redirectUri?: string;
+                    /**
+                     * @description Reconnect the bank connection behind this funding source instead of linking a new account (Plaid Link update mode, or a new Link session at the same bank when the connection no longer exists). Pass this or `bankAccountId`, not both. The user signs in to their bank again; the funding source and bank account keep their IDs. Complete it as any link: with the Link SDK, call link-complete with the public token; with Hosted Link, Spritz completes it when the session finishes. A 409 `PLAID_ITEM_NOT_REPAIRABLE` from link-complete means the bank returned a different account than this one (for example a new account number at a bank that does not tokenize), so it cannot replace it.
+                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    fundingSourceId?: string;
+                    /**
+                     * @description Reconnect the bank connection behind this bank account, for a bank account whose `connectionStatus` is `reconnect_required` or `expiring`. Spritz picks how: Plaid Link update mode while the connection exists, else a new Link session at the same bank whose account is carried onto this bank account (same IDs; selecting a different account is refused when link-complete gets this `bankAccountId`). Works whether or not the bank account has a funding source, so use it for payout destinations. Pass this or `fundingSourceId`, not both. Completes like `fundingSourceId`; 404 `PLAID_BANK_ACCOUNT_NOT_FOUND` means the bank account was not linked through a bank connection.
+                     * @example 66f1c0b2e4b0a1d2c3e4f5a6
+                     */
+                    bankAccountId?: string;
                 };
                 "application/x-www-form-urlencoded": {
                     /**
@@ -16664,6 +16800,16 @@ export interface operations {
                      * @example https://app.example.com/plaid/oauth-return
                      */
                     redirectUri?: string;
+                    /**
+                     * @description Reconnect the bank connection behind this funding source instead of linking a new account (Plaid Link update mode, or a new Link session at the same bank when the connection no longer exists). Pass this or `bankAccountId`, not both. The user signs in to their bank again; the funding source and bank account keep their IDs. Complete it as any link: with the Link SDK, call link-complete with the public token; with Hosted Link, Spritz completes it when the session finishes. A 409 `PLAID_ITEM_NOT_REPAIRABLE` from link-complete means the bank returned a different account than this one (for example a new account number at a bank that does not tokenize), so it cannot replace it.
+                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    fundingSourceId?: string;
+                    /**
+                     * @description Reconnect the bank connection behind this bank account, for a bank account whose `connectionStatus` is `reconnect_required` or `expiring`. Spritz picks how: Plaid Link update mode while the connection exists, else a new Link session at the same bank whose account is carried onto this bank account (same IDs; selecting a different account is refused when link-complete gets this `bankAccountId`). Works whether or not the bank account has a funding source, so use it for payout destinations. Pass this or `fundingSourceId`, not both. Completes like `fundingSourceId`; 404 `PLAID_BANK_ACCOUNT_NOT_FOUND` means the bank account was not linked through a bank connection.
+                     * @example 66f1c0b2e4b0a1d2c3e4f5a6
+                     */
+                    bankAccountId?: string;
                 };
                 "multipart/form-data": {
                     /**
@@ -16671,6 +16817,16 @@ export interface operations {
                      * @example https://app.example.com/plaid/oauth-return
                      */
                     redirectUri?: string;
+                    /**
+                     * @description Reconnect the bank connection behind this funding source instead of linking a new account (Plaid Link update mode, or a new Link session at the same bank when the connection no longer exists). Pass this or `bankAccountId`, not both. The user signs in to their bank again; the funding source and bank account keep their IDs. Complete it as any link: with the Link SDK, call link-complete with the public token; with Hosted Link, Spritz completes it when the session finishes. A 409 `PLAID_ITEM_NOT_REPAIRABLE` from link-complete means the bank returned a different account than this one (for example a new account number at a bank that does not tokenize), so it cannot replace it.
+                     * @example fs_01JV7Q8M4Y8K6N2Z5P3R1T9W0X
+                     */
+                    fundingSourceId?: string;
+                    /**
+                     * @description Reconnect the bank connection behind this bank account, for a bank account whose `connectionStatus` is `reconnect_required` or `expiring`. Spritz picks how: Plaid Link update mode while the connection exists, else a new Link session at the same bank whose account is carried onto this bank account (same IDs; selecting a different account is refused when link-complete gets this `bankAccountId`). Works whether or not the bank account has a funding source, so use it for payout destinations. Pass this or `fundingSourceId`, not both. Completes like `fundingSourceId`; 404 `PLAID_BANK_ACCOUNT_NOT_FOUND` means the bank account was not linked through a bank connection.
+                     * @example 66f1c0b2e4b0a1d2c3e4f5a6
+                     */
+                    bankAccountId?: string;
                 };
             };
         };
@@ -16688,6 +16844,90 @@ export interface operations {
                         hostedLinkUrl: string | null;
                         expiration: string;
                         requestId: string;
+                    };
+                };
+            };
+            /** @description Response for status 400 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": ({
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /**
+                         * @description Safe next action when the failing product policy can provide one.
+                         * @enum {string}
+                         */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /**
+                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs reconnecting; reconnect it with `POST /v1/bank-accounts/link-token` and its `bankAccountId`, then prepare again). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
+                         * @enum {string}
+                         */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
+                    } & {
+                        [key: string]: unknown;
+                    }) & {
+                        /** @description Every cause. A single-cause failure also reports it via top-level `code`/`field`/`detail`; a multi-field failure is described only here. */
+                        errors?: {
+                            field: string;
+                            message: string;
+                            code?: string;
+                        }[];
                     };
                 };
             };
@@ -16731,6 +16971,148 @@ export interface operations {
                          * @example read:users
                          */
                         scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -16799,7 +17181,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16870,7 +17252,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -16894,6 +17276,11 @@ export interface operations {
                     accountIds: string[];
                     institutionId?: string;
                     institutionName?: string;
+                    /**
+                     * @description When completing a reconnect, the `bankAccountId` passed to link-token (for `fundingSourceId`, that funding source's `bankAccountId`). If the user selected a different account at the bank, the link is refused with 409 `PLAID_ITEM_NOT_REPAIRABLE` and nothing is linked, instead of adding it as a new bank account. Hosted Link sessions need nothing: Spritz remembers the bank account from link-token.
+                     * @example 66f1c0b2e4b0a1d2c3e4f5a6
+                     */
+                    bankAccountId?: string;
                 };
                 "application/x-www-form-urlencoded": {
                     /** @description Public token returned by Plaid Link on success */
@@ -16902,6 +17289,11 @@ export interface operations {
                     accountIds: string[];
                     institutionId?: string;
                     institutionName?: string;
+                    /**
+                     * @description When completing a reconnect, the `bankAccountId` passed to link-token (for `fundingSourceId`, that funding source's `bankAccountId`). If the user selected a different account at the bank, the link is refused with 409 `PLAID_ITEM_NOT_REPAIRABLE` and nothing is linked, instead of adding it as a new bank account. Hosted Link sessions need nothing: Spritz remembers the bank account from link-token.
+                     * @example 66f1c0b2e4b0a1d2c3e4f5a6
+                     */
+                    bankAccountId?: string;
                 };
                 "multipart/form-data": {
                     /** @description Public token returned by Plaid Link on success */
@@ -16910,6 +17302,11 @@ export interface operations {
                     accountIds: string[];
                     institutionId?: string;
                     institutionName?: string;
+                    /**
+                     * @description When completing a reconnect, the `bankAccountId` passed to link-token (for `fundingSourceId`, that funding source's `bankAccountId`). If the user selected a different account at the bank, the link is refused with 409 `PLAID_ITEM_NOT_REPAIRABLE` and nothing is linked, instead of adding it as a new bank account. Hosted Link sessions need nothing: Spritz remembers the bank account from link-token.
+                     * @example 66f1c0b2e4b0a1d2c3e4f5a6
+                     */
+                    bankAccountId?: string;
                 };
             };
         };
@@ -16984,8 +17381,14 @@ export interface operations {
                              * @description When the account was created
                              */
                             createdAt: string;
-                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                             fundingSourceId: string | null;
+                            /**
+                             * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                             * @example connected
+                             * @enum {string}
+                             */
+                            connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                             /** @enum {string} */
                             type: "us";
                             /** @enum {string} */
@@ -17068,8 +17471,14 @@ export interface operations {
                              * @description When the account was created
                              */
                             createdAt: string;
-                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                             fundingSourceId: string | null;
+                            /**
+                             * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                             * @example connected
+                             * @enum {string}
+                             */
+                            connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                             /** @enum {string} */
                             type: "ca";
                             /** @enum {string} */
@@ -17157,8 +17566,14 @@ export interface operations {
                              * @description When the account was created
                              */
                             createdAt: string;
-                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                             fundingSourceId: string | null;
+                            /**
+                             * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                             * @example connected
+                             * @enum {string}
+                             */
+                            connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                             /** @enum {string} */
                             type: "uk";
                             /** @enum {string} */
@@ -17235,8 +17650,14 @@ export interface operations {
                              * @description When the account was created
                              */
                             createdAt: string;
-                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                             fundingSourceId: string | null;
+                            /**
+                             * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                             * @example connected
+                             * @enum {string}
+                             */
+                            connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                             /** @enum {string} */
                             type: "iban";
                             /**
@@ -17367,7 +17788,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -17438,7 +17859,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -17509,7 +17930,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -17580,7 +18001,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -17851,7 +18272,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -17922,7 +18343,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18193,7 +18614,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18264,7 +18685,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18537,7 +18958,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18608,7 +19029,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18679,7 +19100,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18859,7 +19280,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -18930,7 +19351,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -19139,7 +19560,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -19210,7 +19631,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -19380,7 +19801,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -19451,7 +19872,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -19632,7 +20053,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -19703,7 +20124,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -19862,7 +20283,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -19933,7 +20354,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -20088,7 +20509,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -20159,7 +20580,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -20318,7 +20739,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -20389,7 +20810,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -20563,7 +20984,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -20634,7 +21055,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -20834,7 +21255,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -20905,7 +21326,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21078,7 +21499,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21149,7 +21570,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21351,7 +21772,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21422,7 +21843,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21634,7 +22055,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21705,7 +22126,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21896,7 +22317,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -21967,7 +22388,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -22174,7 +22595,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -22245,7 +22666,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -22462,7 +22883,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -22533,7 +22954,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -22771,7 +23192,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -22842,7 +23263,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -22869,7 +23290,7 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique identifier for the debit card
-                             * @example 6afaf7552f86d55e4d709d2b
+                             * @example 6afece3a96cb9f0f518d5710
                              */
                             id: string;
                             /** @enum {string} */
@@ -23062,7 +23483,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -23133,7 +23554,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -23390,7 +23811,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6afaf7552f86d55e4d709d2b
+                         * @example 6afece3a96cb9f0f518d5710
                          */
                         id: string;
                         /** @enum {string} */
@@ -23581,7 +24002,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -23652,7 +24073,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -23680,7 +24101,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6afaf7552f86d55e4d709d2b
+                         * @example 6afece3a96cb9f0f518d5710
                          */
                         id: string;
                         /** @enum {string} */
@@ -23871,7 +24292,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -23942,7 +24363,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -24113,7 +24534,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -24184,7 +24605,254 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    "getV1Debit-cardsByCardIdPayment-limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cardId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payment limits for a payout account */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Maximum amount per transaction */
+                        transactionLimit: string;
+                        /** @description Maximum total daily payment volume */
+                        dailyLimit: string;
+                        /** @description Remaining daily payment volume */
+                        dailyRemaining: string;
+                    };
+                };
+            };
+            /** @description Response for status 401 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 401
+                         */
+                        status: number;
+                        /**
+                         * @description A human-readable explanation specific to this occurrence
+                         * @example Bearer token required
+                         */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The authentication realm
+                         * @example API
+                         */
+                        realm?: string;
+                        /**
+                         * @description The required scope for this resource
+                         * @example read:users
+                         */
+                        scope?: string;
+                    };
+                };
+            };
+            /** @description Response for status 404 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         */
+                        type: string;
+                        /** @description A short, human-readable summary of the problem type */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 404
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /** @description A URI reference that identifies the specific occurrence */
+                        instance?: string;
+                        /**
+                         * @description The type of resource that was not found
+                         * @example user
+                         */
+                        resourceType: string;
+                        /** @description The identifier of the resource that was not found */
+                        resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 429 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Response for status 500 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -24347,7 +25015,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6afaf7552f86d55e4d709d2b
+                         * @example 6afece3a96cb9f0f518d5710
                          */
                         id: string;
                         /** @enum {string} */
@@ -24538,7 +25206,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -24609,7 +25277,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -24682,7 +25350,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6afaf7552f86d55e4d709d2f
+                         * @example 6afece3a96cb9f0f518d5714
                          */
                         userId: string;
                         /**
@@ -24698,7 +25366,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-11-16T13:30:13.407Z
+                         * @example 2026-11-19T11:23:54.969Z
                          */
                         expiresAt: string;
                     };
@@ -24845,7 +25513,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -24916,7 +25584,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -24970,7 +25638,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-11-16T12:30:13.406Z
+                         * @example 2026-11-19T10:23:54.968Z
                          */
                         createdAt: string;
                     };
@@ -25117,7 +25785,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25188,7 +25856,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25256,7 +25924,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description ID of the account this request resolved to: the account it created or, where account reuse is enabled, the existing account this email resolves to for you (your own, or one you are currently authorized for through an existing authorization). With reuse enabled, a repeat for the same email returns the same ID.
-                         * @example 6afaf7552f86d55e4d709d31
+                         * @example 6afece3a96cb9f0f518d5716
                          */
                         userId: string;
                         /**
@@ -25338,7 +26006,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25485,7 +26153,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25556,7 +26224,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25627,7 +26295,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25698,7 +26366,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25748,7 +26416,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6afaf7552f86d55e4d709d2e
+                             * @example 6afece3a96cb9f0f518d5713
                              */
                             userId: string;
                             /**
@@ -25924,7 +26592,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -25995,7 +26663,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26033,7 +26701,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6afaf7552f86d55e4d709d2e
+                         * @example 6afece3a96cb9f0f518d5713
                          */
                         userId: string;
                         /**
@@ -26202,7 +26870,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26273,7 +26941,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26299,7 +26967,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6afaf7552f86d55e4d709d30
+                         * @example 6afece3a96cb9f0f518d5715
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -26464,7 +27132,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26535,7 +27203,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26603,7 +27271,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6afaf7552f86d55e4d709d30
+                         * @example 6afece3a96cb9f0f518d5715
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -26768,7 +27436,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -26839,7 +27507,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28148,7 +28816,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28295,7 +28963,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28366,7 +29034,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28437,7 +29105,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28508,7 +29176,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -28579,7 +29247,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -29877,7 +30545,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30024,7 +30692,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30095,7 +30763,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30166,7 +30834,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30346,7 +31014,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30417,7 +31085,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30460,7 +31128,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6afaf7552f86d55e4d709d30
+                         * @example 6afece3a96cb9f0f518d5715
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
@@ -30625,7 +31293,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30696,7 +31364,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30899,7 +31567,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -30970,7 +31638,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31041,7 +31709,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31100,7 +31768,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-11-16T12:35:13.407Z
+                         * @example 2026-11-19T10:28:54.969Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -31247,7 +31915,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31318,7 +31986,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31344,7 +32012,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6afaf7552f86d55e4d709d2c
+                         * @example 6afece3a96cb9f0f518d5711
                          */
                         id: string;
                         /**
@@ -31361,7 +32029,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-16T12:30:13.330Z
+                         * @example 2026-11-19T10:23:54.890Z
                          */
                         signedUpAt: string;
                         /**
@@ -31646,7 +32314,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31717,7 +32385,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -31840,7 +32508,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6afaf7552f86d55e4d709d2c
+                         * @example 6afece3a96cb9f0f518d5711
                          */
                         id: string;
                         /**
@@ -31857,7 +32525,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-16T12:30:13.330Z
+                         * @example 2026-11-19T10:23:54.890Z
                          */
                         signedUpAt: string;
                         /**
@@ -32119,7 +32787,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32190,7 +32858,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32320,7 +32988,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32434,7 +33102,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32505,7 +33173,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32576,7 +33244,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32647,7 +33315,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -32700,7 +33368,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6afaf7552f86d55e4d709d2c
+                         * @example 6afece3a96cb9f0f518d5711
                          */
                         id: string;
                         /**
@@ -32717,7 +33385,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-16T12:30:13.330Z
+                         * @example 2026-11-19T10:23:54.890Z
                          */
                         signedUpAt: string;
                         /**
@@ -32903,7 +33571,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33017,7 +33685,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33121,7 +33789,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33192,7 +33860,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33263,7 +33931,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33418,7 +34086,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33489,7 +34157,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33560,7 +34228,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33631,7 +34299,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33823,7 +34491,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -33894,7 +34562,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34226,7 +34894,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34297,7 +34965,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34456,7 +35124,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34560,7 +35228,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34631,7 +35299,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34702,7 +35370,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -34940,7 +35608,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35011,7 +35679,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35208,7 +35876,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35279,7 +35947,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35504,7 +36172,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35575,7 +36243,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35745,7 +36413,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35816,7 +36484,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -35992,7 +36660,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36063,7 +36731,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36234,7 +36902,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36305,7 +36973,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36525,7 +37193,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36596,7 +37264,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36768,7 +37436,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -36839,7 +37507,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37004,7 +37672,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37075,7 +37743,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37207,7 +37875,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37321,7 +37989,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37392,7 +38060,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37463,7 +38131,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37629,7 +38297,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37700,7 +38368,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37902,7 +38570,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -37973,7 +38641,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38230,7 +38898,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38301,7 +38969,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38485,7 +39153,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -38556,7 +39224,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39089,7 +39757,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39160,7 +39828,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39231,7 +39899,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39302,7 +39970,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39373,7 +40041,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39444,7 +40112,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39515,7 +40183,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39688,7 +40356,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39759,7 +40427,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39830,7 +40498,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39901,7 +40569,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -39972,7 +40640,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40043,7 +40711,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40212,7 +40880,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40283,7 +40951,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40354,7 +41022,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40425,7 +41093,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40496,7 +41164,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40567,7 +41235,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40725,7 +41393,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40796,7 +41464,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -40867,7 +41535,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41040,7 +41708,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41111,7 +41779,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41182,7 +41850,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41253,7 +41921,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41523,7 +42191,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41594,7 +42262,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41665,7 +42333,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41736,7 +42404,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41910,7 +42578,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -41981,7 +42649,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42052,7 +42720,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42218,7 +42886,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42289,7 +42957,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42360,7 +43028,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42431,7 +43099,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42582,7 +43250,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42653,7 +43321,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42724,7 +43392,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42795,7 +43463,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -42951,7 +43619,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -43022,7 +43690,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -43093,7 +43761,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -43164,7 +43832,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -43336,7 +44004,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -43450,7 +44118,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -43521,7 +44189,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -43592,7 +44260,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -43757,7 +44425,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -43871,7 +44539,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -43942,7 +44610,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -44013,7 +44681,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -44084,7 +44752,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -44199,7 +44867,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -44313,7 +44981,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -44384,7 +45052,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -44455,7 +45123,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -44526,7 +45194,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -44659,7 +45327,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -44773,7 +45441,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -44844,7 +45512,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -44915,7 +45583,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -45042,7 +45710,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -45156,7 +45824,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -45227,7 +45895,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -45298,7 +45966,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -45369,7 +46037,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -45485,7 +46153,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -45599,7 +46267,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -45670,7 +46338,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -45741,7 +46409,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -45812,7 +46480,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -45924,7 +46592,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -46038,7 +46706,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -46109,7 +46777,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -46180,7 +46848,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -46251,7 +46919,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -46380,7 +47048,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -46494,7 +47162,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -46565,7 +47233,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -46636,7 +47304,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -46790,10 +47458,10 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /**
-                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs reconnecting; reconnect it with `POST /v1/bank-accounts/link-token` and its `bankAccountId`, then prepare again). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
                          * @enum {string}
                          */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -46914,7 +47582,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -46985,7 +47653,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -47056,7 +47724,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -47127,7 +47795,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -47198,7 +47866,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -47408,10 +48076,10 @@ export interface operations {
                          * @example v1
                          * @enum {string}
                          */
-                        messageVersion: "v1" | "fomo_v1" | "fomo_v2" | "v2" | "fomo_v3" | "fomo_v4";
+                        messageVersion: "v1" | "fomo_v1" | "fomo_v2" | "v2";
                         /** @description Display-ready ACH authorization message */
                         message: string;
-                        /** @description The authorization paragraph alone, a verbatim part of `message`. When `messageVersion` is `fomo_v2` or `fomo_v4` the paragraph is self-contained: clients that lay out amounts and fees in their own UI must still display it word for word on the confirmation screen. For every other version, display `message` in full. */
+                        /** @description The authorization paragraph alone, a verbatim part of `message`. When `messageVersion` is `fomo_v2` the paragraph is self-contained: clients that lay out amounts and fees in their own UI must still display it word for word on the confirmation screen. For every other version, display `message` in full. */
                         authorizationStatement: string;
                         /**
                          * @description Short-lived, preparation-bound bearer capability returned for integrator preparations. Send it only to the authorizing client, which uses it to submit this preparation directly to Spritz.
@@ -47528,10 +48196,10 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /**
-                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs reconnecting; reconnect it with `POST /v1/bank-accounts/link-token` and its `bankAccountId`, then prepare again). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
                          * @enum {string}
                          */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -47652,7 +48320,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -47756,7 +48424,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -47827,7 +48495,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -47898,7 +48566,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -47969,7 +48637,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -48129,6 +48797,12 @@ export interface operations {
                         feeRateBps: number;
                         principalAmountUsd: string;
                         instantPortionUsd: string;
+                        /**
+                         * @description Why the requested instant portion was dropped entirely, when the person can fix it: `bank_relink_required` means Spritz could not read the account's balance because the bank connection needs relinking. Reconnect the bank (`POST /v1/bank-accounts/link-token` with its `bankAccountId`; it keeps its IDs) to get instant on later deposits. Null when instant was granted, not requested, or dropped for any other reason.
+                         * @example null
+                         * @enum {string|null}
+                         */
+                        instantUnavailableReason: "bank_relink_required" | null;
                         settlementPortionUsd: string;
                         expectedAssetAmount: string;
                         grossFeeUsd: string;
@@ -48263,10 +48937,10 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /**
-                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs reconnecting; reconnect it with `POST /v1/bank-accounts/link-token` and its `bankAccountId`, then prepare again). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
                          * @enum {string}
                          */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -48387,7 +49061,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -48491,7 +49165,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -48562,7 +49236,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -48633,7 +49307,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -48704,7 +49378,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -48844,7 +49518,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -48915,7 +49589,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -48986,7 +49660,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -49057,7 +49731,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -49128,7 +49802,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -49243,10 +49917,10 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /**
-                         * @description Why a deposit cannot be cancelled, present alongside `code: deposit_not_cancellable`. `crypto_released`: crypto is already on its way. `debit_in_progress`: the bank debit has been transmitted. `deposit_closed`: the deposit already finished or failed.
+                         * @description Why a request was refused, when a client can act on it. With `code: deposit_not_cancellable`: `crypto_released` (crypto is already on its way), `debit_in_progress` (the bank debit has been transmitted) or `deposit_closed` (the deposit already finished or failed). With `code: risk_evaluation_unavailable` or `instant_unavailable`: `bank_relink_required` (the bank connection needs reconnecting; reconnect it with `POST /v1/bank-accounts/link-token` and its `bankAccountId`, then prepare again). With `code: risk_evaluation_unavailable`: `temporarily_unavailable` (a provider failed or timed out; prepare again and retry shortly).
                          * @enum {string}
                          */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     }) & {
@@ -49367,7 +50041,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -49438,7 +50112,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -49509,7 +50183,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -49580,7 +50254,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -49651,7 +50325,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -49812,8 +50486,14 @@ export interface operations {
                              * @description When the account was created
                              */
                             createdAt: string;
-                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                             fundingSourceId: string | null;
+                            /**
+                             * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                             * @example connected
+                             * @enum {string}
+                             */
+                            connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                             /** @enum {string} */
                             type: "us";
                             /** @enum {string} */
@@ -49896,8 +50576,14 @@ export interface operations {
                              * @description When the account was created
                              */
                             createdAt: string;
-                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                             fundingSourceId: string | null;
+                            /**
+                             * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                             * @example connected
+                             * @enum {string}
+                             */
+                            connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                             /** @enum {string} */
                             type: "ca";
                             /** @enum {string} */
@@ -49985,8 +50671,14 @@ export interface operations {
                              * @description When the account was created
                              */
                             createdAt: string;
-                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                             fundingSourceId: string | null;
+                            /**
+                             * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                             * @example connected
+                             * @enum {string}
+                             */
+                            connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                             /** @enum {string} */
                             type: "uk";
                             /** @enum {string} */
@@ -50063,8 +50755,14 @@ export interface operations {
                              * @description When the account was created
                              */
                             createdAt: string;
-                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. */
+                            /** @description Associated opaque public funding source identifier, or null when no funding source exists for this bank account. A bank account linked through Plaid can have none (its funding source was removed); use `connectionStatus` to decide whether it needs reconnecting. */
                             fundingSourceId: string | null;
+                            /**
+                             * @description State of the bank connection (Plaid) behind the account. `connected`: nothing to do. `expiring`: the bank will cut the connection soon; offer a reconnect. `reconnect_required`: the bank cut the connection or the account number stopped working; reconnect with `POST /v1/bank-accounts/link-token` and `bankAccountId` (or `fundingSourceId`) before paying to or debiting it; the bank account keeps its ID. `not_applicable`: entered by hand rather than linked through a bank connection; nothing to reconnect.
+                             * @example connected
+                             * @enum {string}
+                             */
+                            connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
                             /** @enum {string} */
                             type: "iban";
                             /**
@@ -50195,7 +50893,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -50266,7 +50964,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -50337,7 +51035,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -50408,7 +51106,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -50479,7 +51177,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -50703,7 +51401,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -50774,7 +51472,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -50845,7 +51543,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -51015,7 +51713,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -51086,7 +51784,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -51157,7 +51855,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -51338,7 +52036,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -51409,7 +52107,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -51480,7 +52178,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -51627,7 +52325,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -51731,7 +52429,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -51802,7 +52500,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -52037,7 +52735,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -52151,7 +52849,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -52255,7 +52953,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -52326,7 +53024,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -52397,7 +53095,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -52536,7 +53234,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -52607,7 +53305,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
@@ -52678,7 +53376,7 @@ export interface operations {
                         /** @description Whether the current funding-source restriction will not clear automatically. */
                         permanent?: boolean;
                         /** @enum {string} */
-                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed";
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
                     } & {
                         [key: string]: unknown;
                     };
