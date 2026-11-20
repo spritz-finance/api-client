@@ -8,7 +8,7 @@ const ACCOUNT = {
         type: 'iban',
         bankName: 'Example Bank',
         bankAddress: '1 Example Street, Berlin',
-        paymentRails: ['sepa'],
+        paymentRails: ['sepa_credit_transfer'],
         iban: 'DE89370400440532013000',
         bic: 'COBADEFFXXX',
     },
