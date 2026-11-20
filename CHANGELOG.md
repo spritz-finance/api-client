@@ -1,5 +1,11 @@
 # @spritz-finance/api-client
 
+## 0.30.0
+
+### Minor Changes
+
+- 27a667a: Regenerate REST types: `connectionExpiresAt` on bank accounts and funding sources, the `account.connectionUpdated` webhook event, the 409 `bank_relink_required` refusal on off-ramp quote create, and `paymentRails` on deposit accounts. README documents the reconnect codes.
+
 ## 0.29.0
 
 ### Minor Changes
