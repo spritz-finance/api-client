@@ -633,6 +633,10 @@ Banks cut Plaid connections (password changes, expired consent). At Chase, PNC a
 | `reconnect_required` | The connection is cut or the number stopped working; reconnect before paying to or debiting it |
 | `not_applicable`     | Entered by hand, not linked through Plaid; nothing to reconnect                                |
 
+`connectionExpiresAt` is the time the bank will cut an `expiring` connection, and `null` for every other status. Most connections never expire: they go straight from `connected` to `reconnect_required`.
+
+Subscribe to the `account.connectionUpdated` webhook to hear when `connectionStatus` or `connectionExpiresAt` changes. Its `id` is the bank account id; read the bank account for the current values, because deliveries can repeat or arrive out of order.
+
 To reconnect, create a link token for the bank account and run Plaid Link as usual. The bank account and its funding source keep their IDs:
 
 ```typescript
@@ -652,6 +656,20 @@ await client.bankAccount.completeLinking({
     bankAccountId: bankAccount.id,
 })
 ```
+
+**Refusals and failures that mean "reconnect".** These codes are plain strings in the generated types:
+
+| Where                          | What you get                                                                           |
+| ------------------------------ | -------------------------------------------------------------------------------------- |
+| `offRampQuote.create()`        | `ConflictError` (409), `problem.code === 'bank_relink_required'`, `field: 'accountId'` |
+| Deposit create (standard)      | 409 `risk_evaluation_unavailable` with `reason: 'bank_relink_required'`                |
+| Deposit create (instant)       | 409 `instant_unavailable` with `reason: 'bank_relink_required'`                        |
+| A deposit after it was created | `debitFailureCode === 'bank_relink_required'` (held debit cancelled before sending)    |
+| An off-ramp to the account     | `offramp.failed`; re-read the bank account's `connectionStatus` to offer a reconnect   |
+
+The quote refusal is switched on for all integrators at once, after notice. Until then quotes go through, and Spritz checks again before money moves.
+
+A bank account whose funding source was disabled by a return (`statusReason: 'returned'`) is not fixed by reconnecting: the user has to link a different account.
 
 If the user picks a different account at the bank, `completeLinking` throws a `ConflictError` with `problem.code === 'PLAID_ITEM_NOT_REPAIRABLE'` and nothing is linked; ask them to choose the same account. With Hosted Link, Spritz completes the reconnect when the session finishes. `bankAccountId` works whether or not the bank account has a funding source, so use it for payout destinations too; `fundingSourceId` is accepted in its place for funding sources.
 
@@ -1584,6 +1602,7 @@ The on-ramp it produces is an ordinary one: it appears in `onrampPayment.list()`
 - `account.created` — new account created
 - `account.updated` — account details updated
 - `account.deleted` — account deleted
+- `account.connectionUpdated` — a bank account's `connectionStatus` or `connectionExpiresAt` changed
 
 #### Payment Events
 

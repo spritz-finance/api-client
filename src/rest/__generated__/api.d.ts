@@ -153,6 +153,8 @@ export interface paths {
          *     - `sign_transaction`: Call `POST /off-ramp-quotes/{id}/transaction` for calldata, sign, and submit on-chain.
          *     - `send_to_address`: Send crypto to `sendTo.address` before `sendTo.expiresAt`.
          *
+         *     **Bank connection:** a 409 with `code: bank_relink_required` means the destination bank account's connection needs reconnecting first (its `connectionStatus` is `reconnect_required`): reconnect it with `POST /v1/bank-accounts/link-token` and its `bankAccountId`, then quote again.
+         *
          *     **Amount modes:** `output` (default) fixes the destination fiat amount and remains supported for USD destinations. EUR destinations require `input`: `amount` is the exact USD value Spritz collects, while quote output is an estimate. Actual settlement is reported by the off-ramp resource.
          */
         post: operations["postV1Off-ramp-quotes"];
@@ -2719,7 +2721,7 @@ export interface operations {
                          * @example 507f1f77bcf86cd799439011
                          */
                         id: string;
-                        /** @description Deposit instructions for the virtual account. The `type` field indicates the account format: `us` for ACH/wire (routing + account number) or `iban` for SEPA (IBAN + BIC). */
+                        /** @description Deposit instructions for the virtual account. The `type` field indicates the account format: `us` for ACH, wire, RTP and FedNow (routing + account number) or `iban` for SEPA (IBAN + BIC). */
                         depositInstructions: {
                             /**
                              * @description Name of the bank holding the virtual account
@@ -2732,15 +2734,17 @@ export interface operations {
                              */
                             bankAddress: string;
                             /**
-                             * @description Supported payment rails for depositing funds
+                             * @description Rails the account accepts deposits on. Each deposit's `input.rail` on the resulting on-ramp says which one it used.
                              * @example [
-                             *       "ach",
-                             *       "wire"
+                             *       "ach_credit",
+                             *       "wire",
+                             *       "rtp",
+                             *       "fednow"
                              *     ]
                              */
-                            paymentRails: string[];
+                            paymentRails: ("ach_credit" | "wire" | "rtp" | "fednow" | "sepa_credit_transfer")[];
                             /**
-                             * @description US deposit instructions (ACH/wire)
+                             * @description US deposit instructions (ACH, wire, RTP, FedNow)
                              * @enum {string}
                              */
                             type: "us";
@@ -2766,13 +2770,15 @@ export interface operations {
                              */
                             bankAddress: string;
                             /**
-                             * @description Supported payment rails for depositing funds
+                             * @description Rails the account accepts deposits on. Each deposit's `input.rail` on the resulting on-ramp says which one it used.
                              * @example [
-                             *       "ach",
-                             *       "wire"
+                             *       "ach_credit",
+                             *       "wire",
+                             *       "rtp",
+                             *       "fednow"
                              *     ]
                              */
-                            paymentRails: string[];
+                            paymentRails: ("ach_credit" | "wire" | "rtp" | "fednow" | "sepa_credit_transfer")[];
                             /**
                              * @description IBAN deposit instructions (SEPA)
                              * @enum {string}
@@ -3107,7 +3113,7 @@ export interface operations {
                          * @example 507f1f77bcf86cd799439011
                          */
                         id: string;
-                        /** @description Deposit instructions for the virtual account. The `type` field indicates the account format: `us` for ACH/wire (routing + account number) or `iban` for SEPA (IBAN + BIC). */
+                        /** @description Deposit instructions for the virtual account. The `type` field indicates the account format: `us` for ACH, wire, RTP and FedNow (routing + account number) or `iban` for SEPA (IBAN + BIC). */
                         depositInstructions: {
                             /**
                              * @description Name of the bank holding the virtual account
@@ -3120,15 +3126,17 @@ export interface operations {
                              */
                             bankAddress: string;
                             /**
-                             * @description Supported payment rails for depositing funds
+                             * @description Rails the account accepts deposits on. Each deposit's `input.rail` on the resulting on-ramp says which one it used.
                              * @example [
-                             *       "ach",
-                             *       "wire"
+                             *       "ach_credit",
+                             *       "wire",
+                             *       "rtp",
+                             *       "fednow"
                              *     ]
                              */
-                            paymentRails: string[];
+                            paymentRails: ("ach_credit" | "wire" | "rtp" | "fednow" | "sepa_credit_transfer")[];
                             /**
-                             * @description US deposit instructions (ACH/wire)
+                             * @description US deposit instructions (ACH, wire, RTP, FedNow)
                              * @enum {string}
                              */
                             type: "us";
@@ -3154,13 +3162,15 @@ export interface operations {
                              */
                             bankAddress: string;
                             /**
-                             * @description Supported payment rails for depositing funds
+                             * @description Rails the account accepts deposits on. Each deposit's `input.rail` on the resulting on-ramp says which one it used.
                              * @example [
-                             *       "ach",
-                             *       "wire"
+                             *       "ach_credit",
+                             *       "wire",
+                             *       "rtp",
+                             *       "fednow"
                              *     ]
                              */
-                            paymentRails: string[];
+                            paymentRails: ("ach_credit" | "wire" | "rtp" | "fednow" | "sepa_credit_transfer")[];
                             /**
                              * @description IBAN deposit instructions (SEPA)
                              * @enum {string}
@@ -3664,7 +3674,7 @@ export interface operations {
                          * @example 507f1f77bcf86cd799439011
                          */
                         id: string;
-                        /** @description Deposit instructions for the virtual account. The `type` field indicates the account format: `us` for ACH/wire (routing + account number) or `iban` for SEPA (IBAN + BIC). */
+                        /** @description Deposit instructions for the virtual account. The `type` field indicates the account format: `us` for ACH, wire, RTP and FedNow (routing + account number) or `iban` for SEPA (IBAN + BIC). */
                         depositInstructions: {
                             /**
                              * @description Name of the bank holding the virtual account
@@ -3677,15 +3687,17 @@ export interface operations {
                              */
                             bankAddress: string;
                             /**
-                             * @description Supported payment rails for depositing funds
+                             * @description Rails the account accepts deposits on. Each deposit's `input.rail` on the resulting on-ramp says which one it used.
                              * @example [
-                             *       "ach",
-                             *       "wire"
+                             *       "ach_credit",
+                             *       "wire",
+                             *       "rtp",
+                             *       "fednow"
                              *     ]
                              */
-                            paymentRails: string[];
+                            paymentRails: ("ach_credit" | "wire" | "rtp" | "fednow" | "sepa_credit_transfer")[];
                             /**
-                             * @description US deposit instructions (ACH/wire)
+                             * @description US deposit instructions (ACH, wire, RTP, FedNow)
                              * @enum {string}
                              */
                             type: "us";
@@ -3711,13 +3723,15 @@ export interface operations {
                              */
                             bankAddress: string;
                             /**
-                             * @description Supported payment rails for depositing funds
+                             * @description Rails the account accepts deposits on. Each deposit's `input.rail` on the resulting on-ramp says which one it used.
                              * @example [
-                             *       "ach",
-                             *       "wire"
+                             *       "ach_credit",
+                             *       "wire",
+                             *       "rtp",
+                             *       "fednow"
                              *     ]
                              */
-                            paymentRails: string[];
+                            paymentRails: ("ach_credit" | "wire" | "rtp" | "fednow" | "sepa_credit_transfer")[];
                             /**
                              * @description IBAN deposit instructions (SEPA)
                              * @enum {string}
@@ -4586,7 +4600,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description Creation timestamp
-                         * @example 2026-11-19T10:23:54.670Z
+                         * @example 2026-11-20T13:53:29.772Z
                          */
                         createdAt?: string;
                     }[];
@@ -4824,7 +4838,7 @@ export interface operations {
                 "application/json": {
                     /**
                      * @description Destination account ID
-                     * @example 6afece3a96cb9f0f518d5709
+                     * @example 6b0050d9144fcc8f56cf6b8d
                      */
                     accountId: string;
                     /**
@@ -4852,7 +4866,7 @@ export interface operations {
                 "application/x-www-form-urlencoded": {
                     /**
                      * @description Destination account ID
-                     * @example 6afece3a96cb9f0f518d5709
+                     * @example 6b0050d9144fcc8f56cf6b8d
                      */
                     accountId: string;
                     /**
@@ -4880,7 +4894,7 @@ export interface operations {
                 "multipart/form-data": {
                     /**
                      * @description Destination account ID
-                     * @example 6afece3a96cb9f0f518d5709
+                     * @example 6b0050d9144fcc8f56cf6b8d
                      */
                     accountId: string;
                     /**
@@ -4927,7 +4941,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-19T10:23:54.595Z
+                         * @example 2026-11-20T13:53:29.754Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -4966,7 +4980,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6afece3a96cb9f0f518d570a
+                             * @example 6b0050d9144fcc8f56cf6b8e
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -5119,6 +5133,77 @@ export interface operations {
                         resourceType: string;
                         /** @description The identifier of the resource that was not found */
                         resourceId: string;
+                    };
+                };
+            };
+            /** @description Response for status 409 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /**
+                         * @description A URI reference that identifies the problem type
+                         * @default about:blank
+                         * @example urn:problem-type:auth:unauthorized
+                         */
+                        type: string;
+                        /**
+                         * @description A short, human-readable summary of the problem type
+                         * @example Unauthorized
+                         */
+                        title: string;
+                        /**
+                         * @description The HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /** @description A human-readable explanation specific to this occurrence */
+                        detail?: string;
+                        /**
+                         * @description A URI reference that identifies the specific occurrence
+                         * @example /errors/1234567890
+                         */
+                        instance?: string;
+                        /**
+                         * @description Machine-readable cause, present when exactly one thing failed. Branch on this, never on `detail`, which is human-facing copy and may change. For deposit limits the vocabulary matches the `reason` values the limits API returns pre-flight.
+                         * @example transaction_limit
+                         */
+                        code?: string;
+                        /**
+                         * @description The offending request field, present alongside `code`.
+                         * @example amountUsd
+                         */
+                        field?: string;
+                        /**
+                         * @description Whether retrying the same request later may succeed without changing its inputs.
+                         * @example true
+                         */
+                        retryable?: boolean;
+                        /**
+                         * @description Seconds to wait before retrying, present alongside `retryable: true`. Mirrors the `Retry-After` response header and is meant for short backoffs the server chose (load shedding); for a condition that clears on its own schedule, `clearsAt` carries the absolute time instead.
+                         * @example 5
+                         */
+                        retryAfter?: number;
+                        /** @enum {string} */
+                        suggestedAction?: "auto_ramp" | "wait_for_settlement";
+                        /**
+                         * Format: date-time
+                         * @description Earliest known time the current temporary condition may clear.
+                         */
+                        clearsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @description When a temporary block lifts: a temporarily ineligible funding source, or new deposits paused after repeated cancellations (`ach_debit_cancel_cooldown`).
+                         */
+                        availableAt?: string | null;
+                        /** @description Whether the current funding-source restriction will not clear automatically. */
+                        permanent?: boolean;
+                        /** @enum {string} */
+                        reason?: "crypto_released" | "debit_in_progress" | "deposit_closed" | "bank_relink_required" | "temporarily_unavailable";
+                    } & {
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -5296,7 +5381,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-19T10:23:54.595Z
+                         * @example 2026-11-20T13:53:29.754Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -5335,7 +5420,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6afece3a96cb9f0f518d570a
+                             * @example 6b0050d9144fcc8f56cf6b8e
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -6290,7 +6375,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description When the quote was created
-                         * @example 2026-11-19T10:23:54.595Z
+                         * @example 2026-11-20T13:53:29.754Z
                          */
                         createdAt: string;
                         /** @description Exact USD value collected by Spritz and the token route used to fund it. The exact token quantity is returned by the transaction endpoint. */
@@ -6329,7 +6414,7 @@ export interface operations {
                             rail: "ach_standard" | "ach_same_day" | "rtp" | "wire" | "eft" | "sepa" | "faster_payments" | "push_to_card" | "bill_pay" | "card_deposit";
                             /**
                              * @description Destination account ID
-                             * @example 6afece3a96cb9f0f518d570a
+                             * @example 6b0050d9144fcc8f56cf6b8e
                              */
                             accountId: string;
                             /** @description True when this quote does not lock the destination amount. EUR quotes remain estimates; actual settlement is reported by the off-ramp resource. */
@@ -6705,7 +6790,7 @@ export interface operations {
                                 currency: string;
                                 /**
                                  * @description Destination account ID
-                                 * @example 6afece3a96cb9f0f518d570b
+                                 * @example 6b0050d9144fcc8f56cf6b8f
                                  */
                                 accountId: string;
                                 /**
@@ -7069,7 +7154,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6afece3a96cb9f0f518d570b
+                             * @example 6b0050d9144fcc8f56cf6b8f
                              */
                             accountId: string;
                             /**
@@ -7383,7 +7468,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6afece3a96cb9f0f518d570c
+                     * @example 6b0050d9144fcc8f56cf6b90
                      */
                     accountId?: string;
                 };
@@ -7401,7 +7486,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6afece3a96cb9f0f518d570c
+                     * @example 6b0050d9144fcc8f56cf6b90
                      */
                     accountId?: string;
                 };
@@ -7419,7 +7504,7 @@ export interface operations {
                     method: "account";
                     /**
                      * @description Destination account to reissue the payout to. Omit to reuse the off-ramp's original destination account.
-                     * @example 6afece3a96cb9f0f518d570c
+                     * @example 6b0050d9144fcc8f56cf6b90
                      */
                     accountId?: string;
                 };
@@ -7485,7 +7570,7 @@ export interface operations {
                             currency: string;
                             /**
                              * @description Destination account ID
-                             * @example 6afece3a96cb9f0f518d570b
+                             * @example 6b0050d9144fcc8f56cf6b8f
                              */
                             accountId: string;
                             /**
@@ -7810,7 +7895,7 @@ export interface operations {
                                 /** @enum {string} */
                                 currency: "USD" | "CAD" | "EUR" | "GBP";
                                 /** @enum {string} */
-                                rail: "ach_credit" | "wire" | "sepa_credit_transfer";
+                                rail: "ach_credit" | "wire" | "sepa_credit_transfer" | "rtp" | "fednow" | "unknown";
                             };
                             fees: {
                                 /**
@@ -8919,7 +9004,7 @@ export interface operations {
                             /** @enum {string} */
                             currency: "USD" | "CAD" | "EUR" | "GBP";
                             /** @enum {string} */
-                            rail: "ach_credit" | "wire" | "sepa_credit_transfer";
+                            rail: "ach_credit" | "wire" | "sepa_credit_transfer" | "rtp" | "fednow" | "unknown";
                         };
                         fees: {
                             /**
@@ -9349,6 +9434,12 @@ export interface operations {
                          * @enum {string}
                          */
                         connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                        /**
+                         * Format: date-time
+                         * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                         * @example null
+                         */
+                        connectionExpiresAt: string | null;
                         /** @enum {string} */
                         type: "us";
                         /** @enum {string} */
@@ -9439,6 +9530,12 @@ export interface operations {
                          * @enum {string}
                          */
                         connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                        /**
+                         * Format: date-time
+                         * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                         * @example null
+                         */
+                        connectionExpiresAt: string | null;
                         /** @enum {string} */
                         type: "ca";
                         /** @enum {string} */
@@ -9534,6 +9631,12 @@ export interface operations {
                          * @enum {string}
                          */
                         connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                        /**
+                         * Format: date-time
+                         * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                         * @example null
+                         */
+                        connectionExpiresAt: string | null;
                         /** @enum {string} */
                         type: "uk";
                         /** @enum {string} */
@@ -9618,6 +9721,12 @@ export interface operations {
                          * @enum {string}
                          */
                         connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                        /**
+                         * Format: date-time
+                         * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                         * @example null
+                         */
+                        connectionExpiresAt: string | null;
                         /** @enum {string} */
                         type: "iban";
                         /**
@@ -10686,6 +10795,12 @@ export interface operations {
                          * @enum {string}
                          */
                         connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                        /**
+                         * Format: date-time
+                         * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                         * @example null
+                         */
+                        connectionExpiresAt: string | null;
                         /** @enum {string} */
                         type: "us";
                         /** @enum {string} */
@@ -10776,6 +10891,12 @@ export interface operations {
                          * @enum {string}
                          */
                         connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                        /**
+                         * Format: date-time
+                         * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                         * @example null
+                         */
+                        connectionExpiresAt: string | null;
                         /** @enum {string} */
                         type: "ca";
                         /** @enum {string} */
@@ -10871,6 +10992,12 @@ export interface operations {
                          * @enum {string}
                          */
                         connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                        /**
+                         * Format: date-time
+                         * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                         * @example null
+                         */
+                        connectionExpiresAt: string | null;
                         /** @enum {string} */
                         type: "uk";
                         /** @enum {string} */
@@ -10955,6 +11082,12 @@ export interface operations {
                          * @enum {string}
                          */
                         connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                        /**
+                         * Format: date-time
+                         * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                         * @example null
+                         */
+                        connectionExpiresAt: string | null;
                         /** @enum {string} */
                         type: "iban";
                         /**
@@ -11283,6 +11416,12 @@ export interface operations {
                          * @enum {string}
                          */
                         connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                        /**
+                         * Format: date-time
+                         * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                         * @example null
+                         */
+                        connectionExpiresAt: string | null;
                         /** @enum {string} */
                         type: "us";
                         /** @enum {string} */
@@ -11373,6 +11512,12 @@ export interface operations {
                          * @enum {string}
                          */
                         connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                        /**
+                         * Format: date-time
+                         * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                         * @example null
+                         */
+                        connectionExpiresAt: string | null;
                         /** @enum {string} */
                         type: "ca";
                         /** @enum {string} */
@@ -11468,6 +11613,12 @@ export interface operations {
                          * @enum {string}
                          */
                         connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                        /**
+                         * Format: date-time
+                         * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                         * @example null
+                         */
+                        connectionExpiresAt: string | null;
                         /** @enum {string} */
                         type: "uk";
                         /** @enum {string} */
@@ -11552,6 +11703,12 @@ export interface operations {
                          * @enum {string}
                          */
                         connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                        /**
+                         * Format: date-time
+                         * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                         * @example null
+                         */
+                        connectionExpiresAt: string | null;
                         /** @enum {string} */
                         type: "iban";
                         /**
@@ -12376,6 +12533,12 @@ export interface operations {
                         createdAt: string;
                         /** @enum {string} */
                         connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                        /**
+                         * Format: date-time
+                         * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                         * @example null
+                         */
+                        connectionExpiresAt: string | null;
                     }[];
                 };
             };
@@ -13008,6 +13171,12 @@ export interface operations {
                         createdAt: string;
                         /** @enum {string} */
                         connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                        /**
+                         * Format: date-time
+                         * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                         * @example null
+                         */
+                        connectionExpiresAt: string | null;
                     };
                 };
             };
@@ -17389,6 +17558,12 @@ export interface operations {
                              * @enum {string}
                              */
                             connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                            /**
+                             * Format: date-time
+                             * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                             * @example null
+                             */
+                            connectionExpiresAt: string | null;
                             /** @enum {string} */
                             type: "us";
                             /** @enum {string} */
@@ -17479,6 +17654,12 @@ export interface operations {
                              * @enum {string}
                              */
                             connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                            /**
+                             * Format: date-time
+                             * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                             * @example null
+                             */
+                            connectionExpiresAt: string | null;
                             /** @enum {string} */
                             type: "ca";
                             /** @enum {string} */
@@ -17574,6 +17755,12 @@ export interface operations {
                              * @enum {string}
                              */
                             connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                            /**
+                             * Format: date-time
+                             * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                             * @example null
+                             */
+                            connectionExpiresAt: string | null;
                             /** @enum {string} */
                             type: "uk";
                             /** @enum {string} */
@@ -17658,6 +17845,12 @@ export interface operations {
                              * @enum {string}
                              */
                             connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                            /**
+                             * Format: date-time
+                             * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                             * @example null
+                             */
+                            connectionExpiresAt: string | null;
                             /** @enum {string} */
                             type: "iban";
                             /**
@@ -23290,7 +23483,7 @@ export interface operations {
                         data: {
                             /**
                              * @description Unique identifier for the debit card
-                             * @example 6afece3a96cb9f0f518d5710
+                             * @example 6b0050d9144fcc8f56cf6b94
                              */
                             id: string;
                             /** @enum {string} */
@@ -23811,7 +24004,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6afece3a96cb9f0f518d5710
+                         * @example 6b0050d9144fcc8f56cf6b94
                          */
                         id: string;
                         /** @enum {string} */
@@ -24101,7 +24294,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6afece3a96cb9f0f518d5710
+                         * @example 6b0050d9144fcc8f56cf6b94
                          */
                         id: string;
                         /** @enum {string} */
@@ -25015,7 +25208,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the debit card
-                         * @example 6afece3a96cb9f0f518d5710
+                         * @example 6b0050d9144fcc8f56cf6b94
                          */
                         id: string;
                         /** @enum {string} */
@@ -25350,7 +25543,7 @@ export interface operations {
                         accessToken: string;
                         /**
                          * @description The internal ID of the authorized user
-                         * @example 6afece3a96cb9f0f518d5714
+                         * @example 6b0050d9144fcc8f56cf6b98
                          */
                         userId: string;
                         /**
@@ -25366,7 +25559,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when token expires
-                         * @example 2026-11-19T11:23:54.969Z
+                         * @example 2026-11-20T14:53:29.978Z
                          */
                         expiresAt: string;
                     };
@@ -25638,7 +25831,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the integrator was created
-                         * @example 2026-11-19T10:23:54.968Z
+                         * @example 2026-11-20T13:53:29.976Z
                          */
                         createdAt: string;
                     };
@@ -25924,7 +26117,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description ID of the account this request resolved to: the account it created or, where account reuse is enabled, the existing account this email resolves to for you (your own, or one you are currently authorized for through an existing authorization). With reuse enabled, a repeat for the same email returns the same ID.
-                         * @example 6afece3a96cb9f0f518d5716
+                         * @example 6b0050d9144fcc8f56cf6b9a
                          */
                         userId: string;
                         /**
@@ -26416,7 +26609,7 @@ export interface operations {
                             depositId: string;
                             /**
                              * @description Spritz user ID associated with the returned deposit
-                             * @example 6afece3a96cb9f0f518d5713
+                             * @example 6b0050d9144fcc8f56cf6b97
                              */
                             userId: string;
                             /**
@@ -26701,7 +26894,7 @@ export interface operations {
                         depositId: string;
                         /**
                          * @description Spritz user ID associated with the returned deposit
-                         * @example 6afece3a96cb9f0f518d5713
+                         * @example 6b0050d9144fcc8f56cf6b97
                          */
                         userId: string;
                         /**
@@ -26967,11 +27160,11 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6afece3a96cb9f0f518d5715
+                         * @example 6b0050d9144fcc8f56cf6b99
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
-                        events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
+                        events: ("account.created" | "account.updated" | "account.deleted" | "account.connectionUpdated" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                         /**
                          * Format: uri
                          * @description URL to which webhook payloads are delivered
@@ -27231,7 +27424,7 @@ export interface operations {
                      * @description List of event types to subscribe to. Defaults to empty array.
                      * @default []
                      */
-                    events?: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
+                    events?: ("account.created" | "account.updated" | "account.deleted" | "account.connectionUpdated" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                 };
                 "application/x-www-form-urlencoded": {
                     /**
@@ -27244,7 +27437,7 @@ export interface operations {
                      * @description List of event types to subscribe to. Defaults to empty array.
                      * @default []
                      */
-                    events?: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
+                    events?: ("account.created" | "account.updated" | "account.deleted" | "account.connectionUpdated" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                 };
                 "multipart/form-data": {
                     /**
@@ -27257,7 +27450,7 @@ export interface operations {
                      * @description List of event types to subscribe to. Defaults to empty array.
                      * @default []
                      */
-                    events?: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
+                    events?: ("account.created" | "account.updated" | "account.deleted" | "account.connectionUpdated" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                 };
             };
         };
@@ -27271,11 +27464,11 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6afece3a96cb9f0f518d5715
+                         * @example 6b0050d9144fcc8f56cf6b99
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
-                        events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
+                        events: ("account.created" | "account.updated" | "account.deleted" | "account.connectionUpdated" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                         /**
                          * Format: uri
                          * @description URL to which webhook payloads are delivered
@@ -31106,15 +31299,15 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @description List of event types to subscribe to. Use `*` to subscribe to all events. */
-                    events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
+                    events: ("account.created" | "account.updated" | "account.deleted" | "account.connectionUpdated" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                 };
                 "application/x-www-form-urlencoded": {
                     /** @description List of event types to subscribe to. Use `*` to subscribe to all events. */
-                    events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
+                    events: ("account.created" | "account.updated" | "account.deleted" | "account.connectionUpdated" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                 };
                 "multipart/form-data": {
                     /** @description List of event types to subscribe to. Use `*` to subscribe to all events. */
-                    events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
+                    events: ("account.created" | "account.updated" | "account.deleted" | "account.connectionUpdated" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                 };
             };
         };
@@ -31128,11 +31321,11 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the webhook
-                         * @example 6afece3a96cb9f0f518d5715
+                         * @example 6b0050d9144fcc8f56cf6b99
                          */
                         id: string;
                         /** @description List of event types this webhook is subscribed to */
-                        events: ("account.created" | "account.updated" | "account.deleted" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
+                        events: ("account.created" | "account.updated" | "account.deleted" | "account.connectionUpdated" | "payment.created" | "payment.updated" | "payment.completed" | "payment.refunded" | "verification.status.updated" | "capabilities.updated" | "onramp.created" | "onramp.updated" | "onramp.completed" | "achDebitReturn.created" | "achDebitReturn.updated" | "achDebit.authorized" | "achDebit.deliveryProgress" | "achDebit.delivered" | "achDebit.refunded" | "achDebit.returned" | "offramp.confirmed" | "offramp.inFlight" | "offramp.completed" | "offramp.failed" | "offramp.refunded" | "offramp.reversed" | "onrampCredit.depositDetected" | "onrampCredit.completed" | "onrampCredit.failed" | "onrampCredit.reversed" | "onrampCredit.refunded" | "*")[];
                         /**
                          * Format: uri
                          * @description URL to which webhook payloads are delivered
@@ -31768,7 +31961,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the old secret will expire. Only present if a grace period was specified.
-                         * @example 2026-11-19T10:28:54.969Z
+                         * @example 2026-11-20T13:58:29.978Z
                          */
                         oldSecretExpiresAt?: string;
                     };
@@ -32012,7 +32205,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6afece3a96cb9f0f518d5711
+                         * @example 6b0050d9144fcc8f56cf6b95
                          */
                         id: string;
                         /**
@@ -32029,7 +32222,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-19T10:23:54.890Z
+                         * @example 2026-11-20T13:53:29.970Z
                          */
                         signedUpAt: string;
                         /**
@@ -32508,7 +32701,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6afece3a96cb9f0f518d5711
+                         * @example 6b0050d9144fcc8f56cf6b95
                          */
                         id: string;
                         /**
@@ -32525,7 +32718,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-19T10:23:54.890Z
+                         * @example 2026-11-20T13:53:29.970Z
                          */
                         signedUpAt: string;
                         /**
@@ -33368,7 +33561,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * @description Unique identifier for the user
-                         * @example 6afece3a96cb9f0f518d5711
+                         * @example 6b0050d9144fcc8f56cf6b95
                          */
                         id: string;
                         /**
@@ -33385,7 +33578,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp of when the user was created
-                         * @example 2026-11-19T10:23:54.890Z
+                         * @example 2026-11-20T13:53:29.970Z
                          */
                         signedUpAt: string;
                         /**
@@ -50494,6 +50687,12 @@ export interface operations {
                              * @enum {string}
                              */
                             connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                            /**
+                             * Format: date-time
+                             * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                             * @example null
+                             */
+                            connectionExpiresAt: string | null;
                             /** @enum {string} */
                             type: "us";
                             /** @enum {string} */
@@ -50584,6 +50783,12 @@ export interface operations {
                              * @enum {string}
                              */
                             connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                            /**
+                             * Format: date-time
+                             * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                             * @example null
+                             */
+                            connectionExpiresAt: string | null;
                             /** @enum {string} */
                             type: "ca";
                             /** @enum {string} */
@@ -50679,6 +50884,12 @@ export interface operations {
                              * @enum {string}
                              */
                             connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                            /**
+                             * Format: date-time
+                             * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                             * @example null
+                             */
+                            connectionExpiresAt: string | null;
                             /** @enum {string} */
                             type: "uk";
                             /** @enum {string} */
@@ -50763,6 +50974,12 @@ export interface operations {
                              * @enum {string}
                              */
                             connectionStatus: "connected" | "expiring" | "reconnect_required" | "not_applicable";
+                            /**
+                             * Format: date-time
+                             * @description When the bank will cut the connection, while `connectionStatus` is `expiring` (an estimate when the bank gave no date); null otherwise. Most connections never expire: they break without warning and go straight to `reconnect_required`.
+                             * @example null
+                             */
+                            connectionExpiresAt: string | null;
                             /** @enum {string} */
                             type: "iban";
                             /**
